@@ -269,7 +269,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                     </div>
                     <button className={styles.shareButton}>
                       <Image
-                        src="/placeholder.svg?height=16&width=16"
+                        src="/assets/img/chat/Vector.png?height=16&width=16"
                         width={16}
                         height={16}
                         alt="Share"

@@ -4,12 +4,12 @@ import { useState, useEffect, useRef } from "react"
 import styles from "../../viewscreen/screen.module.css"
 import qualitySettingsService from "../contexts/quality-settings-service"
 
-const VideoQualitySettings = ({ streamId, onQualityChange }) => {
+const VideoQualitySettings = ({ streamId, onQualityChange, initialQuality = "auto", initialFrameRate = "60" }) => {
   const [showSettings, setShowSettings] = useState(false)
   const [showQualityOptions, setShowQualityOptions] = useState(false)
   const [showFrameRateOptions, setShowFrameRateOptions] = useState(false)
-  const [quality, setQuality] = useState("auto")
-  const [frameRate, setFrameRate] = useState("60")
+  const [quality, setQuality] = useState(initialQuality)
+  const [frameRate, setFrameRate] = useState(initialFrameRate)
   const [userId, setUserId] = useState(null)
   const settingsRef = useRef(null)
 
@@ -54,9 +54,9 @@ const VideoQualitySettings = ({ streamId, onQualityChange }) => {
           onQualityChange(response.settings.quality, response.settings.frameRate)
         }
       } else {
-        // Use defaults
-        setQuality("auto")
-        setFrameRate("60")
+        // Use initial values
+        setQuality(initialQuality)
+        setFrameRate(initialFrameRate)
       }
     } catch (error) {
       console.error("Error fetching quality settings:", error)
@@ -157,7 +157,7 @@ const VideoQualitySettings = ({ streamId, onQualityChange }) => {
                 <path d="M6 18H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <div className={styles.settingLabel}>Quality</div>
+            <div className={styles.settingLabel}>Resolution</div>
             <div className={styles.settingValue}>{getQualityDisplayText()}</div>
             <div className={styles.settingArrow}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -253,23 +253,32 @@ const VideoQualitySettings = ({ streamId, onQualityChange }) => {
           {/* Quality options dropdown */}
           {showQualityOptions && (
             <div className={styles.optionsDropdown}>
+              <div className={styles.optionsHeader}>
+                <span>Video resolution will change, but player size will remain the same</span>
+              </div>
               <div
                 className={`${styles.optionItem} ${quality === "auto" ? styles.activeOption : ""}`}
                 onClick={() => handleQualityChange("auto")}
               >
-                Auto
+                Auto (1080p)
               </div>
               <div
                 className={`${styles.optionItem} ${quality === "1080p" ? styles.activeOption : ""}`}
                 onClick={() => handleQualityChange("1080p")}
               >
-                1080p
+                1080p HD
               </div>
               <div
                 className={`${styles.optionItem} ${quality === "720p" ? styles.activeOption : ""}`}
                 onClick={() => handleQualityChange("720p")}
               >
-                720p
+                720p HD
+              </div>
+              <div
+                className={`${styles.optionItem} ${quality === "480p" ? styles.activeOption : ""}`}
+                onClick={() => handleQualityChange("480p")}
+              >
+                480p
               </div>
               <div
                 className={`${styles.optionItem} ${quality === "360p" ? styles.activeOption : ""}`}
@@ -284,10 +293,10 @@ const VideoQualitySettings = ({ streamId, onQualityChange }) => {
                 240p
               </div>
               <div
-                className={`${styles.optionItem} ${quality === "140p" ? styles.activeOption : ""}`}
-                onClick={() => handleQualityChange("140p")}
+                className={`${styles.optionItem} ${quality === "144p" ? styles.activeOption : ""}`}
+                onClick={() => handleQualityChange("144p")}
               >
-                140p
+                144p
               </div>
             </div>
           )}
@@ -295,6 +304,9 @@ const VideoQualitySettings = ({ streamId, onQualityChange }) => {
           {/* Frame Rate options dropdown */}
           {showFrameRateOptions && (
             <div className={styles.optionsDropdown}>
+              <div className={styles.optionsHeader}>
+                <span>Higher frame rate provides smoother video playback</span>
+              </div>
               <div
                 className={`${styles.optionItem} ${frameRate === "60" ? styles.activeOption : ""}`}
                 onClick={() => handleFrameRateChange("60")}
