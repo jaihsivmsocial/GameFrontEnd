@@ -21,8 +21,8 @@
 "use client";
 
 import React, { Component } from "react";
-import GameShop from "../../components/cloths/gameshop";
-import Inventory from "../../components/cloths/inventory";
+import GameShop from "@/components/cloths/gameshop";
+import Inventory from "@/components/cloths/inventory";
 import Scene from "@/components/threeD/Scene";
 
 export default class ShopPage extends Component {
