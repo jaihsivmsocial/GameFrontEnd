@@ -372,6 +372,9 @@ const WebRTCStream = forwardRef(
     const fallbackInitializedRef = useRef(false)
     const heartbeatIntervalRef = useRef(null)
     const viewerRegisteredRef = useRef(false)
+    const containerRef = useRef(null)
+    const [currentQuality, setCurrentQuality] = useState(quality)
+    const [currentFrameRate, setCurrentFrameRate] = useState(frameRate)
 
     // Immediately use fallback for test streams (stream-1, stream-2, etc.)
     useEffect(() => {
@@ -470,55 +473,50 @@ const WebRTCStream = forwardRef(
       }
     }, [unregisterViewer])
 
-    // Apply quality settings
-    useEffect(() => {
-      if (!videoRef.current) return
-
-      // Apply quality settings based on the selected option
-      if (quality !== "auto" && !isPublisher) {
-        console.log(`Applying quality: ${quality}, frame rate: ${frameRate}`)
-
-        // For regular videos, we can adjust CSS properties
-        if (usingFallback) {
-          const height = Number.parseInt(quality.replace("p", ""))
-          if (!isNaN(height)) {
-            videoRef.current.style.maxHeight = `${height}px`
-          }
-        }
-      } else if (usingFallback) {
-        // Auto quality - remove any restrictions
-        videoRef.current.style.maxHeight = "none"
-      }
-    }, [quality, frameRate, isPublisher, usingFallback])
-
-    // Get the correct video source based on streamId
-    const getVideoSource = useCallback((streamId) => {
-      // Map streamId to the correct video source
-      const videoSources = {
-        "stream-1": "/assets/videos/videoplayback.mp4",
-        "stream-2": "/assets/videos/video1.mp4",
-        "stream-3": "/assets/videos/office.mp4",
-        "stream-4": "/assets/videos/orchestra.mp4",
-        "default-stream": "/assets/videos/videoplayback.mp4",
+    // Get the correct video source based on streamId and quality
+    const getVideoSource = useCallback((streamId, videoQuality) => {
+      // Map of base video sources by stream ID
+      const baseVideoSources = {
+        "stream-1": "/assets/videos/videoplayback",
+        "stream-2": "/assets/videos/video1",
+        "stream-3": "/assets/videos/office",
+        "stream-4": "/assets/videos/orchestra",
+        "default-stream": "/assets/videos/videoplayback",
       }
 
-      // Check if we have a predefined source for this streamId
-      if (videoSources[streamId]) {
-        return videoSources[streamId]
+      // Get the base path
+      let basePath = baseVideoSources[streamId]
+
+      if (!basePath) {
+        // Try to extract a number from the streamId and use it to select a video
+        const streamNumber = streamId.match(/\d+/)?.[0] || "1"
+        const index = Number.parseInt(streamNumber, 10) % 4 // Cycle through 4 videos
+
+        const fallbackBasePaths = [
+          "/assets/videos/videoplayback",
+          "/assets/videos/video1",
+          "/assets/videos/office",
+          "/assets/videos/orchestra",
+        ]
+
+        basePath = fallbackBasePaths[index] || fallbackBasePaths[0]
       }
 
-      // Try to extract a number from the streamId and use it to select a video
-      const streamNumber = streamId.match(/\d+/)?.[0] || "1"
-      const index = Number.parseInt(streamNumber, 10) % 4 // Cycle through 4 videos
+      // In a real implementation, you would have different resolution versions of each video
+      // For this demo, we'll simulate different qualities by appending the quality to the path
 
-      const fallbackSources = [
-        "/assets/videos/videoplayback.mp4",
-        "/assets/videos/video1.mp4",
-        "/assets/videos/office.mp4",
-        "/assets/videos/orchestra.mp4",
-      ]
+      // If quality is auto, use the highest quality (1080p)
+      const actualQuality = videoQuality === "auto" ? "1080p" : videoQuality
 
-      return fallbackSources[index] || fallbackSources[0]
+      // Create a path that includes the quality
+      // In a real implementation, you would have actual different resolution files
+      // For example: /assets/videos/videoplayback-1080p.mp4, /assets/videos/videoplayback-720p.mp4, etc.
+      const qualityPath = `${basePath}-${actualQuality.replace("p", "")}.mp4`
+
+      console.log(`Loading ${actualQuality} version: ${qualityPath}`)
+
+      // For this demo, we'll fall back to the original video if the quality-specific one doesn't exist
+      return qualityPath
     }, [])
 
     // For fallback when WebRTC fails or for test streams, use a regular video element
@@ -535,7 +533,7 @@ const WebRTCStream = forwardRef(
         }
 
         // Get the appropriate video source
-        const videoSource = getVideoSource(streamId)
+        const videoSource = getVideoSource(streamId, quality)
         console.log(`Using fallback video source: ${videoSource}`)
 
         // Try multiple paths for the video
@@ -555,16 +553,15 @@ const WebRTCStream = forwardRef(
             if (videoRef.current) {
               videoRef.current.src = source
 
-              // Apply quality settings
-              if (quality !== "auto") {
-                const height = Number.parseInt(quality.replace("p", ""))
-                if (!isNaN(height)) {
-                  videoRef.current.style.maxHeight = `${height}px`
-                }
-              }
-
               // Set playback rate based on frame rate
               videoRef.current.playbackRate = frameRate === "60" ? 1.0 : 0.5
+
+              // Ensure the video maintains its container size
+              videoRef.current.style.objectFit = "cover"
+
+              // Add quality indicator
+              setCurrentQuality(quality)
+              setCurrentFrameRate(frameRate)
 
               // Play the video
               videoRef.current
@@ -586,7 +583,12 @@ const WebRTCStream = forwardRef(
             console.error(`Source failed to load: ${source}`)
 
             // Try alternative paths
-            if (source.includes("/assets/")) {
+            if (source.includes("-")) {
+              // If quality-specific video fails, try the base video
+              const basePath = source.substring(0, source.lastIndexOf("-")) + ".mp4"
+              console.log(`Quality-specific video not found, trying base video: ${basePath}`)
+              tryVideoSource(basePath)
+            } else if (source.includes("/assets/")) {
               // Try without /assets/ prefix
               tryVideoSource(source.replace("/assets/", "/"))
             } else if (!source.startsWith("/assets/")) {
@@ -606,6 +608,114 @@ const WebRTCStream = forwardRef(
         tryVideoSource(videoSource)
       }
     }, [usingFallback, streamId, onPlay, quality, frameRate, getVideoSource, registerViewer])
+
+    // Update video quality when quality setting changes
+    useEffect(() => {
+      // Check if this is a small view - if so, only apply quality changes when necessary
+      const isSmallView = className.includes("smallVideo")
+
+      // For small views in multi-view, only apply high-impact quality changes
+      // to avoid unnecessary video reloading
+      if (isSmallView && quality !== currentQuality) {
+        // For small views, only change quality if it's a significant change
+        // (e.g., from high to low or low to high)
+        const currentQualityValue = getQualityValue(currentQuality)
+        const newQualityValue = getQualityValue(quality)
+
+        // If the quality change is minor and this is a small view, just update the state
+        // without reloading the video
+        if (Math.abs(currentQualityValue - newQualityValue) < 2) {
+          setCurrentQuality(quality)
+          setCurrentFrameRate(frameRate)
+          return
+        }
+      }
+
+      if (usingFallback && fallbackInitializedRef.current && videoRef.current && quality !== currentQuality) {
+        console.log(`Quality changed from ${currentQuality} to ${quality}`)
+
+        // Get current playback position and state
+        const currentTime = videoRef.current.currentTime
+        const wasPlaying = !videoRef.current.paused
+
+        // Show loading indicator
+        setIsLoading(true)
+
+        // Get the appropriate video source for the new quality
+        const videoSource = getVideoSource(streamId, quality)
+        console.log(`Updating video quality to ${quality}, source: ${videoSource}`)
+
+        // Create a temporary video element to test if the source loads
+        const tempVideo = document.createElement("video")
+        tempVideo.muted = true
+        tempVideo.preload = "metadata"
+
+        tempVideo.onloadedmetadata = () => {
+          console.log(`New quality source loaded successfully: ${videoSource}`)
+
+          // If this source works, use it in the actual video element
+          if (videoRef.current) {
+            videoRef.current.src = videoSource
+
+            // Set playback rate based on frame rate
+            videoRef.current.playbackRate = frameRate === "60" ? 1.0 : 0.5
+
+            // Restore playback position
+            videoRef.current.currentTime = currentTime
+
+            // Update current quality state
+            setCurrentQuality(quality)
+
+            // Hide loading indicator
+            setIsLoading(false)
+
+            // Resume playback if it was playing
+            if (wasPlaying) {
+              videoRef.current.play().catch((err) => {
+                console.error("Error resuming video after quality change:", err)
+              })
+            }
+          }
+        }
+
+        tempVideo.onerror = () => {
+          console.error(`New quality source failed to load: ${videoSource}`)
+
+          // Try alternative paths
+          if (videoSource.includes("-")) {
+            // If quality-specific video fails, try the base video
+            const basePath = videoSource.substring(0, videoSource.lastIndexOf("-")) + ".mp4"
+            console.log(`Quality-specific video not found, using base video: ${basePath}`)
+
+            if (videoRef.current) {
+              videoRef.current.src = basePath
+              videoRef.current.currentTime = currentTime
+              setIsLoading(false)
+
+              if (wasPlaying) {
+                videoRef.current.play().catch((err) => {
+                  console.error("Error resuming video after quality change fallback:", err)
+                })
+              }
+            }
+          } else {
+            // If all attempts fail, keep the current video
+            setIsLoading(false)
+            console.log("Failed to change quality, keeping current video")
+          }
+        }
+
+        // Start loading the source
+        tempVideo.src = videoSource
+      }
+
+      // Update frame rate if changed
+      if (usingFallback && videoRef.current && frameRate !== currentFrameRate) {
+        console.log(`Frame rate changed from ${currentFrameRate} to ${frameRate}`)
+        videoRef.current.playbackRate = frameRate === "60" ? 1.0 : 0.5
+        setCurrentFrameRate(frameRate)
+      }
+    }, [quality, frameRate, usingFallback, streamId, currentQuality, currentFrameRate, getVideoSource, className])
 
     // Initialize WebRTC only for non-test streams
     const initWebRTC = useCallback(async () => {
@@ -652,14 +762,31 @@ const WebRTCStream = forwardRef(
         if (isPublisher) {
           // Publisher logic - get local media and create offer
           try {
+            // Apply quality constraints based on settings
+            const videoConstraints = {
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              frameRate: { ideal: frameRate === "60" ? 60 : 30 },
+            }
+
+            // Adjust constraints based on quality setting
+            if (quality !== "auto") {
+              const height = Number.parseInt(quality.replace("p", ""))
+              if (!isNaN(height)) {
+                videoConstraints.width = { ideal: (height * 16) / 9 }
+                videoConstraints.height = { ideal: height }
+              }
+            }
+
             const localStream = await navigator.mediaDevices.getUserMedia({
-              video: true,
+              video: videoConstraints,
               audio: true,
             })
 
             // Display local stream
             if (videoRef.current) {
               videoRef.current.srcObject = localStream
+              videoRef.current.style.objectFit = "cover" // Maintain aspect ratio but fill container
             }
 
             // Add tracks to peer connection
@@ -682,6 +809,7 @@ const WebRTCStream = forwardRef(
           peerConnection.ontrack = (event) => {
             if (videoRef.current && event.streams[0]) {
               videoRef.current.srcObject = event.streams[0]
+              videoRef.current.style.objectFit = "cover" // Maintain aspect ratio but fill container
               setIsLoading(false)
 
               // Auto-play the video when we get a stream
@@ -699,8 +827,14 @@ const WebRTCStream = forwardRef(
             }
           }
 
-          // Request to view stream
-          socket.emit("viewer_request", { streamId })
+          // Request to view stream with quality preferences
+          socket.emit("viewer_request", {
+            streamId,
+            preferences: {
+              quality,
+              frameRate,
+            },
+          })
         }
 
         return peerConnection
@@ -711,7 +845,7 @@ const WebRTCStream = forwardRef(
         setUsingFallback(true)
         return null
       }
-    }, [socket, streamId, isPublisher, onPlay, registerViewer])
+    }, [socket, streamId, isPublisher, onPlay, registerViewer, quality, frameRate])
 
     // Set up WebRTC connection and socket event handlers (only for non-test streams)
     useEffect(() => {
@@ -851,9 +985,22 @@ const WebRTCStream = forwardRef(
       }
     }
 
+    const getQualityValue = (qualityString) => {
+      if (qualityString === "auto") return 5 // Highest quality
+      const numericValue = Number.parseInt(qualityString.replace("p", ""))
+
+      // Map resolution to a numeric value
+      if (numericValue >= 1080) return 5
+      if (numericValue >= 720) return 4
+      if (numericValue >= 480) return 3
+      if (numericValue >= 360) return 2
+      if (numericValue >= 240) return 1
+      return 0 // Lowest quality
+    }
+
     return (
-      <div className="relative w-full h-full">
-        {isLoading && !usingFallback && (
+      <div ref={containerRef} className="relative w-full h-full">
+        {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
           </div>
@@ -883,11 +1030,11 @@ const WebRTCStream = forwardRef(
           }}
         />
 
-        {usingFallback && (
-          <div className="absolute top-2 left-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded opacity-70">
-            Fallback
-          </div>
-        )}
+        {/* Quality indicator */}
+        <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+          {currentQuality === "auto" ? "Auto (1080p)" : currentQuality} • {currentFrameRate} FPS
+          {usingFallback && " • Fallback"}
+        </div>
       </div>
     )
   },
@@ -896,6 +1043,11 @@ const WebRTCStream = forwardRef(
 WebRTCStream.displayName = "WebRTCStream"
 
 export default WebRTCStream
+
+
+
+
+
 
 
 
