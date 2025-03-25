@@ -1,0 +1,38 @@
+.settingsContainer {
+    background-color: #071328;
+    color: white;
+  }
+  
+  .settingsCard {
+    background-color: #0d1c36 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    padding: 20px;
+  }
+  
+  .settingsCardItem {
+    background-color: #0d1c36 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 15px;
+    padding: 15px;
+  }
+  
+  .navTabs .nav-link {
+    color: rgba(255, 255, 255, 0.7);
+    border: none;
+    padding: 10px 20px;
+  }
+  
+  .navTabs .nav-link.active {
+    color: white;
+    background-color: transparent;
+    border-bottom: 2px solid #0d6efd;
+  }
+  
+  .navTabs .nav-link:hover {
+    color: white;
+  }
+  
+  
