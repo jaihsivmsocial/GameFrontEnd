@@ -25,8 +25,8 @@ export default function SettingsPage() {
       case "notifications":
         return <NotificationsSection />
         case "funds":
-          router.push('/managefund'); // Redirect to /funds
-          return null; // No component rendered here
+          router.push('/managefund'); 
+          return null; 
       default:
         return <SecuritySection />
     }

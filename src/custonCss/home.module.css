@@ -8,6 +8,18 @@
   font-family: "Arial", sans-serif;
 }
 
+.rateLimitMessage {
+  background-color: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+  text-align: center;
+  font-size: 14px;
+}
+
+
+
 /* Navigation Bar */
 .navbar {
   display: flex;
@@ -158,8 +170,8 @@
   /* Content Wrapper - Contains both main content and chat */
   .contentWrapper {
     display: flex;
-    flex: 1;
-    position: relative;
+  flex: 1;
+  position: relative;
   }
 
 /* Main and Game Wrapper - Contains both video and game sections */
@@ -381,47 +393,39 @@
 }
 
 .chatHeader {
-  /* display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 1rem;
-  border-bottom: 1px solid #1e1e1e;
-  align-items: center;
-  gap: 5px; */
-
   padding: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background-color: #0a1929;
+  background: linear-gradient(180deg, #050e1a 0%, #0a1929 100%);
 }
 
 .worldchat {
-  /* display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-weight: bold;
-  font-size: 0.9rem;
-  width: 100%;  */
-
   display: flex;
   justify-content: space-between;
-  align-items: center
+  align-items: center;
 }
 
 .worldchat h5 {
   margin: 0;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
+  letter-spacing: 1px;
   color: white;
+  text-transform: uppercase;
+  text-align: center;
 }
 
-
-
-.usersButton {
-  /* background: none;
+.arrowButton {
+  background: none;
   border: none;
-  color: #999;
-  cursor: pointer; */
-
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+}
+.usersButton {
   background: none;
   border: none;
   cursor: pointer;
@@ -432,7 +436,7 @@
 
 }
 .icon {
-  filter: invert(1);
+  filter: invert(1) brightness(100%);
 }
 
 .usersButton:hover {
@@ -443,9 +447,11 @@
 .chatMessages {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
-  scrollbar-width: thin;
-  scrollbar-color: #0088cc #1a1a1a;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background-color: #0a1929;
 }
 
 /* .chatMessages::-webkit-scrollbar {
@@ -477,34 +483,21 @@
 }
 
 .messageText {
-  /* background-color: #1a1a1a;
-  padding: 0.8rem;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem; */
-  padding:10px;
-
-  margin: 0 0 5px 0;
+  margin: 0 0 10px 0;
   color: #e6e6e6;
   font-size: 14px;
   line-height: 1.4;
-  line-break: anywhere;
+  word-break: break-word;
 }
 
 .messageUser {
-  /* display: flex;
-  align-items: center; */
-
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 10px;
-  margin-bottom:10px;
 }
 
 .userAvatar {
   /* margin-right: 0.5rem; */
-
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -512,8 +505,6 @@
 }
 
 .avatar {
-  /* border-radius: 50%; */
-
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -525,9 +516,6 @@
 }
 
 .userName {
-  /* font-weight: bold;
-  font-size: 0.9rem;
-  color: #0088cc; */
   font-weight: 600;
   font-size: 14px;
   color: #c0af96;
@@ -535,23 +523,21 @@
 }
 
 .userLocation {
-  /* font-size: 0.7rem;
-  color: #999; */
-
   font-size: 12px;
   color: #6c757d;
 }
 
 .shareButton {
-  /* background: none;
-  border: none;
-  color: #999;
-  cursor: pointer; */
-
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;;
+  padding: 0;
+}
+
+.systemMessage {
+  text-align: center;
+  color: #6c757d;
+  padding: 20px 0;
 }
 
 .systemNotification {
@@ -575,23 +561,25 @@
   padding: 20px 0;
 }
 .chatMessage {
-  margin-bottom: 15px;
-  border:.5px solid white;
-  border-radius:12px;
-  padding:4px
+  background-color: #0d2240;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tagMessage {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 1rem 0;
-  font-size: 0.8rem;
+  margin: 10px 0;
+  font-size: 12px;
+  color: #4fc3f7;
 }
 
-.tagUser {
-  color: #999;
-  margin-right: 0.5rem;
+.tagTarget {
+  color: #d5c7c1;
+  margin-left: 5px;
 }
 
 .tagTarget {
@@ -600,11 +588,6 @@
 }
 
 .chatInput {
-  /* display: flex;
-  align-items: center;
-  padding: 1rem;
-  border-top: 1px solid #1e1e1e; */
-
   display: flex;
   padding: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -612,14 +595,6 @@
 }
 
 .messageInput {
-  /* flex: 1;
-  background-color: #1a1a1a;
-  border: none;
-  border-radius: 20px;
-  padding: 0.8rem 1rem;
-  color: #ffffff;
-  margin-right: 0.5rem; */
-
   flex: 1;
   padding: 8px 12px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -634,8 +609,9 @@
 
 .messageInput:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.5);
+  border-color: #0078d7;
 }
+
 /*
 .emojiButton,
 .sendButton {
@@ -673,7 +649,6 @@
   cursor: pointer;
   margin-left: 5px;
 }
-
 .sendButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -907,5 +882,224 @@
 .videoPlayer {
   width: 100%;
   border-radius: 10px;
+}
+
+
+
+/* Reply feature share chat  styles */
+
+/* Reply feature styles */
+
+.replyContainer {
+  background-color: #1e2a38;
+  border-radius: 12px;
+  margin: 8px;
+  padding: 12px;
+  width: calc(100% - 16px);
+}
+
+.replyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.replyingTo {
+  display: flex;
+  align-items: center;
+  color: #4a9eff;
+  font-size: 0.9rem;
+}
+
+.replyArrow {
+  margin-right: 4px;
+}
+
+.cancelReplyButton {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cancelReplyButton:hover {
+  color: #fff;
+}
+
+.replyInputContainer {
+  display: flex;
+  align-items: center;
+  background-color: #131c28;
+  border-radius: 20px;
+  padding: 4px 8px;
+}
+
+.replyInput {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 8px;
+  outline: none;
+}
+
+.sendReplyButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #4a9eff;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sendReplyButton:hover {
+  background-color: #3a8eff;
+}
+
+.sendReplyButton:disabled {
+  background-color: #2a4a7a;
+  cursor: not-allowed;
+}
+
+/* Style for messages that are replies */
+.replyInfo {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  margin-bottom: 2px;
+  font-size: 0.8rem;
+  color: #4a9eff;
+}
+
+/* Message styles */
+.chatMessage {
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: #1e2a38;
+  position: relative;
+}
+
+/* Original message style with green left border */
+.originalMessage {
+  border-left: 4px solid #4caf50;
+  background-color: rgba(76, 175, 80, 0.1);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 0 8px 8px 0;
+}
+
+.originalMessageUsername {
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.originalMessageContent {
+  color: #ddd;
+  word-break: break-word;
+}
+
+.originalMessageUrl {
+  color: #4a9eff;
+  word-break: break-word;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+/* Reply message style */
+.replyMessage {
+  border-left: 4px solid #4a9eff;
+  background-color: rgba(74, 158, 255, 0.1);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 0 8px 8px 0;
+}
+
+.messageText {
+  color: #fff;
+  margin: 8px 0;
+  word-break: break-word;
+}
+
+.messageUser {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  position: relative; /* Add this to position the share button */
+}
+
+.userAvatar {
+  margin-right: 8px;
+}
+
+.avatar {
+  border-radius: 50%;
+}
+
+.shareButton {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px;
+  position: absolute; /* Position absolutely */
+  right: 0; /* Align to the right */
+  top: 50%; /* Center vertically */
+  transform: translateY(-50%); /* Adjust for perfect centering */
+}
+
+.userInfo {
+  flex: 1;
+}
+
+.userName {
+  font-weight: 500;
+  color: #fff;
+}
+
+.userLocation {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.timestamp {
+  font-size: 0.8rem;
+  color: #aaa;
+  position: absolute;
+  top: 8px;
+  right: 12px;
+}
+
+/* Add styles for the reply badge */
+.replyBadge {
+  display: flex;
+  align-items: center;
+  background-color: #131c28;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+}
+
+.replyIcon {
+  color: #58a6ff;
+  margin-right: 4px;
+}
+
+.replyUsername {
+  color: #58a6ff;
+}
+
+.replyArrow {
+  margin-left: auto;
+  color: #fff;
 }
 
