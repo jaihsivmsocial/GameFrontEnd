@@ -1,41 +1,58 @@
 "use client"
-
 import { useState } from "react"
 import Link from "next/link"
-import "bootstrap/dist/css/bootstrap.min.css"
-
-export const Shope = () => {
+import { useNavigation } from "../context/NavigationContext"
+const Shope = () => {
   const [hover, setHover] = useState(false)
+  const { activeButton, setActiveButton } = useNavigation()
+  const isActive = activeButton === "shop"
+
+  // Base gradient for the button
+  const baseGradient = "linear-gradient(90deg, #00C8FF 0%, #04B2FF 47%, #0E76FE 100%)"
+
+  const handleClick = () => {
+    setActiveButton("shop")
+  }
 
   return (
-    <Link href="/shop" passHref>
-      <button
-        type="button"
-        className="btn text-white d-flex align-items-center justify-content-center"
-        style={{
-          backgroundColor: "#000",
-          border: `0.5px solid #FFFFFF`, // Updated to match design
-          width: "142px", // Updated to match design
-          height: "37px", // Updated to match design
-          fontWeight: "bold",
-          letterSpacing: "1px",
-          boxShadow: hover ? "0 0 10px rgba(13, 202, 240, 0.8)" : "0 0 5px rgba(13, 202, 240, 0.5)",
-          transition: "all 0.3s cubic-bezier(0.5, 0, 0.5, 1)", // Spring-like transition
-          padding: "0",
-          overflow: "hidden",
-          gap: "8px",
-          borderRadius: "8px", // Updated to match design
-          position: "relative",
-        }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
-        <img src="/assets/img/iconImage/shopping-bag 1.png" alt="shopping bag icon" width="20" height="20" />
-        SHOP
-      </button>
+    <Link
+      href="/shop"
+      className="btn text-white d-flex align-items-center justify-content-center"
+      style={{
+        background: isActive ? baseGradient : "#000",
+        border: `0.5px solid ${isActive ? "#0E76FE" : "#FFFFFF"}`,
+        width: isActive ? "180px" : "142px",
+        height: "37px",
+        fontWeight: "bold",
+        letterSpacing: "1px",
+        boxShadow: isActive
+          ? "0 0 15px rgba(0, 200, 255, 0.6)"
+          : hover
+            ? "0 0 10px rgba(13, 202, 240, 0.8)"
+            : "0 0 5px rgba(13, 202, 240, 0.5)",
+        padding: "0",
+        overflow: "hidden",
+        gap: "8px",
+        borderRadius: "8px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        // Removed transition property
+      }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onClick={handleClick}
+    >
+      <img
+        src={isActive ? "/assets/img/iconImage/shopping-bag 1.png" : "/assets/img/iconImage/shopping-bag 1.png"}
+        alt="shopping bag icon"
+        width="20"
+        height="20"
+        style={{ marginRight: "4px" }}
+      />
+      SHOP
     </Link>
   )
 }
 
 export default Shope
-

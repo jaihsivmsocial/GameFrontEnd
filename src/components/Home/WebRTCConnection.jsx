@@ -373,8 +373,63 @@ const WebRTCStream = forwardRef(
     const heartbeatIntervalRef = useRef(null)
     const viewerRegisteredRef = useRef(false)
     const containerRef = useRef(null)
+    const isMountedRef = useRef(true)
+    const lastRegistrationTimeRef = useRef(0)
+    const unregisterTimeoutRef = useRef(null)
     const [currentQuality, setCurrentQuality] = useState(quality)
     const [currentFrameRate, setCurrentFrameRate] = useState(frameRate)
+
+    // Set isMounted to false when component unmounts
+    useEffect(() => {
+      isMountedRef.current = true
+      return () => {
+        isMountedRef.current = false
+      }
+    }, [])
+
+    // Update quality settings when props change
+    useEffect(() => {
+      if (quality !== currentQuality) {
+        console.log(`Quality changed from ${currentQuality} to ${quality}`)
+        setCurrentQuality(quality)
+        applyQualitySettings()
+      }
+
+      if (frameRate !== currentFrameRate) {
+        console.log(`Frame rate changed from ${currentFrameRate} to ${frameRate}`)
+        setCurrentFrameRate(frameRate)
+        applyQualitySettings()
+      }
+    }, [quality, frameRate])
+
+    // Apply quality settings to the video element
+    const applyQualitySettings = useCallback(() => {
+      if (!videoRef.current) return
+
+      // For fallback video, adjust playback rate based on frame rate
+      if (usingFallback) {
+        videoRef.current.playbackRate = frameRate === "60" ? 1.0 : 0.5
+
+        // If we have a source, try to reload with new quality
+        if (videoRef.current.src && fallbackInitializedRef.current) {
+          // For a real implementation, we would switch to different quality video sources
+          // For this demo, we'll just log that quality changed
+          console.log(`Applied quality settings to fallback video: ${quality}, ${frameRate}fps`)
+        }
+      } else if (peerConnectionRef.current) {
+        // For WebRTC, we would need to renegotiate with new constraints
+        // This is a simplified version - in a real app, you'd update the sender's constraints
+        console.log(`Applied quality settings to WebRTC stream: ${quality}, ${frameRate}fps`)
+
+        // In a real implementation, you would do something like:
+        // const sender = peerConnectionRef.current.getSenders().find(s => s.track.kind === 'video')
+        // if (sender) {
+        //   const params = sender.getParameters()
+        //   // Update encoding parameters based on quality and frameRate
+        //   sender.setParameters(params)
+        // }
+      }
+    }, [quality, frameRate, usingFallback])
 
     // Immediately use fallback for test streams (stream-1, stream-2, etc.)
     useEffect(() => {
@@ -399,8 +454,22 @@ const WebRTCStream = forwardRef(
     const registerViewer = useCallback(() => {
       if (!socket || !streamId || viewerRegisteredRef.current) return
 
+      // Prevent rapid registration/unregistration cycles
+      const now = Date.now()
+      if (now - lastRegistrationTimeRef.current < 1000) {
+        console.log(`Skipping registration for ${streamId} - too soon after last registration`)
+        return
+      }
+
+      lastRegistrationTimeRef.current = now
       console.log(`Registering as viewer for stream: ${streamId}`)
       viewerRegisteredRef.current = true
+
+      // Clear any pending unregister timeout
+      if (unregisterTimeoutRef.current) {
+        clearTimeout(unregisterTimeoutRef.current)
+        unregisterTimeoutRef.current = null
+      }
 
       // Join the stream room via socket to increment viewer count
       socket.emit("join_stream", { streamId })
@@ -420,21 +489,44 @@ const WebRTCStream = forwardRef(
     const unregisterViewer = useCallback(() => {
       if (!socket || !streamId || !viewerRegisteredRef.current) return
 
-      console.log(`Unregistering as viewer for stream: ${streamId}`)
-      viewerRegisteredRef.current = false
+      // Prevent rapid registration/unregistration cycles
+      const now = Date.now()
+      if (now - lastRegistrationTimeRef.current < 1000) {
+        console.log(`Delaying unregistration for ${streamId} - too soon after registration`)
 
-      // Leave the stream room via socket to decrement viewer count
-      socket.emit("leave_stream", { streamId })
+        // Set a timeout to unregister after a delay
+        if (unregisterTimeoutRef.current) {
+          clearTimeout(unregisterTimeoutRef.current)
+        }
 
-      // Also decrement via API as a fallback
-      apiService
-        .decrementViewerCount(streamId)
-        .then((response) => {
-          if (response.success) {
-            console.log(`API: Decremented viewer count for ${streamId}`)
+        unregisterTimeoutRef.current = setTimeout(() => {
+          if (isMountedRef.current && viewerRegisteredRef.current) {
+            performUnregister()
           }
-        })
-        .catch((err) => console.error("API error decrementing viewer count:", err))
+        }, 1000)
+        return
+      }
+
+      performUnregister()
+
+      function performUnregister() {
+        console.log(`Unregistering as viewer for stream: ${streamId}`)
+        viewerRegisteredRef.current = false
+        lastRegistrationTimeRef.current = now
+
+        // Leave the stream room via socket to decrement viewer count
+        socket.emit("leave_stream", { streamId })
+
+        // Also decrement via API as a fallback
+        apiService
+          .decrementViewerCount(streamId)
+          .then((response) => {
+            if (response.success) {
+              console.log(`API: Decremented viewer count for ${streamId}`)
+            }
+          })
+          .catch((err) => console.error("API error decrementing viewer count:", err))
+      }
     }, [socket, streamId])
 
     // Set up heartbeat to keep viewer count accurate
@@ -456,19 +548,58 @@ const WebRTCStream = forwardRef(
       return () => {
         if (heartbeatIntervalRef.current) {
           clearInterval(heartbeatIntervalRef.current)
+          heartbeatIntervalRef.current = null
         }
       }
     }, [socket, streamId, isPlaying])
+
+    // Handle beforeunload event to ensure proper cleanup when page is closed
+    useEffect(() => {
+      const handleBeforeUnload = () => {
+        if (viewerRegisteredRef.current) {
+          // Synchronous API call to ensure it completes before page unload
+          const xhr = new XMLHttpRequest()
+          xhr.open(
+            "POST",
+            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/viewer/decrement/${streamId}`,
+            false,
+          )
+          xhr.setRequestHeader("Content-Type", "application/json")
+          xhr.send(JSON.stringify({ streamId }))
+
+          // Also try to send a socket message, though it might not complete
+          if (socket) {
+            socket.emit("leave_stream", { streamId })
+          }
+        }
+      }
+
+      window.addEventListener("beforeunload", handleBeforeUnload)
+
+      return () => {
+        window.removeEventListener("beforeunload", handleBeforeUnload)
+      }
+    }, [streamId, socket])
 
     // Cleanup on unmount
     useEffect(() => {
       return () => {
         // Unregister as viewer when component unmounts
-        unregisterViewer()
+        if (viewerRegisteredRef.current) {
+          unregisterViewer()
+          viewerRegisteredRef.current = false
+        }
 
         // Clear any intervals
         if (heartbeatIntervalRef.current) {
           clearInterval(heartbeatIntervalRef.current)
+          heartbeatIntervalRef.current = null
+        }
+
+        // Clear any timeouts
+        if (unregisterTimeoutRef.current) {
+          clearTimeout(unregisterTimeoutRef.current)
+          unregisterTimeoutRef.current = null
         }
       }
     }, [unregisterViewer])
@@ -502,21 +633,10 @@ const WebRTCStream = forwardRef(
         basePath = fallbackBasePaths[index] || fallbackBasePaths[0]
       }
 
-      // In a real implementation, you would have different resolution versions of each video
-      // For this demo, we'll simulate different qualities by appending the quality to the path
-
-      // If quality is auto, use the highest quality (1080p)
-      const actualQuality = videoQuality === "auto" ? "1080p" : videoQuality
-
-      // Create a path that includes the quality
-      // In a real implementation, you would have actual different resolution files
-      // For example: /assets/videos/videoplayback-1080p.mp4, /assets/videos/videoplayback-720p.mp4, etc.
-      const qualityPath = `${basePath}-${actualQuality.replace("p", "")}.mp4`
-
-      console.log(`Loading ${actualQuality} version: ${qualityPath}`)
-
-      // For this demo, we'll fall back to the original video if the quality-specific one doesn't exist
-      return qualityPath
+      // In a real implementation, we would append quality to the path
+      // For example: `/assets/videos/videoplayback-720p.mp4`
+      // For this demo, we'll just return the base video
+      return `${basePath}.mp4`
     }, [])
 
     // For fallback when WebRTC fails or for test streams, use a regular video element
@@ -550,7 +670,7 @@ const WebRTCStream = forwardRef(
             console.log(`Source loaded successfully: ${source}`)
 
             // If this source works, use it in the actual video element
-            if (videoRef.current) {
+            if (videoRef.current && isMountedRef.current) {
               videoRef.current.src = source
 
               // Set playback rate based on frame rate
@@ -559,22 +679,22 @@ const WebRTCStream = forwardRef(
               // Ensure the video maintains its container size
               videoRef.current.style.objectFit = "cover"
 
-              // Add quality indicator
-              setCurrentQuality(quality)
-              setCurrentFrameRate(frameRate)
-
               // Play the video
               videoRef.current
                 .play()
                 .then(() => {
-                  setIsLoading(false)
-                  setIsPlaying(true)
-                  registerViewer() // Register as viewer when video starts playing
-                  onPlay()
+                  if (isMountedRef.current) {
+                    setIsLoading(false)
+                    setIsPlaying(true)
+                    registerViewer() // Register as viewer when video starts playing
+                    onPlay()
+                  }
                 })
                 .catch((err) => {
                   console.error("Error playing fallback video:", err)
-                  setError("Could not play video. Click to play.")
+                  if (isMountedRef.current) {
+                    setError("Could not play video. Click to play.")
+                  }
                 })
             }
           }
@@ -583,12 +703,7 @@ const WebRTCStream = forwardRef(
             console.error(`Source failed to load: ${source}`)
 
             // Try alternative paths
-            if (source.includes("-")) {
-              // If quality-specific video fails, try the base video
-              const basePath = source.substring(0, source.lastIndexOf("-")) + ".mp4"
-              console.log(`Quality-specific video not found, trying base video: ${basePath}`)
-              tryVideoSource(basePath)
-            } else if (source.includes("/assets/")) {
+            if (source.includes("/assets/")) {
               // Try without /assets/ prefix
               tryVideoSource(source.replace("/assets/", "/"))
             } else if (!source.startsWith("/assets/")) {
@@ -608,114 +723,6 @@ const WebRTCStream = forwardRef(
         tryVideoSource(videoSource)
       }
     }, [usingFallback, streamId, onPlay, quality, frameRate, getVideoSource, registerViewer])
-
-    // Update video quality when quality setting changes
-    useEffect(() => {
-      // Check if this is a small view - if so, only apply quality changes when necessary
-      const isSmallView = className.includes("smallVideo")
-
-      // For small views in multi-view, only apply high-impact quality changes
-      // to avoid unnecessary video reloading
-      if (isSmallView && quality !== currentQuality) {
-        // For small views, only change quality if it's a significant change
-        // (e.g., from high to low or low to high)
-        const currentQualityValue = getQualityValue(currentQuality)
-        const newQualityValue = getQualityValue(quality)
-
-        // If the quality change is minor and this is a small view, just update the state
-        // without reloading the video
-        if (Math.abs(currentQualityValue - newQualityValue) < 2) {
-          setCurrentQuality(quality)
-          setCurrentFrameRate(frameRate)
-          return
-        }
-      }
-
-      if (usingFallback && fallbackInitializedRef.current && videoRef.current && quality !== currentQuality) {
-        console.log(`Quality changed from ${currentQuality} to ${quality}`)
-
-        // Get current playback position and state
-        const currentTime = videoRef.current.currentTime
-        const wasPlaying = !videoRef.current.paused
-
-        // Show loading indicator
-        setIsLoading(true)
-
-        // Get the appropriate video source for the new quality
-        const videoSource = getVideoSource(streamId, quality)
-        console.log(`Updating video quality to ${quality}, source: ${videoSource}`)
-
-        // Create a temporary video element to test if the source loads
-        const tempVideo = document.createElement("video")
-        tempVideo.muted = true
-        tempVideo.preload = "metadata"
-
-        tempVideo.onloadedmetadata = () => {
-          console.log(`New quality source loaded successfully: ${videoSource}`)
-
-          // If this source works, use it in the actual video element
-          if (videoRef.current) {
-            videoRef.current.src = videoSource
-
-            // Set playback rate based on frame rate
-            videoRef.current.playbackRate = frameRate === "60" ? 1.0 : 0.5
-
-            // Restore playback position
-            videoRef.current.currentTime = currentTime
-
-            // Update current quality state
-            setCurrentQuality(quality)
-
-            // Hide loading indicator
-            setIsLoading(false)
-
-            // Resume playback if it was playing
-            if (wasPlaying) {
-              videoRef.current.play().catch((err) => {
-                console.error("Error resuming video after quality change:", err)
-              })
-            }
-          }
-        }
-
-        tempVideo.onerror = () => {
-          console.error(`New quality source failed to load: ${videoSource}`)
-
-          // Try alternative paths
-          if (videoSource.includes("-")) {
-            // If quality-specific video fails, try the base video
-            const basePath = videoSource.substring(0, videoSource.lastIndexOf("-")) + ".mp4"
-            console.log(`Quality-specific video not found, using base video: ${basePath}`)
-
-            if (videoRef.current) {
-              videoRef.current.src = basePath
-              videoRef.current.currentTime = currentTime
-              setIsLoading(false)
-
-              if (wasPlaying) {
-                videoRef.current.play().catch((err) => {
-                  console.error("Error resuming video after quality change fallback:", err)
-                })
-              }
-            }
-          } else {
-            // If all attempts fail, keep the current video
-            setIsLoading(false)
-            console.log("Failed to change quality, keeping current video")
-          }
-        }
-
-        // Start loading the source
-        tempVideo.src = videoSource
-      }
-
-      // Update frame rate if changed
-      if (usingFallback && videoRef.current && frameRate !== currentFrameRate) {
-        console.log(`Frame rate changed from ${currentFrameRate} to ${frameRate}`)
-        videoRef.current.playbackRate = frameRate === "60" ? 1.0 : 0.5
-        setCurrentFrameRate(frameRate)
-      }
-    }, [quality, frameRate, usingFallback, streamId, currentQuality, currentFrameRate, getVideoSource, className])
 
     // Initialize WebRTC only for non-test streams
     const initWebRTC = useCallback(async () => {
@@ -755,7 +762,9 @@ const WebRTCStream = forwardRef(
           console.log(`Connection state: ${peerConnection.connectionState}`)
           if (peerConnection.connectionState === "failed" || peerConnection.connectionState === "disconnected") {
             console.log("WebRTC connection failed, using fallback")
-            setUsingFallback(true)
+            if (isMountedRef.current) {
+              setUsingFallback(true)
+            }
           }
         }
 
@@ -801,13 +810,15 @@ const WebRTCStream = forwardRef(
             socket.emit("broadcaster_offer", { streamId, offer })
           } catch (mediaError) {
             console.error("Media access error:", mediaError)
-            setError("Could not access camera/microphone")
-            setUsingFallback(true)
+            if (isMountedRef.current) {
+              setError("Could not access camera/microphone")
+              setUsingFallback(true)
+            }
           }
         } else {
           // Viewer logic - handle remote stream
           peerConnection.ontrack = (event) => {
-            if (videoRef.current && event.streams[0]) {
+            if (videoRef.current && event.streams[0] && isMountedRef.current) {
               videoRef.current.srcObject = event.streams[0]
               videoRef.current.style.objectFit = "cover" // Maintain aspect ratio but fill container
               setIsLoading(false)
@@ -816,9 +827,11 @@ const WebRTCStream = forwardRef(
               videoRef.current
                 .play()
                 .then(() => {
-                  setIsPlaying(true)
-                  registerViewer() // Register as viewer when WebRTC stream starts playing
-                  onPlay()
+                  if (isMountedRef.current) {
+                    setIsPlaying(true)
+                    registerViewer() // Register as viewer when WebRTC stream starts playing
+                    onPlay()
+                  }
                 })
                 .catch((err) => {
                   console.error("Error auto-playing video:", err)
@@ -840,9 +853,11 @@ const WebRTCStream = forwardRef(
         return peerConnection
       } catch (err) {
         console.error("WebRTC initialization error:", err)
-        setError("Failed to initialize WebRTC")
-        setIsLoading(false)
-        setUsingFallback(true)
+        if (isMountedRef.current) {
+          setError("Failed to initialize WebRTC")
+          setIsLoading(false)
+          setUsingFallback(true)
+        }
         return null
       }
     }, [socket, streamId, isPublisher, onPlay, registerViewer, quality, frameRate])
@@ -860,11 +875,15 @@ const WebRTCStream = forwardRef(
 
         try {
           await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer))
-          setIsLoading(false)
+          if (isMountedRef.current) {
+            setIsLoading(false)
+          }
         } catch (err) {
           console.error("Error setting remote description:", err)
-          setError("Connection error")
-          setUsingFallback(true)
+          if (isMountedRef.current) {
+            setError("Connection error")
+            setUsingFallback(true)
+          }
         }
       }
 
@@ -880,8 +899,10 @@ const WebRTCStream = forwardRef(
           socket.emit("viewer_answer", { streamId, answer })
         } catch (err) {
           console.error("Error handling viewer offer:", err)
-          setError("Connection error")
-          setUsingFallback(true)
+          if (isMountedRef.current) {
+            setError("Connection error")
+            setUsingFallback(true)
+          }
         }
       }
 
@@ -896,9 +917,11 @@ const WebRTCStream = forwardRef(
       }
 
       const handleError = ({ message }) => {
-        setError(message)
-        setIsLoading(false)
-        setUsingFallback(true)
+        if (isMountedRef.current) {
+          setError(message)
+          setIsLoading(false)
+          setUsingFallback(true)
+        }
       }
 
       // Register socket event listeners
@@ -912,7 +935,7 @@ const WebRTCStream = forwardRef(
 
       // Set a timeout to fall back to regular video if WebRTC doesn't connect
       const fallbackTimeout = setTimeout(() => {
-        if (isLoading && !isPlaying) {
+        if (isLoading && !isPlaying && isMountedRef.current) {
           console.log(`WebRTC connection timeout for stream: ${streamId}, using fallback`)
           setUsingFallback(true)
         }
@@ -940,35 +963,52 @@ const WebRTCStream = forwardRef(
         }
 
         // Unregister as viewer when cleaning up WebRTC
-        unregisterViewer()
+        if (viewerRegisteredRef.current) {
+          unregisterViewer()
+        }
       }
     }, [socket, streamId, isPublisher, initWebRTC, onPlay, onPause, isPlaying, isLoading, unregisterViewer])
 
     // Handle play/pause events
     const handlePlay = () => {
-      setIsPlaying(true)
-      registerViewer() // Register as viewer when video starts playing
-      onPlay()
+      if (isMountedRef.current) {
+        if (!isPlaying) {
+          setIsPlaying(true)
+          // Only register if not already registered
+          if (!viewerRegisteredRef.current) {
+            registerViewer() // Register as viewer when video starts playing
+          }
+          onPlay()
+        }
+      }
     }
 
     const handlePause = () => {
-      setIsPlaying(false)
-      unregisterViewer() // Unregister as viewer when video is paused
-      onPause()
+      if (isMountedRef.current) {
+        setIsPlaying(false)
+        if (viewerRegisteredRef.current) {
+          unregisterViewer() // Unregister as viewer when video is paused
+        }
+        onPause()
+      }
     }
 
     // Handle video ended event
     const handleEnded = () => {
-      setIsPlaying(false)
-      unregisterViewer() // Unregister as viewer when video ends
-      onPause()
+      if (isMountedRef.current) {
+        setIsPlaying(false)
+        if (viewerRegisteredRef.current) {
+          unregisterViewer() // Unregister as viewer when video ends
+        }
+        onPause()
+      }
     }
 
     // Handle video load error
     const handleVideoError = (e) => {
       console.error("Video error:", e)
 
-      if (!usingFallback) {
+      if (!usingFallback && isMountedRef.current) {
         // If not already using fallback, switch to it
         setUsingFallback(true)
       } else if (videoRef.current) {
@@ -985,17 +1025,17 @@ const WebRTCStream = forwardRef(
       }
     }
 
-    const getQualityValue = (qualityString) => {
-      if (qualityString === "auto") return 5 // Highest quality
-      const numericValue = Number.parseInt(qualityString.replace("p", ""))
+    // Apply quality settings when they change
+    useEffect(() => {
+      applyQualitySettings()
+    }, [applyQualitySettings, quality, frameRate])
 
-      // Map resolution to a numeric value
-      if (numericValue >= 1080) return 5
-      if (numericValue >= 720) return 4
-      if (numericValue >= 480) return 3
-      if (numericValue >= 360) return 2
-      if (numericValue >= 240) return 1
-      return 0 // Lowest quality
+    // Display quality indicator
+    const getQualityIndicator = () => {
+      if (quality === "auto") {
+        return "Auto"
+      }
+      return `${quality} ${frameRate}fps`
     }
 
     return (
@@ -1031,10 +1071,15 @@ const WebRTCStream = forwardRef(
         />
 
         {/* Quality indicator */}
-        <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
-          {currentQuality === "auto" ? "Auto (1080p)" : currentQuality} • {currentFrameRate} FPS
-          {usingFallback && " • Fallback"}
+        <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+          {getQualityIndicator()}
         </div>
+
+        {usingFallback && (
+          <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+            Fallback
+          </div>
+        )}
       </div>
     )
   },
@@ -1043,7 +1088,6 @@ const WebRTCStream = forwardRef(
 WebRTCStream.displayName = "WebRTCStream"
 
 export default WebRTCStream
-
 
 
 

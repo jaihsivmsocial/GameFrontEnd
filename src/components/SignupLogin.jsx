@@ -264,7 +264,6 @@ export default function AuthHeaderButtons({
           >
             LOGIN
           </button>
-
           {/* Signup Button */}
           <button
             type="button"
@@ -473,7 +472,6 @@ export default function AuthHeaderButtons({
                   e.currentTarget.style.backgroundColor = "transparent"
                 }}
               >
-                Settings
               </a>
               <button
                 onClick={handleLogout}
@@ -544,7 +542,6 @@ export default function AuthHeaderButtons({
                     style={{ backgroundColor: "#1a1a1a", borderColor: "#333", color: "#fff" }}
                   />
                 </div>
-
                 {/* Password Field */}
                 <div className="mb-3">
                   <label className="form-label">Password</label>

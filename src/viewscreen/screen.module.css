@@ -657,9 +657,7 @@
   
   
 
-  /*////* this is video quality setting css
-
-
+  /*////* this is video quality setting css*
   /* Add these styles to your existing screen.module.css file */
 
 .videoQualitySettings {
@@ -813,6 +811,19 @@
   width: 100%;
 }
 
+/* Quality indicator styles */
+.qualityIndicator {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 40;
+}
+
 /* Keep the original styles for backward compatibility */
 .settingsDropdown {
   position: absolute;
@@ -905,3 +916,4 @@
   }
 }
 
+  

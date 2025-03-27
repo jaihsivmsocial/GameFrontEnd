@@ -1,36 +1,58 @@
 "use client"
-
 import { useState } from "react"
-import "bootstrap/dist/css/bootstrap.min.css"
+import Link from "next/link"
+import { useNavigation } from "./context/NavigationContext"
 
-export const PlayButton = () => {
+const PlayButton = () => {
   const [hover, setHover] = useState(false)
+  const { activeButton, setActiveButton } = useNavigation()
+  const isActive = activeButton === "play"
+
+  // Base gradient for the button
+  const baseGradient = "linear-gradient(90deg, #00C8FF 0%, #04B2FF 47%, #0E76FE 100%)"
+
+  const handleClick = () => {
+    setActiveButton("play")
+  }
 
   return (
-    <button
-      type="button"
+    <Link
+      href="/play"
       className="btn text-white d-flex align-items-center justify-content-center"
       style={{
-        backgroundColor: "#000",
-        border: `0.5px solid #FFFFFF`, // Updated border to match design
-        width: "143px", // Updated to match design
-        height: "37px", // Updated to match design
+        background: isActive ? baseGradient : "#000",
+        border: `0.5px solid ${isActive ? "#0E76FE" : "#FFFFFF"}`,
+        width: isActive ? "180px" : "143px",
+        height: "37px",
         fontWeight: "bold",
         letterSpacing: "1px",
-        boxShadow: hover ? "0 0 10px rgba(13, 202, 240, 0.8)" : "0 0 5px rgba(13, 202, 240, 0.5)",
-        transition: "box-shadow 0.3s ease",
+        boxShadow: isActive
+          ? "0 0 15px rgba(0, 200, 255, 0.6)"
+          : hover
+            ? "0 0 10px rgba(13, 202, 240, 0.8)"
+            : "0 0 5px rgba(13, 202, 240, 0.5)",
         padding: "0",
         overflow: "hidden",
         gap: "8px",
-        borderRadius: "8px", // Updated to match design
-        position: "relative",
+        borderRadius: "8px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        // Removed transition property
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onClick={handleClick}
     >
-      <img src="/assets/img/iconImage/gaming 1.png" alt="gaming icon" width="20" height="20" />
+      <img
+        src={isActive ? "/assets/img/iconImage/gaming 1.png" : "/assets/img/iconImage/gaming 1.png"}
+        alt="gaming icon"
+        width="20"
+        height="20"
+        style={{ marginRight: "4px" }}
+      />
       PLAY
-    </button>
+    </Link>
   )
 }
 

@@ -12,6 +12,7 @@ const VideoQualitySettings = ({ streamId, onQualityChange, initialQuality = "aut
   const [frameRate, setFrameRate] = useState(initialFrameRate)
   const [userId, setUserId] = useState(null)
   const settingsRef = useRef(null)
+  const qualityChangeTimeoutRef = useRef(null)
 
   // Get user ID from local storage
   useEffect(() => {
@@ -38,6 +39,9 @@ const VideoQualitySettings = ({ streamId, onQualityChange, initialQuality = "aut
     document.addEventListener("mousedown", handleClickOutside)
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
+      if (qualityChangeTimeoutRef.current) {
+        clearTimeout(qualityChangeTimeoutRef.current)
+      }
     }
   }, [streamId])
 
@@ -63,7 +67,7 @@ const VideoQualitySettings = ({ streamId, onQualityChange, initialQuality = "aut
     }
   }
 
-  // Update quality settings
+  // Update quality settings with debounce to prevent too many updates
   const updateQualitySettings = async (newQuality, newFrameRate) => {
     if (!userId || !streamId) return
 
@@ -73,12 +77,28 @@ const VideoQualitySettings = ({ streamId, onQualityChange, initialQuality = "aut
         frameRate: newFrameRate || frameRate,
       }
 
-      await qualitySettingsService.updateQualitySettings(userId, streamId, settings)
-
-      // Notify parent component
-      if (onQualityChange) {
-        onQualityChange(settings.quality, settings.frameRate)
+      // Clear any existing timeout
+      if (qualityChangeTimeoutRef.current) {
+        clearTimeout(qualityChangeTimeoutRef.current)
       }
+
+      // Set a timeout to update after a short delay
+      qualityChangeTimeoutRef.current = setTimeout(() => {
+        // Save to API
+        qualitySettingsService
+          .updateQualitySettings(userId, streamId, settings)
+          .then(() => {
+            console.log(`Quality settings updated: ${settings.quality}, ${settings.frameRate}fps`)
+          })
+          .catch((error) => {
+            console.error("Error updating quality settings:", error)
+          })
+
+        // Notify parent component immediately
+        if (onQualityChange) {
+          onQualityChange(settings.quality, settings.frameRate)
+        }
+      }, 300) // 300ms debounce
     } catch (error) {
       console.error("Error updating quality settings:", error)
     }
@@ -253,9 +273,9 @@ const VideoQualitySettings = ({ streamId, onQualityChange, initialQuality = "aut
           {/* Quality options dropdown */}
           {showQualityOptions && (
             <div className={styles.optionsDropdown}>
-              <div className={styles.optionsHeader}>
+              {/* <div className={styles.optionsHeader}>
                 <span>Video resolution will change, but player size will remain the same</span>
-              </div>
+              </div> */}
               <div
                 className={`${styles.optionItem} ${quality === "auto" ? styles.activeOption : ""}`}
                 onClick={() => handleQualityChange("auto")}
