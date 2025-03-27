@@ -1,0 +1,34 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[branch "master"]
+	remote = https://github.com/jaishivkumar/bbb.git
+	merge = refs/heads/master
+[branch "temp"]
+	remote = https://github.com/jaishivkumar/bbb.git
+	merge = refs/heads/temp
+[remote "origin"]
+	url = https://github.com/jaishivkumar/file.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "dd"]
+	vscode-merge-base = origin/temp
+[branch "feature2"]
+	remote = origin
+	merge = refs/heads/feature2
+	vscode-merge-base = origin/feature2
+[branch "temp4"]
+	vscode-merge-base = origin/feature2
+[branch "feature3"]
+	remote = origin
+	merge = refs/heads/feature3
+	vscode-merge-base = origin/feature3
+[branch "temp6"]
+	vscode-merge-base = origin/feature3
+[branch "feature13"]
+	remote = origin
+	merge = refs/heads/feature13
+	vscode-merge-base = origin/feature13
