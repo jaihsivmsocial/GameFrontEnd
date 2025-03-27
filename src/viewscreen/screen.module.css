@@ -1,0 +1,919 @@
+.mainAndGameWrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+  }
+  
+  .mainContent {
+    flex: 1;
+    min-height: 0;
+    background-color: #0a0a0a;
+  }
+  
+  .videoSection,
+  .multiViewSection {
+    /* height: 100%;
+    width: 100%;
+    position: relative; */
+
+    width: 100%;
+  height: 100%;
+  padding: 8px;
+    background-color: #000;
+  }
+  
+  .videoContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .videoPlayer {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  /* Multi View Styles - Matching the second image */
+  .multiViewGrid {
+    /* display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 12px;
+    padding: 12px;
+    height: 100%;
+    background-color: #0a0a0a; */
+
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .multiViewItem {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+  
+  /* Highlight the active camera with blue border */
+  .activeCamera {
+    border: 2px solid #3b82f6;
+  }
+  
+  .cameraContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+  }
+  
+  .smallVideo {
+    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  }
+  
+  /* Camera icon in circle */
+  .cameraIconCircle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 30px;
+    height: 30px;
+    background-color: #0066cc;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  
+  /* Info button */
+  .infoButton {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  
+  /* Camera label and expand button */
+  .cameraLabel {
+    /* position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px; */
+
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+    color: white;
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+  }
+  
+  .expandButton {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+  /* border-radius: 12px; */
+  /* padding: 4px 8px;
+  font-size: 12px; */
+  cursor: pointer;
+  transition: background-color 0.2s;
+  }
+  
+
+  .expandButton:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+  .activeIndicator {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  
+  .activeDot {
+    width: 10px;
+    height: 10px;
+    background-color: #10b981; /* Green color */
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+  
+    100% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+  }
+  
+  
+  
+  
+  /* Main view elements */
+  .mainCam {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 8px;
+    border-radius: 4px;
+    color: white;
+    z-index: 10;
+  }
+  
+  .camIcon {
+    background-color: #0066cc;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+  }
+  
+  .camText {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .changeView {
+    font-size: 12px;
+    color: #0066cc;
+    cursor: pointer;
+  }
+  
+  .liveIndicator {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+  }
+  
+  .liveIcon {
+    background-color: rgba(255, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  
+  .viewerCount {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+  }
+  
+  .infoBox {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    /* background-color: rgba(0, 0, 0, 0.7); */
+    color: #00ffff;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+  }
+  
+  /* Game Section Styles */
+  .gameSection {
+    height: 230px;
+    width: 100%;
+    background-color: #0a0a0a;
+    position: relative;
+  }
+  .gameSection {
+    height: 230px;
+    width: 100%;
+    background-color: #0a0a0a;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .gameContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .gamePlatform {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .gameControls {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    gap: 30px;
+    z-index: 10;
+  }
+  
+  .controlsLeft,
+  .controlsRight {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    backdrop-filter: blur(4px);
+    padding: 8px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+  
+  .controlsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 2px;
+  }
+  
+  .controlKey {
+    width: 30px;
+    height: 30px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: all 0.2s ease;
+  }
+  
+  .controlKey:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  .controlKey:nth-child(1) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  
+  .controlKey:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  
+  .controlKey:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  
+  .controlKey:nth-child(4) {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  
+  .controlLabel {
+    margin-top: 5px;
+    color: white;
+    font-size: 12px;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+  
+  .spaceKey {
+    width: 100px;
+    height: 30px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: all 0.2s ease;
+  }
+  
+  .spaceKey:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  .gameSettings {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+  }
+  
+  .settingsButton,
+  .fullscreenButton {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .settingsButton:hover,
+  .fullscreenButton:hover {
+    background-color: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+  
+  
+  .gameContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .gamePlatform {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .gameControls {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    gap: 30px;
+  }
+  
+  .controlsLeft,
+  .controlsRight {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .controlsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 2px;
+  }
+  
+  .controlKey {
+    width: 30px;
+    height: 30px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+  
+  .controlKey:nth-child(1) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  
+  .controlKey:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  
+  .controlKey:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  
+  .controlKey:nth-child(4) {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  
+  .controlLabel {
+    margin-top: 5px;
+    color: white;
+    font-size: 12px;
+    text-align: center;
+  }
+  
+  .spaceKey {
+    width: 100px;
+    height: 30px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+  
+  .gameSettings {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+  }
+  
+  .settingsButton,
+  .fullscreenButton {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  
+  
+  
+  .smallViewerCount {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 10;
+  }
+  
+  .smallViewerCount .icon {
+    width: 12px;
+    height: 12px;
+  }
+
+
+  .settingsButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    background-color: rgba(0, 0, 0, 0.5);
+    transition: all 0.2s;
+  }
+  
+  .settingsButton:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .settingsDropdown {
+    position: relative;
+  }
+  
+  .qualityPanel {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 0.5rem;
+    width: 16rem;
+    background-color: rgba(0, 0, 0, 0.9);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    z-index: 50;
+  }
+  
+  .panelHeader {
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(75, 85, 99, 1);
+  }
+  
+  .panelTitle {
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  .settingItem {
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 0.375rem;
+  }
+  
+  .settingItem:hover {
+    background-color: rgba(31, 41, 55, 1);
+  }
+  
+  .settingHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .settingIcon {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .settingLabel {
+    color: white;
+    font-size: 0.875rem;
+  }
+  
+  .settingValue {
+    color: rgba(209, 213, 219, 1);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .optionsList {
+    margin-top: 0.5rem;
+    padding-left: 2rem;
+  }
+  
+  .option {
+    font-size: 0.875rem;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+  }
+  
+  .option:hover {
+    background-color: rgba(55, 65, 81, 1);
+  }
+  
+  .selectedOption {
+    color: rgba(96, 165, 250, 1);
+    background-color: rgba(30, 58, 138, 0.3);
+  }
+  
+  .normalOption {
+    color: rgba(209, 213, 219, 1);
+  }
+  
+  
+
+  /*////* this is video quality setting css*
+  /* Add these styles to your existing screen.module.css file */
+
+.videoQualitySettings {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 50;
+}
+
+.settingsButton {
+  background-color: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.settingsButton:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Horizontal settings menu styles */
+.horizontalSettingsMenu {
+  position: absolute;
+  bottom: 45px;
+  right: 0;
+  width: 280px;
+  background-color: rgba(28, 28, 28, 0.95);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.settingRow {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  position: relative;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settingRow:last-child {
+  border-bottom: none;
+}
+
+.settingRow:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.settingIcon {
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settingLabel {
+  flex: 1;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.settingValue {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+.settingArrow {
+  display: flex;
+  align-items: center;
+}
+
+.optionsDropdown {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgba(40, 40, 40, 0.95);
+  z-index: 60;
+  max-height: 250px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.optionsHeader {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.optionsDropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.optionsDropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.optionsDropdown::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.optionItem {
+  padding: 12px 16px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.optionItem:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.activeOption {
+  background-color: rgba(255, 255, 255, 0.15);
+  font-weight: 500;
+}
+
+/* Video container styles to ensure consistent size */
+.cameraContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.videoPlayer,
+.smallVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* This ensures the video fills the container while maintaining aspect ratio */
+}
+
+/* Ensure the video container maintains its dimensions */
+.mainCameraView {
+  aspect-ratio: 16 / 9;
+  max-height: 100%;
+  width: 100%;
+}
+
+/* Quality indicator styles */
+.qualityIndicator {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 40;
+}
+
+/* Keep the original styles for backward compatibility */
+.settingsDropdown {
+  position: absolute;
+  bottom: 45px;
+  right: 0;
+  width: 250px;
+  background-color: rgba(28, 28, 28, 0.9);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.settingsSection {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settingsSection:last-child {
+  border-bottom: none;
+}
+
+.settingHeader {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  position: relative;
+}
+
+.settingHeader svg {
+  margin-right: 12px;
+}
+
+.settingHeader span {
+  color: white;
+  font-size: 14px;
+}
+
+.currentValue {
+  margin-left: auto;
+  color: rgba(255, 255, 255, 0.7) !important;
+  margin-right: 8px;
+}
+
+.arrowIcon {
+  transform: rotate(0deg);
+  transition: transform 0.2s;
+}
+
+.settingOptions {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: rgba(20, 20, 20, 0.9);
+}
+
+.settingOption {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.settingOption:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.settingOption.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  font-weight: bold;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .horizontalSettingsMenu,
+  .settingsDropdown {
+    width: 240px;
+  }
+
+  .settingLabel,
+  .settingValue,
+  .optionItem,
+  .settingHeader span,
+  .settingOption {
+    font-size: 12px;
+  }
+}
+
+  

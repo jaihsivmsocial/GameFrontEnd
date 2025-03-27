@@ -1,0 +1,62 @@
+// Plugin CSS
+@import "~animate.css";
+// @import "aos/dist/aos.css";
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
+@import "react-modal-video/css/modal-video.css";
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import "~/public/assets/css/bootstrap.min.css";
+@import "~/public/assets/css/fontawesome.min.css";
+@import "~/public/assets/css/nice-select.min.css";
+@import "~/public/assets/css/animate.min.css";
+
+@import "~/public/assets/sass/style.scss";
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+  }
+  
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  body {
+    background: linear-gradient(180deg, #0b0f19 0%, #0a1a2e 100%);
+    color: white;
+  }
+  
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  
+  .btn-info {
+    background-color: #00a8ff;
+    border-color: #00a8ff;
+  }
+  
+  .btn-info:hover {
+    background-color: #0099e6;
+    border-color: #0099e6;
+  }
+  
+  .text-info {
+    color: #00a8ff !important;
+  }
+  
+  .bg-info {
+    background-color: #00a8ff !important;
+  }
+  
+  .border-info {
+    border-color: #00a8ff !important;
+  }
+  
+  .card {
+    background: linear-gradient(180deg, #0b1526 0%, #0a1a2e 100%) !important;
+  }
+  
+  
