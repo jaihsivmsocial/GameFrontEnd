@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from "react";
+import { BASEURL } from "@/utils/apiservice";
 
 const ForgotPasswordModal = ({ show, handleClose }) => {
   const [email, setEmail] = useState("");
@@ -11,7 +12,7 @@ const ForgotPasswordModal = ({ show, handleClose }) => {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/forgot-password", {
+      const response = await fetch(`${BASEURL}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

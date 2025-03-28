@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import { BASEURL } from "@/utils/apiservice"
 
 export default function AuthHeaderButtons({
   initialView = null,
@@ -67,7 +68,7 @@ export default function AuthHeaderButtons({
     setError("")
 
     try {
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await fetch(`${BASEURL}/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -134,7 +135,7 @@ export default function AuthHeaderButtons({
     setLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5000/api/register", {
+      const response = await fetch(`${BASEURL}/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -180,7 +181,7 @@ export default function AuthHeaderButtons({
     setLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5000/api/forgot-password", {
+      const response = await fetch(`${BASEURL}api/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
