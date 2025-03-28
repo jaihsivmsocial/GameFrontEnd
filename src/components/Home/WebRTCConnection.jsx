@@ -347,6 +347,7 @@
 import { useEffect, useRef, useState, useCallback, forwardRef } from "react"
 import { useSocket } from "../contexts/SocketContext"
 import apiService from "../contexts/api-service"
+import { BASEURL } from "@/utils/apiservice"
 
 const WebRTCStream = forwardRef(
   (
@@ -561,7 +562,7 @@ const WebRTCStream = forwardRef(
           const xhr = new XMLHttpRequest()
           xhr.open(
             "POST",
-            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/viewer/decrement/${streamId}`,
+            `${process.env.NEXT_PUBLIC_API_URL || {BASEURL}}/api/viewer/decrement/${streamId}`,
             false,
           )
           xhr.setRequestHeader("Content-Type", "application/json")
