@@ -417,6 +417,7 @@ import Image from "next/image"
 import io from "socket.io-client"
 import AuthHeaderButtons from "../components/SignupLogin"
 import ReplyMessage from "../components/chat/reply-message"
+import { BASEURL } from "@/utils/apiservice"
 
 // Helper function to validate and fix image URLs
 const getValidImageUrl = (url) => {
@@ -514,7 +515,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     }
 
     // Connect to socket server
-    const newSocket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000", {
+    const newSocket = io(`${process.env.NEXT_PUBLIC_API_URL || BASEURL}`, {
       transports: ["websocket"],
       auth: {
         anonymousId,
@@ -522,7 +523,8 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
         realUsername: isLoggedIn && userData ? userData.username : null,
         token: localStorage.getItem("authToken") || null,
       },
-    })
+    });
+    
 
     // Socket event listeners
     newSocket.on("connect", () => {
@@ -590,8 +592,9 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     const fetchMessages = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/messages/${streamId}`,
-        )
+          `${process.env.NEXT_PUBLIC_API_URL || BASEURL}/api/messages/${streamId}`
+        );
+        
         const data = await response.json()
         if (data.messages && data.messages.length > 0) {
           // Fix any invalid profile picture URLs in fetched messages

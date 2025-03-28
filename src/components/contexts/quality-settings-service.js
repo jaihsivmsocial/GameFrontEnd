@@ -1,10 +1,12 @@
+import { BASEURL } from "@/utils/apiservice"
+
 // Quality settings API service
 const qualitySettingsService = {
     // Get quality settings for a user and stream
     getQualitySettings: async (userId, streamId) => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/quality-settings/${userId}/${streamId}`,
+         `${process.env.NEXT_PUBLIC_API_URL || BASEURL}/api/quality-settings/${userId}/${streamId}`,
           {
             method: "GET",
             headers: {
@@ -32,7 +34,7 @@ const qualitySettingsService = {
     updateQualitySettings: async (userId, streamId, settings) => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/quality-settings/${userId}/${streamId}`,
+          `${process.env.NEXT_PUBLIC_API_URL || BASEURL}/api/quality-settings/${userId}/${streamId}`,
           {
             method: "POST",
             headers: {

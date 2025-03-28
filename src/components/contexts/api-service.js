@@ -1,8 +1,11 @@
+import { BASEURL } from "@/utils/apiservice"
+
 /**
  * API Service for interacting with the backend
  */
 const apiService = {
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
+  baseUrl: process.env.NEXT_PUBLIC_API_URL || BASEURL,
+
   
     /**
      * Helper method to get authentication token
