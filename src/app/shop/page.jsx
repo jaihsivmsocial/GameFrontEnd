@@ -21,7 +21,7 @@
 "use client";
 
 import React, { Component } from "react";
-import GameShop from "@/components/cloths/gameshop";
+import GameShop from "@/components/cloths/GameShop";
 import Inventory from "@/components/cloths/inventory";
 import Scene from "@/components/threeD/Scene";
 
