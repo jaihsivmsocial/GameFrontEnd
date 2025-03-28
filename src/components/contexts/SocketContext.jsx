@@ -1,5 +1,6 @@
 "use client"
 
+import { BASEURL } from "@/utils/apiservice"
 import { createContext, useContext, useEffect, useState, useRef } from "react"
 import { io } from "socket.io-client"
 
@@ -14,7 +15,7 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     // Initialize socket connection if it doesn't exist
     if (!socketRef.current) {
-      const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+      const SOCKET_URL = `${process.env.NEXT_PUBLIC_API_URL || BASEURL}`;
 
       // Create socket instance
       socketRef.current = io(SOCKET_URL, {
