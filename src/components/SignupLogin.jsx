@@ -5,9 +5,9 @@ import { BASEURL } from "@/utils/apiservice"
 
 export default function AuthHeaderButtons({
   initialView = null,
-  onAuthStateChange = () => {},
+  onAuthStateChange = () => { },
   isModal = false,
-  onClose = () => {},
+  onClose = () => { },
 }) {
   // State for modals and authentication
   const [showLoginModal, setShowLoginModal] = useState(initialView === "login")
@@ -299,7 +299,7 @@ export default function AuthHeaderButtons({
         /* User Profile Section - Matches the screenshot design */
         <div className="position-relative">
           <div
-            className="d-flex align-items-center gap-5 bg-black px-3 py-2 rounded"
+            className="d-flex align-items-center gap-5"
             style={{
               border: "1px solid rgba(255, 255, 255, 0.1)",
               minWidth: "250px",
@@ -317,30 +317,15 @@ export default function AuthHeaderButtons({
                 e.currentTarget.style.opacity = 0.75
               }}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
+              <img
+                src="/assets/img/iconImage/settings 1.png" 
+                alt="Settings"
                 width="24"
                 height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
-                <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
-                <path d="M12 2v2" />
-                <path d="M12 22v-2" />
-                <path d="m17 20.66-1-1.73" />
-                <path d="M7 3.34l1 1.73" />
-                <path d="m3.34 7 1.73 1" />
-                <path d="M20.66 17l-1.73-1" />
-                <path d="M3.34 17l1.73-1" />
-                <path d="M20.66 7l-1.73 1" />
-              </svg>
+              />
             </a>
-            <div className="d-flex align-items-center  bg-black px-3 py-2 rounded">
+
+            <div className="d-flex align-items-center px-3 py-2 rounded">
               {/* User Info */}
               <div className="d-flex flex-column ms-3 text-end ">
                 <span className="fw-bold text-white">{userData?.username || "MARK9874"}</span>
@@ -389,20 +374,6 @@ export default function AuthHeaderButtons({
                   border: "2px solid #000",
                 }}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{ color: "#fff" }}
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
               </div>
             </div>
           </div>
@@ -449,31 +420,6 @@ export default function AuthHeaderButtons({
               </div>
 
               {/* Menu Items */}
-              <a
-                href="/setting"
-                className="d-block px-4 py-2 text-white text-decoration-none"
-                style={{ transition: "background-color 0.2s" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent"
-                }}
-              >
-                Profile
-              </a>
-              <a
-                href="/setting"
-                className="d-block px-4 py-2 text-white text-decoration-none"
-                style={{ transition: "background-color 0.2s" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent"
-                }}
-              >
-              </a>
               <button
                 onClick={handleLogout}
                 className="d-block w-100 text-start px-4 py-2 text-white bg-transparent border-0"

@@ -67,7 +67,7 @@ const HeaderOne = () => {
           className={`navbar main navbar-area navbar-area-1 navbar-border navbar-expand-lg ${
             scroll ? "sticky-active" : ""
           }`}
-          style={{ backgroundColor: "#070b11" }}
+          style={{  background: "linear-gradient(to right, #07090ef,#070f17)" }}
         >
           <div className="container nav-container px-lg-0">
             <div className="logo">
@@ -81,6 +81,8 @@ const HeaderOne = () => {
                         fontWeight: "bold",
                         fontSize: "1.5rem",
                         marginLeft: "8px",
+                         width: "60px",
+                         height:"50px"
                       }}
                     >
                     </span>
@@ -143,7 +145,7 @@ const HeaderOne = () => {
                       marginLeft: "5px",
                     }}
                   >
-                    's TRIBE
+
                   </span>
                 </div>
               </Link>
