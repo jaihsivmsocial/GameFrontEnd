@@ -33,7 +33,7 @@ export const Signup = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/register', { // Adjust URL to your backend endpoint
+      const response = await fetch(`${BASEURL}/api/register`, { // Adjust URL to your backend endpoint
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

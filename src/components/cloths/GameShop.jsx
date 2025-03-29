@@ -117,8 +117,8 @@ class GameShop extends React.Component {
   getFilteredItems() {
     let filteredItems = [...this.state.items]
 
-    console.log("Filtering items with genre:", this.state.selectedGenre)
-    console.log("Filtering items with price range:", this.state.priceRange)
+    // console.log("Filtering items with genre:", this.state.selectedGenre)
+    // console.log("Filtering items with price range:", this.state.priceRange)
 
     // Filter by genre
     if (this.state.selectedGenre !== "ALL") {

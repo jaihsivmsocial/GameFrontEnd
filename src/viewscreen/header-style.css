@@ -1,0 +1,246 @@
+/* Main header styles */
+.navbar-area {
+    background-color: #070b11 !important;
+    padding: 10px 0;
+    border-bottom: 1px solid #222;
+  }
+  
+  .sticky-active {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 999;
+    animation: slideDown 0.5s ease-in-out;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
+  }
+  
+  @keyframes slideDown {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  
+  .nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+  
+  /* Logo area */
+  .logo {
+    display: flex;
+    align-items: center;
+  }
+  
+  .logo img {
+    height: 32px;
+    width: auto;
+  }
+  
+  /* Navigation buttons */
+  .btn-subscribe {
+    background-color: #1d9bf0;
+    color: white;
+    border-radius: 20px;
+    padding: 5px 15px;
+    font-size: 14px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-subscribe:hover {
+    background-color: #0c85d0;
+  }
+  
+  .btn-spectate {
+    background-color: transparent;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 5px 15px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-spectate:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .btn-shop,
+  .btn-play {
+    background-color: #1d9bf0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 15px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-shop:hover,
+  .btn-play:hover {
+    background-color: #0c85d0;
+  }
+  
+  .btn-shop svg,
+  .btn-play svg,
+  .btn-spectate svg,
+  .btn-subscribe svg {
+    margin-right: 5px;
+  }
+  
+  /* Auth buttons */
+  .auth-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .btn-login {
+    background-color: transparent;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 5px 15px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-login:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .btn-signup {
+    background-color: transparent;
+    color: white;
+    border: 1px solid #1d9bf0;
+    border-radius: 4px;
+    padding: 5px 15px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-signup:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+  }
+  
+  /* Currency display */
+  .currency-display {
+    display: flex;
+    align-items: center;
+    color: white;
+    font-size: 14px;
+    margin-right: 15px;
+  }
+  
+  .currency-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background-color: #1d9bf0;
+  }
+  
+  /* Mobile menu styles */
+  .responsive-mobile-menu {
+    display: none;
+  }
+  
+  .menu.toggle-btn {
+    width: 30px;
+    height: 30px;
+    position: relative;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .icon-left,
+  .icon-right {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background-color: white;
+    transition: all 0.3s ease;
+  }
+  
+  .icon-left {
+    top: 10px;
+  }
+  
+  .icon-right {
+    bottom: 10px;
+  }
+  
+  .toggle-btn.open .icon-left {
+    transform: rotate(45deg) translate(5px, 5px);
+  }
+  
+  .toggle-btn.open .icon-right {
+    transform: rotate(-45deg) translate(5px, -5px);
+  }
+  
+  .body-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 998;
+    display: none;
+  }
+  
+  .body-overlay.active {
+    display: block;
+  }
+  
+  /* Mobile navigation */
+  @media (max-width: 1023px) {
+    .responsive-mobile-menu {
+      display: block;
+    }
+  
+    .navbar-collapse {
+      position: fixed;
+      top: 0;
+      right: -300px;
+      width: 300px;
+      height: 100vh;
+      background-color: #070b11;
+      z-index: 999;
+      padding: 20px;
+      transition: all 0.3s ease;
+      overflow-y: auto;
+    }
+  
+    .navbar-collapse.sopen {
+      right: 0;
+    }
+  
+    .navbar-nav {
+      margin-top: 50px;
+    }
+  }
+  
+  /* Tablet specific adjustments */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .nav-container {
+      padding: 0 15px;
+    }
+  }
+  
+  

@@ -313,7 +313,7 @@
   z-index: 3;
 }
 .controlButton {
-  background-color: rgba(0, 0, 0, 0.6);
+  background: linear-gradient(to right, #052d5a,  #070b11);
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -327,7 +327,7 @@
 }
 
 .controlButton:hover {
-  background-color: rgba(0, 136, 204, 0.6);
+  background: linear-gradient(to right, #052d5a,  #070b11);
 }
 
 /* Chat Toggle Button */
@@ -336,7 +336,7 @@
   top: 10%;
   right: 20%;
   transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.7);
+  background: linear-gradient(to right,#052d5a, #070b11);
   color: #0088cc;
   border: none;
   border-radius: 4px 0 0 4px;
@@ -350,16 +350,16 @@
 }
 
 .chatToggleBtn:hover {
-  background-color: rgba(0, 136, 204, 0.3);
+  background: linear-gradient(to right,#052d5a, #070b11);
   color: white;
 }
-
+f1c2e
 .chatToggleBtnClosed {
   position: absolute;
   top: 10%;
   right: 20px;
   transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.7);
+  background: linear-gradient(to right,#052d5a,  #070b11);
   color: #0088cc;
   border: none;
   border-radius: 4px 0 0 4px;
@@ -374,20 +374,11 @@
 
 /* Chat Section */
 .chatSection {
-  /* flex: 0 0 20%;
-  display: flex;
-  flex-direction: column;
-  background-color: #0d1117;
-  border-left: 1px solid #1e1e1e;
-  transition: all 0.3s ease-in-out;
-  height: calc(133vh - 210px);
-  width: 20%; */
-
   display: flex;
   flex-direction: column;
   width: 300px;
   height: 100vh;
-  background-color: #0a1929;
+  background: linear-gradient(to right,#052d5a, #070b11);
   color: white;
   border-left: 1px solid #1e3a5f;
 }
@@ -396,13 +387,14 @@
   padding: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background-color: #0a1929;
-  background: linear-gradient(180deg, #050e1a 0%, #0a1929 100%);
+  background: linear-gradient(to right,#052d5a,  #070b11);
 }
 
 .worldchat {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  
 }
 
 .worldchat h5 {
@@ -451,7 +443,7 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  background-color: #0a1929;
+  background: linear-gradient(to right, #052d5a, #070b11);
 }
 
 /* .chatMessages::-webkit-scrollbar {
@@ -479,7 +471,7 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  background-color: #0a1929;
+  background-color:#070b11;
 }
 
 .messageText {
@@ -590,42 +582,28 @@
 .chatInput {
   display: flex;
   padding: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(to right,#052d5a,#070b11);
+
   background-color: #0a1929;
 }
 
 .messageInput {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(121, 25, 25, 0.2);
   border-radius: 20px;
-  background-color: rgba(255, 255, 255, 0.05);
-  color: white;
+  background: whitesmoke;
+  color: rgb(40, 38, 38);
   font-size: 14px;
 }
 .messageInput::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(4, 1, 1, 0.5);
 }
 
 .messageInput:focus {
   outline: none;
   border-color: #0078d7;
 }
-
-/*
-.emojiButton,
-.sendButton {
-  background: none;
-  border: none;
-  color: #999;
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-} */
 
 .emojiButton {
   background: none;
@@ -983,14 +961,14 @@
   margin-bottom: 16px;
   padding: 8px 12px;
   border-radius: 8px;
-  background-color: #1e2a38;
+  background: linear-gradient(to right, #052d5a, #0f1c2e);
   position: relative;
 }
 
 /* Original message style with green left border */
 .originalMessage {
-  border-left: 4px solid #4caf50;
-  background-color: rgba(76, 175, 80, 0.1);
+  background: linear-gradient(to right,#052d5a, #070b11);
+  background: linear-gradient(to right, #052d5a, #070b11);
   padding: 8px 12px;
   margin-bottom: 8px;
   border-radius: 0 8px 8px 0;
@@ -1082,7 +1060,7 @@
 .replyBadge {
   display: flex;
   align-items: center;
-  background-color: #131c28;
+  background: linear-gradient(to right,#052d5a,#070b11);
   padding: 4px 8px;
   border-radius: 4px;
   margin-bottom: 8px;
