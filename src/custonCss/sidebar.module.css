@@ -5,7 +5,7 @@
   justify-content: space-between;
   width: 50px;
   height: 100vh;
-  background: linear-gradient(180deg, #0a1929 0%, #0d2240 100%);
+  background: linear-gradient(to right, #1a3a5f, #0f1c2e);
   color: white;
   position: relative;
   padding: 15px 0;
@@ -18,7 +18,7 @@
   bottom: 50px;
   left: 50%;
   width: 1px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(to right, #1a3a5f, #0f1c2e);
   transform: translateX(-50%);
   z-index: 1;
 }
