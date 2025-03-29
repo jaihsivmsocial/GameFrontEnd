@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useRouter } from "next/navigation";
 import ForgotPasswordModal from '@/components/forgetpassword'
-
+import {BASEURL} from "@/utils/apiservice"
 export const Login = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [formData, setFormData] = useState({
@@ -26,7 +26,7 @@ export const Login = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await fetch(`${BASEURL}/api/register)`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
