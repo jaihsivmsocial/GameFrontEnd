@@ -26,7 +26,7 @@ export const Login = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`${BASEURL}/api/register)`, {
+      const response = await fetch(`${BASEURL}/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
