@@ -1,35 +1,80 @@
-'use client';
+"use client"
 
-import React, { useState } from "react";
-import { BASEURL } from "@/utils/apiservice";
+import { useState } from "react"
+import { BASEURL } from "@/utils/apiservice"
 
-const ForgotPasswordModal = ({ show, handleClose }) => {
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+const ForgotPasswordModal = ({ show, handleClose, onRequestOTP, email, setEmail }) => {
+  const [message, setMessage] = useState("")
+  const [messageType, setMessageType] = useState("success") // 'success' or 'error'
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage("");
+    e.preventDefault()
+    setMessage("")
+    setMessageType("success")
+    setLoading(true)
 
     try {
-      const response = await fetch(`${BASEURL}`, {
+      console.log("Sending forgot password request for email:", email)
+
+      // You can use either endpoint once auth middleware is removed
+      const response = await fetch(`${BASEURL}/api/request-otp-reset`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
-      });
+      })
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to reset password");
+      // Log the raw response for debugging
+      const responseText = await response.text()
+      console.log("Forgot password response:", responseText)
 
-      setMessage("Password reset link sent to your email!");
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (e) {
+        console.error("Error parsing response:", e)
+        throw new Error("Invalid response from server")
+      }
+
+      if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 404) {
+          throw new Error("Email not found. Please check your email address or register a new account.")
+        } else {
+          throw new Error(data.message || data.error || "Failed to send verification code")
+        }
+      }
+
+      // Success case
+      setMessageType("success")
+      setMessage("Verification code sent to your email!")
+
+      // If we have a test OTP in the response (for development), show it
+      if (data.testOtp) {
+        console.log("Test OTP:", data.testOtp)
+        setMessage(`Verification code sent to your email! (Test OTP: ${data.testOtp})`)
+      }
+
+      // Wait a moment to show the success message before closing
+      setTimeout(() => {
+        if (onRequestOTP) {
+          onRequestOTP(email) // Pass email to onRequestOTP if needed
+        } else {
+          handleClose()
+        }
+      }, 2000)
     } catch (err) {
-      setMessage(err.message);
+      console.error("Forgot password error:", err)
+      setMessageType("error")
+      setMessage(err.message || "An error occurred")
+    } finally {
+      setLoading(false)
     }
-  };
+  }
 
-  if (!show) return null;
+  if (!show) return null
 
   return (
     <div
@@ -40,7 +85,12 @@ const ForgotPasswordModal = ({ show, handleClose }) => {
         className="card p-4 text-white position-relative"
         style={{ backgroundColor: "#121212", borderRadius: "10px", width: "400px", border: "2px solid #0dcaf0" }}
       >
-        <button className="btn-close position-absolute top-0 end-0 m-2" style={{ backgroundColor: "#fff" }} onClick={handleClose}></button>
+        <button
+          className="btn-close position-absolute top-0 end-0 m-2"
+          style={{ backgroundColor: "#fff" }}
+          onClick={handleClose}
+          aria-label="Close"
+        ></button>
         <div className="text-center">
           <span role="img" aria-label="crying emoji" style={{ fontSize: "2rem" }}>
             😭
@@ -48,32 +98,49 @@ const ForgotPasswordModal = ({ show, handleClose }) => {
           <h5 className="mt-2">Forgot your password?</h5>
           <p className="text-muted">Reset your password using your registered email address.</p>
         </div>
-        {message && <p className="text-success text-center">{message}</p>}
+        {message && (
+          <p className={`text-${messageType === "success" ? "success" : "danger"} text-center`} role="alert">
+            {message}
+          </p>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="form-label">Email Address</label>
+            <label htmlFor="email-input" className="form-label">
+              Email Address
+            </label>
             <input
+              id="email-input"
               type="email"
               className="form-control"
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ backgroundColor: "#1a1a1a", borderColor: "#333" }}
+              style={{ backgroundColor: "#1a1a1a", borderColor: "#333", color: "#fff" }}
+              disabled={loading}
             />
           </div>
-          <button type="submit" className="btn w-100" style={{ backgroundColor: "#0dcaf0", color: "#fff", fontWeight: "bold" }}>
-            Reset Password
+          <button
+            type="submit"
+            className="btn w-100"
+            style={{ backgroundColor: "#0dcaf0", color: "#fff", fontWeight: "bold" }}
+            disabled={loading || !email}
+          >
+            {loading ? "Sending..." : "Send Verification Code"}
           </button>
         </form>
         <div className="text-center mt-3">
           <p className="text-muted">
-            Need help?? <a href="#" className="text-white fw-bold">Contact Support</a>
+            Need help?{" "}
+            <a href="/support" className="text-white fw-bold">
+              Contact Support
+            </a>
           </p>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ForgotPasswordModal;
+export default ForgotPasswordModal
+
