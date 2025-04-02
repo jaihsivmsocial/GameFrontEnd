@@ -49,7 +49,7 @@ const Shope = () => {
         height="20"
         style={{ marginRight: "4px" }}
       />
-      SHOP
+   MARKET
     </Link>
   )
 }

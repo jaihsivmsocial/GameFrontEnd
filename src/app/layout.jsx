@@ -78,10 +78,9 @@ export default function RootLayout({ children }) {
                 className={styles.icon}
               />
             </button>
-
-                  {isChatOpen && (
+                  {/* {isChatOpen && (
                   <RightChatComp />
-                )}
+                )} */}
           </div>
         </div>
       </body>

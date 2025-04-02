@@ -1,57 +1,52 @@
+/* Add these styles to your existing sidebar.module.css file */
+
 .worldchatSidebar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  height: 65%;
+  width: 40px;
+  background-color: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  width: 50px;
-  height: 100vh;
-  background: linear-gradient(to right, #1a3a5f, #0f1c2e);
-  color: white;
-  position: relative;
-  padding: 15px 0;
+  padding: 10px 0;
+  z-index: 10;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.worldchatSidebar::after {
-  content: "";
-  position: absolute;
-  top: 50px;
-  bottom: 50px;
-  left: 50%;
-  width: 1px;
-  background: linear-gradient(to right, #1a3a5f, #0f1c2e);
-  transform: translateX(-50%);
-  z-index: 1;
-}
-
-.arrowButton,
-.usersButton {
-  background: none;
+.arrowButton {
+  background: transparent;
   border: none;
   cursor: pointer;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-}
-
-.icon {
-  filter: invert(1) brightness(100%);
+  padding: 4px;
+  margin-bottom: 10px;
 }
 
 .verticalText {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  text-orientation: mixed;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 2px;
   color: white;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
-  margin: 20px 0;
+}
+
+.usersButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  margin-top: 10px;
+}
+
+.icon {
+  opacity: 0.8;
 }
 
