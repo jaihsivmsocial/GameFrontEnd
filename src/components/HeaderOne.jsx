@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import SpectateButton from "./SpectateButton"
-import { Login } from "./Login"
-import { Signup } from "./Signup"
+// import { Login } from "./Login"
+// import { Signup } from "./Signup"
 import Shope from "./cloths/Shope"
 import PlayButton from "./play"
 import SucribeButton from "./SubcribeButton"
@@ -166,12 +166,12 @@ const HeaderOne = () => {
                 <li className="mb-3">
                   <Shope />
                 </li>
-                <li className="mb-3">
+                {/* <li className="mb-3">
                   <Login />
                 </li>
                 <li className="mb-3">
                   <Signup />
-                </li>
+                </li> */}
               </ul>
             </div>
           </div>
