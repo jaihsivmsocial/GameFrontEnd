@@ -17,6 +17,7 @@ const HeaderOne = () => {
   const [isMobileView, setIsMobileView] = useState(false)
   const [isTabletView, setIsTabletView] = useState(false)
 
+  
   // Handle scroll behavior
   useEffect(() => {
     window.onscroll = () => {
@@ -60,7 +61,6 @@ const HeaderOne = () => {
     <NavigationProvider>
       {/* Body overlay for mobile menu */}
       <div className="body-overlay" id="body-overlay" ref={bodyOverlayRef} />
-
       {/* Desktop Navigation */}
       {!isMobileView && (
         <nav
@@ -90,12 +90,12 @@ const HeaderOne = () => {
                 </Link>
               </div>
             </div>
-
             {/* Navigation Buttons with fixed spacing */}
             <div className="d-flex align-items-center" style={{ gap: "20px" }}>
-              <div style={{ marginRight: "0px" }}>
-                <SucribeButton />
+            <div style={{ marginRight: "0px" }}>
+                <Shope />
               </div>
+          
               <div style={{ marginRight: "0px" }}>
                 <SpectateButton />
               </div>
@@ -103,14 +103,13 @@ const HeaderOne = () => {
                 <PlayButton />
               </div>
               <div style={{ marginRight: "0px" }}>
-                <Shope />
+                <SucribeButton />
               </div>
               <AuthHeaderButtons />
             </div>
           </div>
         </nav>
       )}
-
       {/* Mobile/Tablet Navigation */}
       {(isMobileView || isTabletView) && (
         <nav
