@@ -18,7 +18,19 @@
   font-size: 14px;
 }
 
-
+.messageReactions {
+  display: flex;
+  gap: 5px;
+  margin-top: 4px;
+}
+.reaction {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 2px 6px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+}
 
 /* Navigation Bar */
 .navbar {
@@ -31,7 +43,12 @@
   height: 60px;
   z-index: 10;
 }
-
+/* Verified badge */
+.verifiedBadge {
+  color: #00c853;
+  font-size: 12px;
+  margin-left: 5px;
+}
 .navLeft,
 .navCenter,
 .navRight {
@@ -313,7 +330,7 @@
   z-index: 3;
 }
 .controlButton {
-  background: linear-gradient(to right, #052d5a,  #070b11);
+  background: #c0bbc3;
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -327,7 +344,7 @@
 }
 
 .controlButton:hover {
-  background: linear-gradient(to right, #052d5a,  #070b11);
+  background: #c0bbc3;
 }
 
 /* Chat Toggle Button */
@@ -336,7 +353,7 @@
   top: 10%;
   right: 20%;
   transform: translateY(-50%);
-  background: linear-gradient(to right,#052d5a, #070b11);
+  background: #c0bbc3;
   color: #0088cc;
   border: none;
   border-radius: 4px 0 0 4px;
@@ -350,7 +367,7 @@
 }
 
 .chatToggleBtn:hover {
-  background: linear-gradient(to right,#052d5a, #070b11);
+  background: #c0bbc3;
   color: white;
 }
 f1c2e
@@ -359,7 +376,7 @@ f1c2e
   top: 10%;
   right: 20px;
   transform: translateY(-50%);
-  background: linear-gradient(to right,#052d5a,  #070b11);
+  background: #c0bbc3;
   color: #0088cc;
   border: none;
   border-radius: 4px 0 0 4px;
@@ -374,22 +391,21 @@ f1c2e
 
 /* Chat Section */
 .chatSection {
-  display: flex;
-  flex-direction: column;
-  width: 300px;
-  height: 100vh;
-  background: linear-gradient(to right,#052d5a, #070b11);
-  color: white;
-  border-left: 1px solid #1e3a5f;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  /* backdrop-filter: blur(5px) !important; */
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 16px !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .chatHeader {
-  padding: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: #0a1929;
-  background: linear-gradient(to right,#052d5a,  #070b11);
+  display: none !important;
 }
-
 .worldchat {
   display: flex;
   justify-content: space-between;
@@ -436,33 +452,36 @@ f1c2e
 }
 
 /* Chat Messages - Ensure scrolling */
+
 .chatMessages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  background: linear-gradient(to right, #052d5a, #070b11);
+  flex: 1 !important;
+  background-color: transparent !important;
+  overflow-y: auto !important;
+  padding: 8px !important;
+  margin-bottom: 60px; /* Make room for the input at bottom */
 }
 
-/* .chatMessages::-webkit-scrollbar {
-
-  width: 8px;
-}
-
-.chatMessages::-webkit-scrollbar-track {
-  background: #1a1a1a;
+.chatMessages::-webkit-scrollbar {
+  width: 4px;
 }
 
 .chatMessages::-webkit-scrollbar-thumb {
-  background-color: #0088cc;
-  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
 }
 
+.chatMessages::-webkit-scrollbar-track {
+  background-color: transparent;
+}
 .chatMessage {
-  margin-bottom: 1.5rem;
-} */
+  margin-bottom: 12px;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
+  position: relative;
+  display: flex;
+}
+
 
 .chatMessages {
   flex: 1;
@@ -489,18 +508,18 @@ f1c2e
 }
 
 .userAvatar {
-  /* margin-right: 0.5rem; */
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   overflow: hidden;
+  margin-right: 10px;
+  flex-shrink: 0;
 }
 
 .avatar {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
 }
 
 .userInfo {
@@ -528,8 +547,9 @@ f1c2e
 
 .systemMessage {
   text-align: center;
-  color: #6c757d;
-  padding: 20px 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  padding: 10px;
 }
 
 .systemNotification {
@@ -543,15 +563,7 @@ f1c2e
   color: #ffffff;
 }
 
-.systemMessage {
-  /* text-align: center;
-  color: #0088cc;
-  font-size: 0.8rem;
-  margin: 1rem 0; */
-  text-align: center;
-  color: #6c757d;
-  padding: 20px 0;
-}
+
 .chatMessage {
   background-color: #0d2240;
   border-radius: 12px;
@@ -581,80 +593,90 @@ f1c2e
 
 .chatInput {
   display: flex;
-  padding: 10px;
-  background: linear-gradient(to right,#052d5a,#070b11);
-
-  background-color: #0a1929;
+  align-items: center;
+  padding: 10px 15px;
+  background: rgba(255, 255, 255, 0.15);
+  /* backdrop-filter: blur(5px); */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  height: 60px;
 }
 
 .messageInput {
   flex: 1;
-  padding: 8px 12px;
-  border: 1px solid rgba(121, 25, 25, 0.2);
-  border-radius: 20px;
-  background: whitesmoke;
-  color: rgb(40, 38, 38);
-  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 20px !important;
+  padding: 8px 15px !important;
+  font-size: 14px !important;
+  height: 40px !important;
+  margin-right: 8px;
 }
+
+/* Style the input placeholder */
 .messageInput::placeholder {
-  color: rgba(4, 1, 1, 0.5);
+  color: whitesmoke !important;
 }
 
 .messageInput:focus {
   outline: none;
-  border-color: #0078d7;
+  background-color:  white
 }
-
 .emojiButton {
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
   padding: 8px;
+  margin-right: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 5px;
 }
 .sendButton {
-  background-color: #0078d7;
-  border: none;
-  border-radius: 4px;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  margin-left: 5px;
+  background-color: #0095ff !important;
+  border: none !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 40px !important;
+  width: 40px !important;
+  transition: transform 0.2s !important;
 }
+
+.sendButton:hover {
+  background-color: #00a0e9 !important;
+  transform: scale(1.05) !important;
+}
+
+.sendButton img {
+  filter: brightness(0) invert(1);
+  width: 20px !important;
+  height: 20px !important;
+}
+
 .sendButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
 }
-
-.emojiButton:hover,
-.sendButton:hover {
-  color: #ffffff;
-}
-
-.sendButton {
-  background-color: #0088cc;
-  border-radius: 50%;
-  color: white;
-}
-
-.sendButton:hover {
-  background-color: #00a0e9;
-  transform: scale(1.1);
-}
-
 /* Game Section */
 .gameSection {
   height: 150px;
   background-color: #0a0a0a;
   border-top: 1px solid #1e1e1e;
 }
-
+.icon {
+  opacity: 1 !important;
+}
 .gameContainer {
   position: relative;
   width: 100%;
@@ -864,12 +886,10 @@ f1c2e
 
 
 
-/* Reply feature share chat  styles */
 
-/* Reply feature styles */
 
 .replyContainer {
-  background-color: #1e2a38;
+  background-color: rgba(0, 0, 0, 0.2);
   border-radius: 12px;
   margin: 8px;
   padding: 12px;
@@ -906,11 +926,10 @@ f1c2e
 .cancelReplyButton:hover {
   color: #fff;
 }
-
 .replyInputContainer {
   display: flex;
   align-items: center;
-  background-color: #131c28;
+  background-color: rgba(0, 0, 0, 0.2);
   border-radius: 20px;
   padding: 4px 8px;
 }
@@ -924,11 +943,12 @@ f1c2e
   outline: none;
 }
 
+
 .sendReplyButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #4a9eff;
+  background-color: #0095ff;
   border: none;
   border-radius: 50%;
   width: 30px;
@@ -938,13 +958,14 @@ f1c2e
 }
 
 .sendReplyButton:hover {
-  background-color: #3a8eff;
+  background-color: #00a0e9;
 }
 
 .sendReplyButton:disabled {
   background-color: #2a4a7a;
   cursor: not-allowed;
 }
+
 
 /* Style for messages that are replies */
 .replyInfo {
@@ -961,27 +982,40 @@ f1c2e
   margin-bottom: 16px;
   padding: 8px 12px;
   border-radius: 8px;
-  background: linear-gradient(to right, #052d5a, #0f1c2e);
+  background:none;
   position: relative;
 }
 
 /* Original message style with green left border */
 .originalMessage {
-  background: linear-gradient(to right,#052d5a, #070b11);
-  background: linear-gradient(to right, #052d5a, #070b11);
+  background: none;
+  background: none;
   padding: 8px 12px;
   margin-bottom: 8px;
   border-radius: 0 8px 8px 0;
 }
 
+
 .originalMessageUsername {
-  font-weight: 500;
-  color: #fff;
-  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 2px;
+}
+.messageContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .originalMessageContent {
-  color: #ddd;
+  font-size: 14px;
+  color: white;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  display: inline-block;
+  max-width: 100%;
   word-break: break-word;
 }
 
@@ -994,11 +1028,11 @@ f1c2e
 
 /* Reply message style */
 .replyMessage {
-  border-left: 4px solid #4a9eff;
-  background-color: rgba(74, 158, 255, 0.1);
-  padding: 8px 12px;
-  margin-bottom: 8px;
-  border-radius: 0 8px 8px 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
 }
 
 .messageText {
@@ -1011,7 +1045,7 @@ f1c2e
   display: flex;
   align-items: center;
   margin-top: 8px;
-  position: relative; /* Add this to position the share button */
+  position: relative;
 }
 
 .userAvatar {
@@ -1020,6 +1054,9 @@ f1c2e
 
 .avatar {
   border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .shareButton {
@@ -1028,10 +1065,10 @@ f1c2e
   color: #fff;
   cursor: pointer;
   padding: 4px;
-  position: absolute; /* Position absolutely */
-  right: 0; /* Align to the right */
-  top: 50%; /* Center vertically */
-  transform: translateY(-50%); /* Adjust for perfect centering */
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .userInfo {
@@ -1049,8 +1086,8 @@ f1c2e
 }
 
 .timestamp {
-  font-size: 0.8rem;
-  color: #aaa;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.6);
   position: absolute;
   top: 8px;
   right: 12px;
@@ -1060,7 +1097,7 @@ f1c2e
 .replyBadge {
   display: flex;
   align-items: center;
-  background: linear-gradient(to right,#052d5a,#070b11);
+  background: #c0bbc3;
   padding: 4px 8px;
   border-radius: 4px;
   margin-bottom: 8px;

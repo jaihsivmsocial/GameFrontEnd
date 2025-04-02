@@ -50,7 +50,7 @@ const SucribeButton = () => {
         height="20"
         style={{ marginRight: "4px" }}
       />
-      SUBSCRIBE
+      CLIP
     </Link>
   )
 }

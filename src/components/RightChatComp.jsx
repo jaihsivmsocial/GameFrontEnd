@@ -1,8 +1,6 @@
-
 "use client"
 import { useEffect, useState, useRef } from "react"
 import styles from "../custonCss/home.module.css"
-import sidebarStyles from "../custonCss/sidebar.module.css"
 import Image from "next/image"
 import io from "socket.io-client"
 import AuthHeaderButtons from "../components/SignupLogin"
@@ -58,7 +56,7 @@ const formatContent = (content) => {
 }
 
 const RealTimeChatComp = ({ streamId = "default-stream" }) => {
-  const [isChatOpen, setIsChatOpen] = useState(true)
+  // We'll always keep the chat open since we're removing the toggle functionality
   const [socket, setSocket] = useState(null)
   const [messages, setMessages] = useState([])
   const [message, setMessage] = useState("")
@@ -74,10 +72,6 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
   // Reply related states
   const [replyTo, setReplyTo] = useState(null)
   const [showReplyUI, setShowReplyUI] = useState(false)
-
-  const toggleChat = () => {
-    setIsChatOpen(!isChatOpen)
-  }
 
   // Check if user is logged in
   useEffect(() => {
@@ -113,8 +107,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
         realUsername: isLoggedIn && userData ? userData.username : null,
         token: localStorage.getItem("authToken") || null,
       },
-    });
-    
+    })
 
     // Socket event listeners
     newSocket.on("connect", () => {
@@ -136,6 +129,18 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       if (newMessage.sender && newMessage.sender.profilePicture) {
         newMessage.sender.profilePicture = getValidImageUrl(newMessage.sender.profilePicture)
       }
+
+      // Add random reactions to some messages for demo purposes
+      if (Math.random() > 0.7) {
+        newMessage.reactions = []
+        if (Math.random() > 0.5) {
+          newMessage.reactions.push({ emoji: "👍", count: Math.floor(Math.random() * 3) + 1 })
+        }
+        if (Math.random() > 0.7) {
+          newMessage.reactions.push({ emoji: "🔥", count: Math.floor(Math.random() * 2) + 1 })
+        }
+      }
+
       setMessages((prev) => [...prev, newMessage])
     })
 
@@ -152,6 +157,18 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
             },
           }
         }
+
+        // Add random reactions to some messages for demo purposes
+        if (Math.random() > 0.7) {
+          msg.reactions = []
+          if (Math.random() > 0.5) {
+            msg.reactions.push({ emoji: "👍", count: Math.floor(Math.random() * 3) + 1 })
+          }
+          if (Math.random() > 0.7) {
+            msg.reactions.push({ emoji: "🔥", count: Math.floor(Math.random() * 2) + 1 })
+          }
+        }
+
         return msg
       })
       setMessages(fixedMessages)
@@ -181,10 +198,8 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || BASEURL}/api/messages/${streamId}`
-        );
-        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || BASEURL}/api/messages/${streamId}`)
+
         const data = await response.json()
         if (data.messages && data.messages.length > 0) {
           // Fix any invalid profile picture URLs in fetched messages
@@ -198,6 +213,18 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                 },
               }
             }
+
+            // Add random reactions to some messages for demo purposes
+            if (Math.random() > 0.7) {
+              msg.reactions = []
+              if (Math.random() > 0.5) {
+                msg.reactions.push({ emoji: "👍", count: Math.floor(Math.random() * 3) + 1 })
+              }
+              if (Math.random() > 0.7) {
+                msg.reactions.push({ emoji: "🔥", count: Math.floor(Math.random() * 2) + 1 })
+              }
+            }
+
             return msg
           })
           setMessages(fixedMessages)
@@ -216,12 +243,6 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     setIsLoggedIn(loggedIn)
     setUserData(user)
     setShowAuthModal(false)
-
-    // If logged in, update the chat header with the username
-    if (loggedIn && user) {
-      // Force a re-render by updating the state
-      setIsChatOpen(isChatOpen)
-    }
   }
 
   // Send message function - now checks for authentication and handles rate limiting
@@ -349,155 +370,142 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     }
   }, [socket])
 
+  // Sample data for demo purposes
+  const demoMessages = [
+    {
+      id: "demo1",
+      sender: { username: "DeviL007", profilePicture: "/placeholder.svg?height=40&width=40" },
+      content: "LMAOOOOOOOOOOOO",
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: "demo2",
+      sender: { username: "R3nn0", profilePicture: "/placeholder.svg?height=40&width=40" },
+      content: "Great shottt man!",
+      reactions: [{ emoji: "👍", count: 2 }],
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: "demo3",
+      sender: { username: "SubroZa", profilePicture: "/placeholder.svg?height=40&width=40", verified: true },
+      content: "How are you playing this gooooood???????",
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: "demo4",
+      sender: { username: "R3nn0", profilePicture: "/placeholder.svg?height=40&width=40" },
+      content: "Great shottt man!",
+      reactions: [{ emoji: "👍", count: 2 }],
+      timestamp: new Date().toISOString(),
+    },
+  ]
+
+  // Use demo messages if no real messages are available
+  const displayMessages = messages.length > 0 ? messages : demoMessages
+
   return (
-    <>
-      {isChatOpen ? (
-        <div className={styles.chatSection}>
-          <div className={styles.chatHeader}>
-            <div className={styles.worldchat}>
-              <button onClick={toggleChat} className={styles.arrowButton}>
+    <div className={styles.chatSection}>
+      {/* We're removing the header section */}
+
+      <div className={styles.chatMessages}>
+        {displayMessages.length === 0 ? (
+          <div className={styles.systemMessage}>No messages yet. Start chatting!</div>
+        ) : (
+          displayMessages.map((msg) => (
+            <div key={msg.id} className={styles.chatMessage}>
+              {/* User avatar */}
+              <div className={styles.userAvatar}>
                 <Image
-                  src="/assets/img/chat/startarrow.png?height=16&width=16"
-                  width={16}
-                  height={16}
-                  alt="Chat"
-                  className={`${styles.icon}`}
+                  src={getValidImageUrl(msg.sender?.profilePicture) || "/placeholder.svg?height=40&width=40"}
+                  width={40}
+                  height={40}
+                  alt="User avatar"
+                  className={styles.avatar}
                 />
-              </button>
-              <h5>WORLDCHAT</h5>
-              <button className={styles.usersButton}>
-                <Image
-                  src="/assets/img/chat/people.png?height=20&width=20"
-                  width={20}
-                  height={20}
-                  alt="Users"
-                  className={styles.icon}
-                />
-              </button>
-            </div>
-          </div>
+              </div>
 
-          <div className={styles.chatMessages}>
-            {messages.length === 0 ? (
-              <div className={styles.systemMessage}>No messages yet. Start chatting!</div>
-            ) : (
-              messages.map((msg) => (
-                <div key={msg.id} className={styles.chatMessage}>
-                  {/* Show timestamp */}
-                  <div className={styles.timestamp}>
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </div>
-
-                  {/* If this is a reply, show the original message */}
-                  {msg.replyTo && (
-                    <div className={styles.replyMessage}>
-                      <div className={styles.originalMessageUsername}>{msg.replyTo.username}</div>
-                      {formatContent(msg.replyTo.content)}
-                    </div>
-                  )}
-
-                  {/* Show the message sender */}
-                  <div className={styles.originalMessageUsername}>{msg.sender?.username || "Anonymous"}</div>
-
-                  {/* Show the message content */}
-                  {formatContent(msg.content)}
-
-                  <div className={styles.messageUser}>
-                    <div className={styles.userAvatar}>
-                      <Image
-                        src={getValidImageUrl(msg.sender?.profilePicture) || "/placeholder.svg?height=30&width=30"}
-                        width={30}
-                        height={30}
-                        alt="User avatar"
-                        className={styles.avatar}
-                      />
-                    </div>
-                    <button className={styles.shareButton} onClick={() => handleReply(msg)}>
-                      <Image
-                        src="/assets/img/chat/share.png?height=16&width=16"
-                        width={16}
-                        height={16}
-                        alt="Share"
-                        className={styles.icon}
-                      />
-                    </button>
-                  </div>
+              {/* Message content */}
+              <div className={styles.messageContent}>
+                {/* Username with optional verified badge */}
+                <div className={styles.originalMessageUsername}>
+                  {msg.sender?.username || "Anonymous"}
+                  {msg.sender?.verified && <span className={styles.verifiedBadge}>✓</span>}
                 </div>
-              ))
-            )}
-            <div ref={messagesEndRef} />
-          </div>
 
-          {/* Show reply UI when replying to a message */}
-          {showReplyUI && replyTo && (
-            <ReplyMessage
-              username={replyTo.sender.username}
-              onSend={handleAfterReplySent}
-              onCancel={handleCancelReply}
-              message={message}
-              setMessage={setMessage}
-              streamId={streamId}
-              replyTo={replyTo}
-              socket={socket}
-            />
-          )}
+                {/* If this is a reply, show the original message */}
+                {msg.replyTo && (
+                  <div className={styles.replyMessage}>
+                    <div className={styles.originalMessageUsername}>{msg.replyTo.username}</div>
+                    {formatContent(msg.replyTo.content)}
+                  </div>
+                )}
 
-          {!showReplyUI && (
-            <form onSubmit={handleSendMessage} className={styles.chatInput}>
-              <input
-                type="text"
-                placeholder="Type here..."
-                className={styles.messageInput}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                disabled={!connected}
-              />
-              <button type="button" className={styles.emojiButton}>
-                <Image
-                  src="/assets/img/chat/emoji.png?height=20&width=20"
-                  width={20}
-                  height={20}
-                  alt="Emoji"
-                  className={styles.icon}
-                />
-              </button>
-              <button type="submit" className={styles.sendButton} disabled={!connected || !message.trim()}>
-                <Image
-                  src="/assets/img/chat/send-message.png?height=20&width=20"
-                  width={20}
-                  height={20}
-                  alt="Send"
-                  className={styles.icon}
-                />
-              </button>
-            </form>
-          )}
+                {/* Show the message content */}
+                {formatContent(msg.content)}
 
-          {isRateLimited && rateLimitMessage && <div className={styles.rateLimitMessage}>{rateLimitMessage}</div>}
-        </div>
-      ) : (
-        <div className={sidebarStyles.worldchatSidebar}>
-          <button onClick={toggleChat} className={sidebarStyles.arrowButton}>
-            <Image
-              src="/assets/img/chat/back.png?height=16&width=16"
-              width={16}
-              height={16}
-              alt="Open Chat"
-              className={sidebarStyles.icon}
-            />
-          </button>
-          <div className={sidebarStyles.verticalText}>WORLDCHAT</div>
-          <button className={sidebarStyles.usersButton}>
-            <Image
-              src="/assets/img/chat/people.png?height=20&width=20"
-              width={20}
-              height={20}
-              alt="Users"
-              className={sidebarStyles.icon}
-            />
-          </button>
-        </div>
+                {/* Show reactions if any */}
+                {msg.reactions && msg.reactions.length > 0 && (
+                  <div className={styles.messageReactions}>
+                    {msg.reactions.map((reaction, index) => (
+                      <div key={index} className={styles.reaction}>
+                        {reaction.emoji} {reaction.count > 1 && reaction.count}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Show reply UI when replying to a message */}
+      {showReplyUI && replyTo && (
+        <ReplyMessage
+          username={replyTo.sender.username}
+          onSend={handleAfterReplySent}
+          onCancel={handleCancelReply}
+          message={message}
+          setMessage={setMessage}
+          streamId={streamId}
+          replyTo={replyTo}
+          socket={socket}
+        />
       )}
+
+      {!showReplyUI && (
+        <form onSubmit={handleSendMessage} className={styles.chatInput}>
+          <input
+            type="text"
+            placeholder="Type Here..."
+            className={styles.messageInput}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            disabled={!connected}
+          />
+          <button type="button" className={styles.emojiButton}>
+            😊
+          </button>
+          <button type="submit" className={styles.sendButton} disabled={!connected || !message.trim()}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </form>
+      )}
+
+      {isRateLimited && rateLimitMessage && <div className={styles.rateLimitMessage}>{rateLimitMessage}</div>}
 
       {/* Auth Modal */}
       {showAuthModal && (
@@ -517,15 +525,10 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
           />
         </div>
       )}
-    </>
+    </div>
   )
 }
 
 export default RealTimeChatComp
-
-
-
-
-
 
 
