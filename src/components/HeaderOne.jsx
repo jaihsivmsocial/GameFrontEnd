@@ -72,10 +72,11 @@ const HeaderOne = () => {
          <div className="container nav-container">
       <div className="logo">
         <div className="d-flex items-center">
-          <Link href="/" style={{ marginLeft: "-110px" }}>
+          <Link href="/" style={{ marginLeft: "-115px" }}>
             <div style={{ display: "flex", alignItems: "center" }}>
               <img src="/assets/img/logo/headlogo.png" alt="img" />
               <span
+              
                 style={{
                   color: "white",
                   fontWeight: "Rajdhani",
@@ -93,7 +94,7 @@ const HeaderOne = () => {
           </Link>
         </div>
       </div>
-      <div className={styles.liveIcon} style={{ marginLeft: "-320px" }}>
+      <div className={styles.liveIcon} style={{ marginLeft: "-310px" }}>
         <img
           src="/assets/img/bg/live.png"
           width={16}
