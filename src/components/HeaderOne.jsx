@@ -76,6 +76,7 @@ const HeaderOne = () => {
             <div style={{ display: "flex", alignItems: "center" }}>
               <img src="/assets/img/logo/headlogo.png" alt="img" />
               <span
+              
                 style={{
                   color: "white",
                   fontWeight: "Rajdhani",
