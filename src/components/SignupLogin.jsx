@@ -1493,7 +1493,6 @@ export default function AuthHeaderButtons({
 
   return (
     <>
-      {/* Auth Buttons - Only show if not in modal mode */}
       {!isModal && !isLoggedIn ? (
         <div className="d-flex gap-2">
           {/* Login Button */}
@@ -1501,11 +1500,12 @@ export default function AuthHeaderButtons({
             type="button"
             className="btn btn-dark border border-info text-white"
             style={{
-              backgroundColor: "#000",
-              border: "3px solid #0dcaf0",
-              width: "110px",
-              height: "40px",
+              backgroundColor: "#070a10",
+              border: "1px solid #0dcaf0",
+              width: "141px",
+              height: "37px",
               fontWeight: "bold",
+              font: "Poppins",
               letterSpacing: "1px",
               boxShadow: "0 0 5px rgba(13, 202, 240, 0.5)",
               transition: "box-shadow 0.3s ease",
@@ -1514,6 +1514,11 @@ export default function AuthHeaderButtons({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+                marginRight:"6px",
+                paddingtop: "10px",
+                paddingright: "30px",
+                paddingbottom: "10px",
+                paddingleft: "30px",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.boxShadow = "0 0 10px rgba(13, 202, 240, 0.8)"
@@ -1530,11 +1535,12 @@ export default function AuthHeaderButtons({
             type="button"
             className="btn btn-dark border border-info text-white"
             style={{
-              backgroundColor: "#000",
+              backgroundColor: "#070a10",
               border: "3px solid #0dcaf0",
-              width: "110px",
-              height: "40px",
+              width: "141px",
+              height: "37px",
               fontWeight: "bold",
+              font: "Poppins",
               letterSpacing: "1px",
               boxShadow: "0 0 5px rgba(13, 202, 240, 0.5)",
               transition: "box-shadow 0.3s ease",
@@ -1543,6 +1549,11 @@ export default function AuthHeaderButtons({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              marginRight:"-90px",
+              paddingtop: "10px",
+              paddingright: "30px",
+              paddingbottom: "10px",
+              paddingleft: "30px",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.boxShadow = "0 0 10px rgba(13, 202, 240, 0.8)"
@@ -1557,6 +1568,7 @@ export default function AuthHeaderButtons({
         </div>
       ) : !isModal && isLoggedIn ? (
         /* User Profile Section - Matches the screenshot design */
+        
         <div className="position-relative">
           <div
             className="d-flex align-items-center gap-5"
@@ -1691,7 +1703,6 @@ export default function AuthHeaderButtons({
           )}
         </div>
       ) : null}
-
       {/* When in modal mode, show the appropriate modal */}
       {isModal && (
         <>
@@ -1715,7 +1726,7 @@ export default function AuthHeaderButtons({
               {/* Welcome Header */}
               <div className="text-center mb-3">
                 <img
-                  src="/assets/fonts/logo.png"
+                  src="/assets/img/logo/headlogo.png"
                   alt="M's TRIBE Logo"
                   style={{
                     maxWidth: "150px",
@@ -1859,7 +1870,7 @@ export default function AuthHeaderButtons({
               {/* Welcome Header replaced with Image */}
               <div className="text-center mb-3">
                 <img
-                  src="/assets/fonts/logo.png"
+                  src="/assets/img/logo/headlogo.png"
                   alt="M's TRIBE Logo"
                   style={{
                     maxWidth: "150px",
@@ -2039,7 +2050,7 @@ export default function AuthHeaderButtons({
                 {/* Welcome Header */}
                 <div className="text-center mb-3">
                   <img
-                    src="/assets/fonts/logo.png"
+                    src="/assets/img/logo/headlogo.png"
                     alt="M's TRIBE Logo"
                     style={{
                       maxWidth: "150px",
@@ -2194,7 +2205,7 @@ export default function AuthHeaderButtons({
                 {/* Welcome Header replaced with Image */}
                 <div className="text-center mb-3">
                   <img
-                    src="/assets/fonts/logo.png"
+                    src="/assets/img/logo/headlogo.png"
                     alt="M's TRIBE Logo"
                     style={{
                       maxWidth: "150px",
