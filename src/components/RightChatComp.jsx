@@ -129,18 +129,6 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       if (newMessage.sender && newMessage.sender.profilePicture) {
         newMessage.sender.profilePicture = getValidImageUrl(newMessage.sender.profilePicture)
       }
-
-      // Add random reactions to some messages for demo purposes
-      if (Math.random() > 0.7) {
-        newMessage.reactions = []
-        if (Math.random() > 0.5) {
-          newMessage.reactions.push({ emoji: "👍", count: Math.floor(Math.random() * 3) + 1 })
-        }
-        if (Math.random() > 0.7) {
-          newMessage.reactions.push({ emoji: "🔥", count: Math.floor(Math.random() * 2) + 1 })
-        }
-      }
-
       setMessages((prev) => [...prev, newMessage])
     })
 
@@ -157,18 +145,6 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
             },
           }
         }
-
-        // Add random reactions to some messages for demo purposes
-        if (Math.random() > 0.7) {
-          msg.reactions = []
-          if (Math.random() > 0.5) {
-            msg.reactions.push({ emoji: "👍", count: Math.floor(Math.random() * 3) + 1 })
-          }
-          if (Math.random() > 0.7) {
-            msg.reactions.push({ emoji: "🔥", count: Math.floor(Math.random() * 2) + 1 })
-          }
-        }
-
         return msg
       })
       setMessages(fixedMessages)
@@ -213,18 +189,6 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                 },
               }
             }
-
-            // Add random reactions to some messages for demo purposes
-            if (Math.random() > 0.7) {
-              msg.reactions = []
-              if (Math.random() > 0.5) {
-                msg.reactions.push({ emoji: "👍", count: Math.floor(Math.random() * 3) + 1 })
-              }
-              if (Math.random() > 0.7) {
-                msg.reactions.push({ emoji: "🔥", count: Math.floor(Math.random() * 2) + 1 })
-              }
-            }
-
             return msg
           })
           setMessages(fixedMessages)
@@ -370,89 +334,54 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     }
   }, [socket])
 
-  // Sample data for demo purposes
-  const demoMessages = [
-    {
-      id: "demo1",
-      sender: { username: "DeviL007", profilePicture: "/placeholder.svg?height=40&width=40" },
-      content: "LMAOOOOOOOOOOOO",
-      timestamp: new Date().toISOString(),
-    },
-    {
-      id: "demo2",
-      sender: { username: "R3nn0", profilePicture: "/placeholder.svg?height=40&width=40" },
-      content: "Great shottt man!",
-      reactions: [{ emoji: "👍", count: 2 }],
-      timestamp: new Date().toISOString(),
-    },
-    {
-      id: "demo3",
-      sender: { username: "SubroZa", profilePicture: "/placeholder.svg?height=40&width=40", verified: true },
-      content: "How are you playing this gooooood???????",
-      timestamp: new Date().toISOString(),
-    },
-    {
-      id: "demo4",
-      sender: { username: "R3nn0", profilePicture: "/placeholder.svg?height=40&width=40" },
-      content: "Great shottt man!",
-      reactions: [{ emoji: "👍", count: 2 }],
-      timestamp: new Date().toISOString(),
-    },
-  ]
-
-  // Use demo messages if no real messages are available
-  const displayMessages = messages.length > 0 ? messages : demoMessages
-
   return (
     <div className={styles.chatSection}>
       {/* We're removing the header section */}
 
       <div className={styles.chatMessages}>
-        {displayMessages.length === 0 ? (
+        {messages.length === 0 ? (
           <div className={styles.systemMessage}>No messages yet. Start chatting!</div>
         ) : (
-          displayMessages.map((msg) => (
+          messages.map((msg) => (
             <div key={msg.id} className={styles.chatMessage}>
-              {/* User avatar */}
-              <div className={styles.userAvatar}>
-                <Image
-                  src={getValidImageUrl(msg.sender?.profilePicture) || "/placeholder.svg?height=40&width=40"}
-                  width={40}
-                  height={40}
-                  alt="User avatar"
-                  className={styles.avatar}
-                />
+              {/* Show timestamp */}
+              <div className={styles.timestamp}>
+                {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </div>
 
-              {/* Message content */}
-              <div className={styles.messageContent}>
-                {/* Username with optional verified badge */}
-                <div className={styles.originalMessageUsername}>
-                  {msg.sender?.username || "Anonymous"}
-                  {msg.sender?.verified && <span className={styles.verifiedBadge}>✓</span>}
+              {/* If this is a reply, show the original message */}
+              {msg.replyTo && (
+                <div className={styles.replyMessage}>
+                  <div className={styles.originalMessageUsername}>{msg.replyTo.username}</div>
+                  {formatContent(msg.replyTo.content)}
                 </div>
+              )}
 
-                {/* If this is a reply, show the original message */}
-                {msg.replyTo && (
-                  <div className={styles.replyMessage}>
-                    <div className={styles.originalMessageUsername}>{msg.replyTo.username}</div>
-                    {formatContent(msg.replyTo.content)}
-                  </div>
-                )}
+              {/* Show the message sender */}
+              <div className={styles.originalMessageUsername}>{msg.sender?.username || "Anonymous"}</div>
 
-                {/* Show the message content */}
-                {formatContent(msg.content)}
+              {/* Show the message content */}
+              {formatContent(msg.content)}
 
-                {/* Show reactions if any */}
-                {msg.reactions && msg.reactions.length > 0 && (
-                  <div className={styles.messageReactions}>
-                    {msg.reactions.map((reaction, index) => (
-                      <div key={index} className={styles.reaction}>
-                        {reaction.emoji} {reaction.count > 1 && reaction.count}
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <div className={styles.messageUser}>
+                <div className={styles.userAvatar}>
+                  <Image
+                    src={getValidImageUrl(msg.sender?.profilePicture) || "/placeholder.svg?height=30&width=30"}
+                    width={30}
+                    height={30}
+                    alt="User avatar"
+                    className={styles.avatar}
+                  />
+                </div>
+                <button className={styles.shareButton} onClick={() => handleReply(msg)}>
+                  <Image
+                    src="/assets/img/chat/share.png?height=16&width=16"
+                    width={16}
+                    height={16}
+                    alt="Share"
+                    className={styles.icon}
+                  />
+                </button>
               </div>
             </div>
           ))
@@ -478,29 +407,20 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
         <form onSubmit={handleSendMessage} className={styles.chatInput}>
           <input
             type="text"
-            placeholder="Type Here..."
+            placeholder="Type here..."
             className={styles.messageInput}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             disabled={!connected}
           />
-          <button type="button" className={styles.emojiButton}>
-            😊
-          </button>
           <button type="submit" className={styles.sendButton} disabled={!connected || !message.trim()}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+            <Image
+              src="/assets/img/chat/send-message.png?height=20&width=20"
+              width={20}
+              height={20}
+              alt="Send"
+              className={styles.icon}
+            />
           </button>
         </form>
       )}
@@ -530,5 +450,4 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
 }
 
 export default RealTimeChatComp
-
 

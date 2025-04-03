@@ -8,6 +8,7 @@ import apiService from "../contexts/api-service"
 import WebRTCStream from "../../components/Home/WebRTCConnection"
 import VideoQualitySettings from "../Home/VideoQualitySettings"
 import RealTimeChatCompWrapper from "../Home/RealTimeChatCompWrapper"
+import StreamBottomBar from "../../components/stream-bottom-bar"
 
 export default function HomeCustom() {
   // Main camera definition
@@ -291,20 +292,6 @@ export default function HomeCustom() {
         </div>
 
         <div className={styles.liveIndicator}>
-          <div className={styles.liveIcon}>
-            <Image
-              src="/assets/img/live.png"
-              width={16}
-              height={16}
-              alt="Live"
-              className={styles.icon}
-              onError={(e) => {
-                e.target.src = "/placeholder.svg?height=16&width=16"
-                console.log("Failed to load image: /assets/img/live.png")
-              }}
-            />
-            LIVE
-          </div>
           <div className={styles.viewerCount}>
             <Image
               src="/assets/img/iconImage/livefeed_3106921.png"
@@ -349,11 +336,33 @@ export default function HomeCustom() {
     viewerCount,
   ])
 
+  // Calculate the height to leave space for the bottom bar
+  const bottomBarHeight = 110 // Height of the bottom bar in pixels
+
   return (
-    <div className={`${styles.mainAndGameWrapper}`} style={{ position: "relative" }}>
-      <div className={styles.mainContent}>
+    <div
+      className={`${styles.mainAndGameWrapper}`}
+      style={{
+        position: "relative",
+        height: "100vh", // Full viewport height
+        paddingBottom: `${bottomBarHeight}px`, // Add padding at the bottom to make space for the bar
+      }}
+    >
+      <div
+        className={styles.mainContent}
+        style={{
+          height: `calc(100% - ${bottomBarHeight}px)`, // Adjust height to leave space for bottom bar
+        }}
+      >
         {/* Single View Mode - Only showing main camera */}
-        <div className={styles.videoSection}>{renderCameraView()}</div>
+        <div
+          className={styles.videoSection}
+          style={{
+            height: "100%", // Make video section take full height of the adjusted container
+          }}
+        >
+          {renderCameraView()}
+        </div>
       </div>
 
       {/* Chat Overlay */}
@@ -370,8 +379,10 @@ export default function HomeCustom() {
       >
         <RealTimeChatCompWrapper streamId={mainCamera.streamId} />
       </div>
+
+      {/* Bottom Betting/Donation Bar */}
+      <StreamBottomBar />
     </div>
   )
 }
-
 
