@@ -337,7 +337,7 @@ export default function HomeCustom() {
   ])
 
   // Calculate the height to leave space for the bottom bar
-  const bottomBarHeight = 110 // Height of the bottom bar in pixels
+  const bottomBarHeight = 138 // Height of the bottom bar in pixels
 
   return (
     <div

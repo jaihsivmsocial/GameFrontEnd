@@ -24,7 +24,7 @@ export default function StreamBottomBar() {
         alignItems: "flex-start",
         borderTop: "1px solid #1e293b",
         zIndex: 9999,
-        height: "110px",
+        height: "160px",
       }}
     >
       {/* Left Section - Donation */}
