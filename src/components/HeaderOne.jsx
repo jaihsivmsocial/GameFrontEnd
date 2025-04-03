@@ -5,11 +5,12 @@ import Link from "next/link"
 import SpectateButton from "./SpectateButton"
 // import { Login } from "./Login"
 // import { Signup } from "./Signup"
-import Shope from "./cloths/Shope"
+import Shop from "./cloths/Shop"
 import PlayButton from "./play"
-import SucribeButton from "./SubcribeButton"
+import Clip from "./Clip"
 import AuthHeaderButtons from "./SignupLogin"
 import { NavigationProvider } from "./context/NavigationContext"
+import styles from "../viewscreen/screen.module.css"
 
 const HeaderOne = () => {
   const [scroll, setScroll] = useState(false)
@@ -17,7 +18,7 @@ const HeaderOne = () => {
   const [isMobileView, setIsMobileView] = useState(false)
   const [isTabletView, setIsTabletView] = useState(false)
 
-  
+
   // Handle scroll behavior
   useEffect(() => {
     window.onscroll = () => {
@@ -64,58 +65,75 @@ const HeaderOne = () => {
       {/* Desktop Navigation */}
       {!isMobileView && (
         <nav
-          className={`navbar main navbar-area navbar-area-1 navbar-border navbar-expand-lg ${
-            scroll ? "sticky-active" : ""
-          }`}
-          style={{  background: "linear-gradient(to right, #07090ef,#070f17)" }}
+          className={`navbar main navbar-area navbar-area-1 navbar-border navbar-expand-lg ${scroll ? "sticky-active" : ""
+            }`}
+          style={{ background: "linear-gradient(to right, #07090ef,#070f17)" }}
         >
-          <div className="container nav-container px-lg-0">
-            <div className="logo">
-              <div className="d-flex items-center gap-5">
-                <Link href="/">
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <img src="assets/fonts/logo.png" alt="img" />
-                    <span
-                      style={{
-                        color: "white",
-                        fontWeight: "bold",
-                        fontSize: "1.5rem",
-                        marginLeft: "8px",
-                         width: "60px",
-                         height:"50px"
-                      }}
-                    >
-                    </span>
-                  </div>
-                </Link>
-              </div>
+         <div className="container nav-container">
+      <div className="logo">
+        <div className="d-flex items-center">
+          <Link href="/" style={{ marginLeft: "-110px" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <img src="/assets/img/logo/headlogo.png" alt="img" />
+              <span
+                style={{
+                  color: "white",
+                  fontWeight: "Rajdhani",
+                  font:"bold",
+                  fontSize: "27.58px",
+                  marginLeft: "8px",
+                  width: "103px",
+                  height: "46px",
+                  lineHeight: "85%",
+                  letterSpacing: "-4%",
+                  stroke:"FFFFFF"
+                }}
+              ></span>
             </div>
-            {/* Navigation Buttons with fixed spacing */}
-            <div className="d-flex align-items-center" style={{ gap: "20px" }}>
-            <div style={{ marginRight: "0px" }}>
-                <Shope />
-              </div>
-          
-              <div style={{ marginRight: "0px" }}>
-                <SpectateButton />
-              </div>
-              <div style={{ marginRight: "0px" }}>
-                <PlayButton />
-              </div>
-              <div style={{ marginRight: "0px" }}>
-                <SucribeButton />
-              </div>
-              <AuthHeaderButtons />
-            </div>
-          </div>
+          </Link>
+        </div>
+      </div>
+      <div className={styles.liveIcon} style={{ marginLeft: "-320px" }}>
+        <img
+          src="/assets/img/bg/live.png"
+          width={16}
+          height={16}
+          alt="Live"
+          className={styles.icon || ""}
+          onError={(e) => {
+            e.currentTarget.src = "/placeholder.svg?height=16&width=16"
+            console.log("Failed to load image: /assets/img/live.png")
+          }}
+        />
+        LIVE
+      </div>
+      {/* Navigation Buttons with fixed positioning */}
+      <div className="d-flex align-items-center" style={{ gap: "20px" }}>
+        <div style={{ width: "180px", height: "37px" }}>
+          <Shop />
+        </div>
+
+        <div style={{ width: "180px", height: "37px" }}>
+          <SpectateButton />
+        </div>
+        <div style={{ width: "180px", height: "37px" }}>
+          <PlayButton />
+        </div>
+        <div style={{ width: "180px", height: "37px" }}>
+          <Clip />
+        </div>
+        <div style={{ minWidth: "180px" }}>
+          <AuthHeaderButtons />
+        </div>
+      </div>
+    </div>
         </nav>
       )}
       {/* Mobile/Tablet Navigation */}
       {(isMobileView || isTabletView) && (
         <nav
-          className={`navbar mobile navbar-area navbar-area-1 navbar-border navbar-expand-lg ${
-            scroll ? "sticky-active" : ""
-          }`}
+          className={`navbar mobile navbar-area navbar-area-1 navbar-border navbar-expand-lg ${scroll ? "sticky-active" : ""
+            }`}
         >
           <div className="container nav-container px-lg-0">
             {/* Mobile Menu Toggle Button */}
@@ -154,7 +172,7 @@ const HeaderOne = () => {
             <div className={`collapse navbar-collapse ${isMobileMenuOpen ? "sopen" : ""}`} id="xdyat_main_menu">
               <ul className="navbar-nav menu-open ps-lg-5 pe-xl-4 text-end">
                 <li className="mb-3">
-                  <SucribeButton />
+                  <Clip />
                 </li>
                 <li className="mb-3">
                   <SpectateButton />
@@ -163,7 +181,7 @@ const HeaderOne = () => {
                   <PlayButton />
                 </li>
                 <li className="mb-3">
-                  <Shope />
+                  <Shop />
                 </li>
                 {/* <li className="mb-3">
                   <Login />

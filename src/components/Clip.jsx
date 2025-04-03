@@ -3,28 +3,29 @@ import { useState } from "react"
 import Link from "next/link"
 import { useNavigation } from "./context/NavigationContext"
 
-const SucribeButton = () => {
+const Clip = () => {
   const [hover, setHover] = useState(false)
   const { activeButton, setActiveButton } = useNavigation()
-  const isActive = activeButton === "subscribe"
+  const isActive = activeButton === "Clip"
 
   // Base gradient for the button
  const baseGradient = "linear-gradient(90deg, #00a0e9 0%, #0073d5 50%, #0046c0 100%)"
 
   const handleClick = () => {
-    setActiveButton("subscribe")
+    setActiveButton("Clip")
   }
 
   return (
     <Link
-      href="/subscribe"
+      href="/Clip"
       className="btn text-white d-flex align-items-center justify-content-center"
       style={{
         background: isActive ? baseGradient : "#071019",
         border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
-        width: isActive ? "180px" : "143px",
+        width: isActive ? "178px" : "143px",
         height: "37px",
         fontWeight: "bold",
+        font: "Poppins",
         letterSpacing: "1px",
         boxShadow: isActive
           ? "0 0 15px rgba(0, 160, 233, 0.6)"
@@ -38,6 +39,7 @@ const SucribeButton = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        marginLeft: "-177px",
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -55,5 +57,5 @@ const SucribeButton = () => {
   )
 }
 
-export default SucribeButton
+export default Clip
 
