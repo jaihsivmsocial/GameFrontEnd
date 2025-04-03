@@ -39,7 +39,7 @@ const Clip = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: "-177px",
+        marginLeft: "-200px",
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
