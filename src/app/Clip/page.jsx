@@ -6,7 +6,7 @@ import HeaderOne from "@/components/HeaderOne"
 import "bootstrap/dist/css/bootstrap.min.css"
 
 
-export default function SubscriptionPage() {
+export default function ClipPage() {
   const [isAnnual, setIsAnnual] = useState(true)
   const [recentSubscribers, setRecentSubscribers] = useState([
     { name: "Parizval", time: "just" },

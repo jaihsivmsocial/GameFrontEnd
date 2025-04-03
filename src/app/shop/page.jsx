@@ -1,22 +1,3 @@
-//  "use client"
-//  import GameShop from "@/components/cloths/gameshop";
-// export default function ShopPage() {
-//   return (
-
-//     <div
-//     className="text-center text-white"
-//     style={{
-//       background: "linear-gradient(180deg, #0b0f19 0%, #0a1a2e 100%)",
-
-//       width:"100%",
-//     }}
-
-//   >
-//     <GameShop/>
-//   </div>
-//   );
-// }
-
 
 "use client";
 
@@ -29,7 +10,7 @@ export default class ShopPage extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      currentPage: "shop",
+      currentPage: "Shop",
     };
     this.handleNavigate = this.handleNavigate.bind(this); // Bind in constructor
   }

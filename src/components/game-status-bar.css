@@ -1,0 +1,147 @@
+.game-status-bar {
+    background-color: #070c12;
+    height: 56px;
+    width: 100%;
+    padding: 0 15px;
+    color: white;
+    font-family: "Arial", sans-serif;
+  }
+  
+  /* Settings Icon */
+  .settings-icon {
+    margin-right: 15px;
+    opacity: 0.8;
+    cursor: pointer;
+    margin-left: -20px;
+  }
+  
+  .settings-icon:hover {
+    opacity: 1;
+  }
+  
+  /* Player Section */
+  .player-section {
+    margin-right: 10px;
+  }
+  
+  .player-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #111;
+    margin-right: 8px;
+  }
+  
+  .player-name {
+    color: #00e6e6;
+    font-size: 1.25rem;
+    font-weight: bold;
+    line-height: 1;
+  }
+  
+  .player-level {
+    color: #00e6e6;
+    font-size: 0.7rem;
+    font-weight: 500;
+    line-height: 1;
+  }
+  
+  /* Currency Section */
+  .currency-section {
+    margin-right: 15px;
+  }
+  
+  .currency-box {
+    background-color: #00e6e6;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-bottom: 2px;
+  }
+  
+  .currency-icon {
+    color: black;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-right: 4px;
+  }
+  
+  .currency-amount {
+    color: black;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+  
+  .xp-text {
+    font-size: 0.65rem;
+    color: white;
+    text-align: center;
+  }
+  
+  /* Companion Section */
+  .companion-section {
+    margin-right: 15px;
+  }
+  
+  .companion-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #111;
+    margin-right: 8px;
+  }
+  
+  .companion-name {
+    color: #00e6e6;
+    font-size: 1.25rem;
+    font-weight: bold;
+    line-height: 1;
+  }
+  
+  .companion-type {
+    color: #00e6e6;
+    font-size: 0.7rem;
+    font-weight: 500;
+    line-height: 1;
+  }
+  
+  .health-box {
+    background-color: #ff3333;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-top: 2px;
+  }
+  
+  .health-icon {
+    color: white;
+    font-size: 0.8rem;
+    margin-right: 4px;
+  }
+  
+  .health-amount {
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+  
+  /* Reward Timer Section */
+  .reward-section {
+    margin-left: auto;
+  }
+  
+  .reward-label {
+    font-size: 0.7rem;
+    color: white;
+    text-align: right;
+    line-height: 1.1;
+  }
+  
+  .reward-timer {
+    color: #ffcc00;
+    font-size: 1.8rem;
+    font-weight: bold;
+    line-height: 1;
+  }
+  
+  
