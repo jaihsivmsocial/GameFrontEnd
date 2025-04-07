@@ -13,7 +13,6 @@ export default function StreamBottomBar() {
   return (
     <div
       style={{
-        position: "fixed",
         bottom: 0,
         left: 0,
         right: 0,
