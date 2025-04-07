@@ -216,7 +216,7 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: "-400px" 
+        marginLeft: "-270px" 
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -249,7 +249,7 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
           width="8px"
           height="8px"
           style={{
-            marginLeft: "-228px",
+            marginLeft: "-159px",
           }}
           onError={(e) => {
             // Fallback to the original red dot div if image fails to load

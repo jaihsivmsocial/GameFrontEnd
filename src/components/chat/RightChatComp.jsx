@@ -1,10 +1,10 @@
 "use client"
 import { useEffect, useState, useRef } from "react"
-import styles from "../custonCss/home.module.css"
+import styles from "../../custonCss/home.module.css"
 import Image from "next/image"
 import io from "socket.io-client"
-import AuthHeaderButtons from "../components/SignupLogin"
-import ReplyMessage from "../components/chat/reply-message"
+import AuthHeaderButtons from "../../components/register/SignupLogin"
+import ReplyMessage from "../../components/chat/reply-message"
 import { BASEURL } from "@/utils/apiservice"
 
 // Helper function to validate and fix image URLs
@@ -336,55 +336,43 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
 
   return (
     <div className={styles.chatSection}>
-      {/* We're removing the header section */}
-
       <div className={styles.chatMessages}>
         {messages.length === 0 ? (
           <div className={styles.systemMessage}>No messages yet. Start chatting!</div>
         ) : (
-          messages.map((msg) => (
-            <div key={msg.id} className={styles.chatMessage}>
-              {/* Show timestamp */}
-              <div className={styles.timestamp}>
-                {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </div>
+          <table className={styles.chatTable} cellSpacing="0" cellPadding="0" border="0">
+            <tbody>
+              {messages.map((msg, index) => (
+                <tr key={msg.id} className={styles.chatRow}>
+                  <td className={styles.profileCell}>
+                    <div className={styles.userAvatar}>
+                      <Image
+                        src={getValidImageUrl(msg.sender?.profilePicture) || "/placeholder.svg?height=40&width=40"}
+                        width={40}
+                        height={40}
+                        alt="User avatar"
+                        className={styles.avatar}
+                      />
+                    </div>
+                    <div className={styles.originalMessageUsername}>{msg.sender?.username || "Anonymous"}</div>
+                  </td>
+                  <td className={styles.messageCell}>
+                    <div className={styles.messageCellContent}>
+                      {/* If this is a reply, show the original message */}
+                      {msg.replyTo && (
+                        <div className={styles.replyMessage}>
+                          <div className={styles.replyUsername}>{msg.replyTo.username}</div>
+                          {formatContent(msg.replyTo.content)}
+                        </div>
+                      )}
 
-              {/* If this is a reply, show the original message */}
-              {msg.replyTo && (
-                <div className={styles.replyMessage}>
-                  <div className={styles.originalMessageUsername}>{msg.replyTo.username}</div>
-                  {formatContent(msg.replyTo.content)}
-                </div>
-              )}
-
-              {/* Show the message sender */}
-              <div className={styles.originalMessageUsername}>{msg.sender?.username || "Anonymous"}</div>
-
-              {/* Show the message content */}
-              {formatContent(msg.content)}
-
-              <div className={styles.messageUser}>
-                <div className={styles.userAvatar}>
-                  <Image
-                    src={getValidImageUrl(msg.sender?.profilePicture) || "/placeholder.svg?height=30&width=30"}
-                    width={30}
-                    height={30}
-                    alt="User avatar"
-                    className={styles.avatar}
-                  />
-                </div>
-                <button className={styles.shareButton} onClick={() => handleReply(msg)}>
-                  <Image
-                    src="/assets/img/chat/share.png?height=16&width=16"
-                    width={16}
-                    height={16}
-                    alt="Share"
-                    className={styles.icon}
-                  />
-                </button>
-              </div>
-            </div>
-          ))
+                      {formatContent(msg.content)}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -407,7 +395,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
         <form onSubmit={handleSendMessage} className={styles.chatInput}>
           <input
             type="text"
-            placeholder="Type here..."
+            placeholder="Type Here..."
             className={styles.messageInput}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -450,4 +438,6 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
 }
 
 export default RealTimeChatComp
+
+
 
