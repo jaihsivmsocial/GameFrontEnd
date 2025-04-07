@@ -15,7 +15,7 @@ const Profile = () => {
     if (loggedInUser) {
       setUser(loggedInUser);
     } else {
-      router.push('/login'); // Redirect to login if no user
+      router.push('/login');
     }
   }, [router]);
 
