@@ -38,7 +38,7 @@ const PlayButton = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: "-200px"
+        marginLeft: "-140px"
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
