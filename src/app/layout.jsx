@@ -43,7 +43,6 @@ import Image from "next/image";
 import CustomCursor from "@/helper/CustomCursor";
 import BackToTop from "@/helper/BackToTop";
 import HeaderOne from "@/components/HeaderOne";
-import RightChatComp from "@/components/RightChatComp";
 
 export default function RootLayout({ children }) {
 

@@ -7,9 +7,8 @@ import { useSocket } from "../contexts/SocketContext"
 import apiService from "../contexts/api-service"
 import WebRTCStream from "../../components/Home/WebRTCConnection"
 import VideoQualitySettings from "../Home/VideoQualitySettings"
-import RealTimeChatCompWrapper from "../Home/RealTimeChatCompWrapper"
+import RealTimeChatCompWrapper from "../chat/RealTimeChatCompWrapper"
 import StreamBottomBar from "../../components/stream-bottom-bar"
-
 export default function HomeCustom() {
   // Main camera definition
   const mainCamera = useMemo(
@@ -191,7 +190,7 @@ export default function HomeCustom() {
     const isActive = activeVideo
 
     return (
-      <div className={`${styles.cameraContainer} ${styles.mainCameraView}`}>
+      <div className={`${styles.cameraContainer} ${styles.mainCameraView}`} style={{ position: "relative", zIndex: 1 }}>
         {/* Camera icon in top left */}
         <div className={styles.cameraIconCircle}>
           <Image src="/placeholder.svg?height=16&width=16" width={16} height={16} alt="Camera" />
@@ -276,7 +275,7 @@ export default function HomeCustom() {
           <span>{mainCamera.name}</span>
         </div>
 
-        <div className={styles.mainCam}>
+        <div className={styles.mainCam} style={{ zIndex: 30 }}>
           <div className={styles.camIcon}>
             <Image
               src="/placeholder.svg?height=24&width=24"
@@ -291,7 +290,7 @@ export default function HomeCustom() {
           </div>
         </div>
 
-        <div className={styles.liveIndicator}>
+        <div className={styles.liveIndicator} style={{ zIndex: 30 }}>
           <div className={styles.viewerCount}>
             <Image
               src="/assets/img/iconImage/livefeed_3106921.png"
@@ -336,52 +335,66 @@ export default function HomeCustom() {
     viewerCount,
   ])
 
-  // Calculate the height to leave space for the bottom bar
-  const bottomBarHeight = 138 // Height of the bottom bar in pixels
-
   return (
     <div
-      className={`${styles.mainAndGameWrapper}`}
+      className={styles.mainAndGameWrapper}
       style={{
-        position: "relative",
-        height: "100vh", // Full viewport height
-        paddingBottom: `${bottomBarHeight}px`, // Add padding at the bottom to make space for the bar
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        position: "relative", // Add position relative
       }}
     >
+      {/* Main content area with fixed height and scrollable */}
       <div
         className={styles.mainContent}
         style={{
-          height: `calc(100% - ${bottomBarHeight}px)`, // Adjust height to leave space for bottom bar
+          flex: 1,
+          overflow: "hidden", // Change from "auto" to "hidden"
+          position: "relative", // Add position relative
         }}
       >
         {/* Single View Mode - Only showing main camera */}
         <div
           className={styles.videoSection}
           style={{
-            height: "100%", // Make video section take full height of the adjusted container
+            height: "100%", // Change from 80% to 100%
+            position: "relative",
+            zIndex: 1, // Add base z-index
           }}
         >
           {renderCameraView()}
         </div>
+
+        {/* Chat Overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            height: "65%",
+            width: "300px",
+            zIndex: 25, // Increase from 10 to 25
+            overflow: "hidden",
+          }}
+        >
+          <RealTimeChatCompWrapper streamId={mainCamera.streamId} />
+        </div>
       </div>
 
-      {/* Chat Overlay */}
+      {/* Bottom Bar - Fixed at bottom */}
       <div
         style={{
-          position: "absolute",
-          top: "10px",
-          right: "10px",
-          height: "65%", // Reduced height to match screenshot exactly
-          width: "300px",
-          zIndex: 10,
-          overflow: "hidden",
+          position: "sticky",
+          bottom: 0,
+          width: "100%",
+          zIndex: 40, // Increase from 20 to 40
+          backgroundColor: "rgba(0, 0, 0, 0.8)", // Add background color for better visibility
         }}
       >
-        <RealTimeChatCompWrapper streamId={mainCamera.streamId} />
+        <StreamBottomBar />
       </div>
-
-      {/* Bottom Betting/Donation Bar */}
-      <StreamBottomBar />
     </div>
   )
 }

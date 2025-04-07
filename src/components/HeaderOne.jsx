@@ -8,7 +8,7 @@ import SpectateButton from "./SpectateButton"
 import Shop from "./cloths/Shop"
 import PlayButton from "./play"
 import Clip from "./Clip"
-import AuthHeaderButtons from "./SignupLogin"
+import AuthHeaderButtons from "../components/register/SignupLogin"
 import { NavigationProvider } from "./context/NavigationContext"
 import styles from "../viewscreen/screen.module.css"
 
@@ -76,7 +76,7 @@ const HeaderOne = () => {
             <div style={{ display: "flex", alignItems: "center" }}>
               <img src="/assets/img/logo/headlogo.png" alt="img" />
               <span
-              
+
                 style={{
                   color: "white",
                   fontWeight: "Rajdhani",
@@ -94,7 +94,7 @@ const HeaderOne = () => {
           </Link>
         </div>
       </div>
-      <div className={styles.liveIcon} style={{ marginLeft: "-310px" }}>
+      <div className={styles.liveIcon} style={{ marginLeft: "-270px" }}>
         <img
           src="/assets/img/bg/live.png"
           width={16}
