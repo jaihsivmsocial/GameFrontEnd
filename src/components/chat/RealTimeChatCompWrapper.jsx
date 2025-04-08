@@ -17,12 +17,16 @@ const RealTimeChatCompWrapper = ({ streamId = "default-stream" }) => {
     backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 16px !important;
-    height: 100% !important;
+    height: 400px !important;
+    max-height: 80vh !important; 
     display: flex !important;
     flex-direction: column !important;
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 400px; /* Limit width on larger screens */
+    margin: 0 auto;
   }
   
   /* Hide the chat header */
@@ -146,22 +150,22 @@ const RealTimeChatCompWrapper = ({ streamId = "default-stream" }) => {
     display: flex;
     align-items: center;
     padding: 10px 15px;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
+    background: #ffffff;
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     width: 100%;
-    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     height: 60px;
+    border-radius: 0 0 16px 16px;
   }
   
   /* Style the input field to match the existing styles */
   .messageInput {
     flex: 1;
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: white !important;
+    background-color: transparent !important;
+    color: #666 !important;
     border: none !important;
     border-radius: 20px !important;
     padding: 8px 15px !important;
@@ -172,17 +176,16 @@ const RealTimeChatCompWrapper = ({ streamId = "default-stream" }) => {
   
   /* Style the input placeholder */
   .messageInput::placeholder {
-    color: rgba(255, 255, 255, 0.6) !important;
+    color: #999 !important;
   }
   
   .messageInput:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.15) !important;
   }
   
   /* Style the send button to match the screenshot */
   .sendButton {
-    background-color: #0095ff !important;
+    background-color: #4da6ff !important;
     border: none !important;
     border-radius: 50% !important;
     cursor: pointer !important;
@@ -196,7 +199,7 @@ const RealTimeChatCompWrapper = ({ streamId = "default-stream" }) => {
   }
   
   .sendButton:hover {
-    background-color: #00a0e9 !important;
+    background-color: #3a95ff !important;
     transform: scale(1.05) !important;
   }
   
@@ -250,6 +253,95 @@ const RealTimeChatCompWrapper = ({ streamId = "default-stream" }) => {
     background: transparent;
     border: none;
   }
+  
+  /* Responsive styles for different device sizes */
+  @media (max-width: 991px) {
+    .chatSection {
+      height: 380px !important;
+    }
+    
+    .userAvatar {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .originalMessageUsername {
+      font-size: 11px;
+    }
+    
+    .originalMessageContent {
+      font-size: 13px;
+    }
+  }
+  
+  @media (max-width: 767px) {
+    .chatSection {
+      height: 350px !important;
+      max-width: 100%;
+    }
+    
+    .profileCell {
+      width: 60px;
+    }
+    
+    .userAvatar {
+      width: 28px;
+      height: 28px;
+    }
+    
+    .chatInput {
+      height: 50px;
+    }
+  }
+  
+  @media (max-width: 575px) {
+    .chatSection {
+      height: 400px !important;
+      border-radius: 16px !important;
+    }
+    
+    .profileCell {
+      width: 45px;
+      padding: 6px;
+    }
+    
+    .messageCell {
+      padding: 6px 8px;
+    }
+    
+    .userAvatar {
+      width: 24px;
+      height: 24px;
+    }
+    
+    .originalMessageUsername {
+      font-size: 10px;
+    }
+    
+    .originalMessageContent {
+      font-size: 11px;
+    }
+    
+    .chatInput {
+      height: 45px;
+      padding: 6px 10px;
+    }
+    
+    .messageInput {
+      height: 35px !important;
+      font-size: 12px !important;
+    }
+    
+    .sendButton {
+      width: 35px !important;
+      height: 35px !important;
+    }
+    
+    .sendButton img {
+      width: 16px !important;
+      height: 16px !important;
+    }
+  }
 `
     document.head.appendChild(styleTag)
 
@@ -267,6 +359,3 @@ const RealTimeChatCompWrapper = ({ streamId = "default-stream" }) => {
 }
 
 export default RealTimeChatCompWrapper
-
-
-

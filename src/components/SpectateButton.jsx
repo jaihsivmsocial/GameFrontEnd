@@ -200,7 +200,7 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
       style={{
         background: isActive ? baseGradient : "#071019",
         border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
-        width: isActive ? "178px" : "143px",
+        width: isActive ? "142px" : "143px",
         height: "37px",
         fontWeight: "bold",
         font: "Poppins",
@@ -216,7 +216,7 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: "-270px" 
+        marginLeft: "-70px" 
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -237,8 +237,8 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
         style={{
           display: "flex",
           alignItems: "center",
-          marginTop: "4px",
-          fontSize: "12px",
+          marginTop: "-5px",
+          fontSize: "18px",
           color: "white",
           fontWeight: "normal",
         }}
@@ -246,21 +246,22 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
         <img
           src="/assets/img/bg/Rectangle 39343.png" 
           alt="Red indicator"
-          width="8px"
-          height="8px"
+          width="10px"
+          height="10px"
           style={{
-            marginLeft: "-159px",
+            marginLeft: "-50px",
           }}
           onError={(e) => {
             // Fallback to the original red dot div if image fails to load
             e.target.style.display = "none"
             const parent = e.target.parentNode
             const redDot = document.createElement("div")
-            redDot.style.width = "8px"
-            redDot.style.height = "8px"
+            redDot.style.width = "30px"
+            redDot.style.height = "30px"
             redDot.style.backgroundColor = "#ff0000"
             redDot.style.borderRadius = "50%"
-            redDot.style.marginLeft = "-160px"
+            redDot.style.marginLeft = "200px"
+            
             parent.insertBefore(redDot, e.target)
           }}
         />

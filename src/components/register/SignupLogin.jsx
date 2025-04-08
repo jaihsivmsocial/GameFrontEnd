@@ -5,12 +5,12 @@ import Image from "next/image"
 import { BASEURL } from "@/utils/apiservice"
 import ForgotPasswordModal from "../../components/register/forgetpassword"
 import VerifyCodeModal from "./verify-code"
-
+import GameHeader from "../game-header"
 export default function AuthHeaderButtons({
   initialView = null,
-  onAuthStateChange = () => {},
+  onAuthStateChange = () => { },
   isModal = false,
-  onClose = () => {},
+  onClose = () => { },
 }) {
   // State for modals and authentication
   const [showLoginModal, setShowLoginModal] = useState(initialView === "login")
@@ -171,7 +171,7 @@ export default function AuthHeaderButtons({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-        
+
         },
         credentials: "include",
         body: JSON.stringify(signupFormData),
@@ -308,11 +308,11 @@ export default function AuthHeaderButtons({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-                marginRight:"6px",
-                paddingtop: "10px",
-                paddingright: "30px",
-                paddingbottom: "10px",
-                paddingleft: "30px",
+              marginRight: "6px",
+              paddingtop: "10px",
+              paddingright: "30px",
+              paddingbottom: "10px",
+              paddingleft: "30px",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.boxShadow = "0 0 10px rgba(13, 202, 240, 0.8)"
@@ -343,7 +343,7 @@ export default function AuthHeaderButtons({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginRight:"-95px",
+              marginRight: "-95px",
               paddingtop: "10px",
               paddingright: "30px",
               paddingbottom: "10px",
@@ -362,82 +362,41 @@ export default function AuthHeaderButtons({
         </div>
       ) : !isModal && isLoggedIn ? (
         /* User Profile Section - Matches the screenshot design */
-        
+
         <div className="position-relative">
           <div
             className="d-flex align-items-center gap-5"
             style={{
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              // border: "1px solid rgba(255, 255, 255, 0.1)",
               minWidth: "250px",
-              marginRight:"-95px",
-            
+              marginRight: "-190px",
+
             }}
           >
             {/* Settings Icon - Now as a link to settings page */}
-            <a
-              href="/setting"
-              className="text-white text-decoration-none"
-              style={{ opacity: 0.75 }}
+       
+
+            <GameHeader />
+            {/* <button
+              onClick={handleLogout}
+              className="d-block w-100 text-start px-4 py-2 text-white bg-transparent border-0"
+              style={{
+                transition: "background-color 0.2s",
+                marginRight: "50px",
+                width: "100%"
+              }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.opacity = 1
+                e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+                e.currentTarget.style.transform = "translateX(-3px)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = 0.75
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.transform = "translateX(0)";
               }}
             >
-              <img src="/assets/img/iconImage/settings 1.png" alt="Settings" width="24" height="24" />
-            </a>
+              SIGNOUT
+            </button> */}
 
-            <div className="d-flex align-items-center px-3 py-2 rounded">
-              {/* User Info */}
-              <div className="d-flex flex-column ms-3 text-end ">
-                <span className="fw-bold text-white">{userData?.username || "MARK9874"}</span>
-                <span className="text-secondary small text-end" style={{ cursor: "pointer" }}>
-                  Change Avatar
-                </span>
-              </div>
-              {/* Profile Picture with Verification Badge */}
-              <div className="position-relative ms-auto ">
-                <div
-                  className="rounded-circle overflow-hidden"
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    border: "2px solid rgba(255, 255, 255, 0.1)",
-                    marginLeft: "10px",
-                  }}
-                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                >
-                  <Image
-                    src={userData?.avatar || "/placeholder.svg?height=40&width=40"}
-                    alt="Profile"
-                    width={40}
-                    height={40}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                </div>
-              </div>
-              {/* Verification Badge */}
-              <div
-                className="position-absolute"
-                style={{
-                  bottom: -2,
-                  right: -2,
-                  backgroundColor: "#0dcaf0",
-                  borderRadius: "50%",
-                  width: "16px",
-                  height: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "2px solid #000",
-                }}
-              ></div>
-            </div>
           </div>
 
           {/* Dropdown Menu - Updated with username on left and image on right */}
@@ -452,7 +411,7 @@ export default function AuthHeaderButtons({
               }}
             >
               {/* Profile Info at Top of Dropdown */}
-              <div className="d-flex align-items-center p-3 border-bottom" style={{ borderColor: "#333" }}>
+              {/* <div className="d-flex align-items-center p-3 border-bottom" style={{ borderColor: "#333" }}>
                 <div>
                   <div className="fw-bold text-white">{userData?.username || "MARK9874"}</div>
                   <div className="text-secondary small">View your profile</div>
@@ -479,22 +438,10 @@ export default function AuthHeaderButtons({
                     />
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Menu Items */}
-              <button
-                onClick={handleLogout}
-                className="d-block w-100 text-start px-4 py-2 text-white bg-transparent border-0"
-                style={{ transition: "background-color 0.2s" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent"
-                }}
-              >
-                Sign out
-              </button>
+
             </div>
           )}
         </div>

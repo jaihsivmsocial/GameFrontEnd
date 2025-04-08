@@ -159,14 +159,14 @@
     display: none;
   }
   
-  .menu.toggle-btn {
+  /* .menu.toggle-btn {
     width: 30px;
     height: 30px;
     position: relative;
     background: transparent;
     border: none;
     cursor: pointer;
-  }
+  } */
   
   .icon-left,
   .icon-right {

@@ -6,6 +6,7 @@ import io from "socket.io-client"
 import AuthHeaderButtons from "../../components/register/SignupLogin"
 import ReplyMessage from "../../components/chat/reply-message"
 import { BASEURL } from "@/utils/apiservice"
+import { useMediaQuery } from "../../components/chat/use-mobile"
 
 // Helper function to validate and fix image URLs
 const getValidImageUrl = (url) => {
@@ -63,6 +64,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
   const [connected, setConnected] = useState(false)
   const [anonymousId, setAnonymousId] = useState("")
   const messagesEndRef = useRef(null)
+  const isMobile = useMediaQuery("(max-width: 768px)")
 
   // Auth related states
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -334,6 +336,327 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     }
   }, [socket])
 
+  // Mobile UI rendering
+  if (isMobile) {
+    return (
+      <div
+        className={styles.chatSection}
+        style={{
+          backgroundColor: "rgba(13, 18, 30, 0.95)",
+          backdropFilter: "blur(10px)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          position: "relative",
+          paddingBottom: "30px", // Add padding at the bottom for the scroll indicator
+        }}
+      >
+        <div
+          className={styles.chatMessages}
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "0",
+            marginBottom: "80px", // Increased to make room for input and scroll indicator
+          }}
+        >
+          {messages.length === 0 ? (
+            <div
+              className={styles.systemMessage}
+              style={{
+                textAlign: "center",
+                color: "rgba(255, 255, 255, 0.5)",
+                padding: "10px",
+                fontSize: "12px",
+              }}
+            >
+              No messages yet. Start chatting!
+            </div>
+          ) : (
+            <div style={{ width: "100%" }}>
+              {messages.map((msg, index) => (
+                <div
+                  key={msg.id}
+                  style={{
+                    display: "flex",
+                    padding: "8px 10px",
+                    marginBottom: "2px",
+                    backgroundColor: "rgba(30, 30, 40, 0.4)",
+                    borderRadius: "8px",
+                    margin: "6px 10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "40px",
+                      marginRight: "10px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "30px",
+                        height: "30px",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        marginBottom: "2px",
+                      }}
+                    >
+                      <Image
+                        src={getValidImageUrl(msg.sender?.profilePicture) || "/placeholder.svg?height=30&width=30"}
+                        width={30}
+                        height={30}
+                        alt="User avatar"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                        color: "#06b6d4", // Cyan color for username
+                        marginBottom: "2px",
+                      }}
+                    >
+                      {msg.sender?.username || "Anonymous"}
+                    </div>
+                    {msg.replyTo && (
+                      <div
+                        style={{
+                          borderLeft: "2px solid rgba(255, 255, 255, 0.2)",
+                          padding: "2px 8px",
+                          marginBottom: "4px",
+                          fontSize: "11px",
+                          color: "rgba(255, 255, 255, 0.7)",
+                        }}
+                      >
+                        <span style={{ fontWeight: "bold" }}>{msg.replyTo.username}: </span>
+                        {msg.replyTo.content}
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color: "white",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {formatContent(msg.content)}
+                    </div>
+                    {/* Add colored line below message if needed */}
+                    {msg.highlight && (
+                      <div
+                        style={{
+                          color: "#4ade80", // Green color for highlights
+                          fontSize: "12px",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {msg.highlight}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {/* System notifications */}
+              {messages.map((msg, index) => {
+                // Check if there's a notification to display after this message
+                if (msg.notification) {
+                  return (
+                    <div
+                      key={`notification-${index}`}
+                      style={{
+                        textAlign: "center",
+                        color: "#4ade80", // Green color for notifications
+                        fontSize: "12px",
+                        padding: "4px 0",
+                        margin: "2px 0",
+                      }}
+                    >
+                      {msg.notification}
+                    </div>
+                  )
+                }
+                return null
+              })}
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Show reply UI when replying to a message */}
+        {showReplyUI && replyTo && (
+          <ReplyMessage
+            username={replyTo.sender.username}
+            onSend={handleAfterReplySent}
+            onCancel={handleCancelReply}
+            message={message}
+            setMessage={setMessage}
+            streamId={streamId}
+            replyTo={replyTo}
+            socket={socket}
+          />
+        )}
+
+        {!showReplyUI && (
+          <form
+            onSubmit={handleSendMessage}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "10px 15px",
+              backgroundColor: "transparent",
+              position: "absolute",
+              bottom: "30px", // Move up from the bottom to make room for scroll indicator
+              left: 0,
+              right: 0,
+              width: "100%",
+              zIndex: 5,
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                backgroundColor: "white",
+                borderRadius: "20px",
+                display: "flex",
+                alignItems: "center",
+                height: "40px",
+                marginRight: "8px",
+                overflow: "hidden",
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Type Here..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                disabled={!connected}
+                style={{
+                  flex: 1,
+                  backgroundColor: "transparent",
+                  color: "#333",
+                  border: "none",
+                  padding: "8px 15px",
+                  fontSize: "14px",
+                  height: "100%",
+                  outline: "none",
+                }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!connected || !message.trim()}
+              style={{
+                backgroundColor: "#0ea5e9", // Brighter blue to match the screenshot
+                border: "none",
+                borderRadius: "50%",
+                cursor: "pointer",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "40px",
+                width: "40px",
+                transition: "transform 0.2s",
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M22 2L15 22L11 13L2 9L22 2Z"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </form>
+        )}
+
+        {/* Scroll down indicator */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: "0",
+            left: 0,
+            right: 0,
+            textAlign: "center",
+            padding: "5px 0",
+            color: "white",
+            fontSize: "12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "5px",
+            backgroundColor: "rgba(13, 18, 30, 0.8)",
+            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+            zIndex: 4,
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 9L12 16L5 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          SCROLL DOWN
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 9L12 16L5 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+
+        {isRateLimited && rateLimitMessage && (
+          <div
+            style={{
+              color: "#ffc107",
+              padding: "8px",
+              textAlign: "center",
+              fontSize: "14px",
+              backgroundColor: "transparent",
+              border: "none",
+              position: "absolute",
+              bottom: "70px",
+              left: 0,
+              right: 0,
+            }}
+          >
+            {rateLimitMessage}
+          </div>
+        )}
+
+        {/* Auth Modal */}
+        {showAuthModal && (
+          <div
+            className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+            style={{
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              backdropFilter: "blur(2px)",
+              zIndex: 1050,
+            }}
+          >
+            <AuthHeaderButtons
+              initialView="signup"
+              onAuthStateChange={handleAuthStateChange}
+              isModal={true}
+              onClose={() => setShowAuthModal(false)}
+            />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Desktop UI (original implementation)
   return (
     <div className={styles.chatSection}>
       <div className={styles.chatMessages}>
@@ -438,6 +761,3 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
 }
 
 export default RealTimeChatComp
-
-
-
