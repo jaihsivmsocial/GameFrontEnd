@@ -22,7 +22,7 @@ const Clip = () => {
       style={{
         background: isActive ? baseGradient : "#071019",
         border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
-        width: isActive ? "178px" : "143px",
+        width: isActive ? "143px" : "143px",
         height: "37px",
         fontWeight: "bold",
         font: "Poppins",
@@ -39,7 +39,7 @@ const Clip = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: "-150px",
+        marginLeft: "-85px",
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
