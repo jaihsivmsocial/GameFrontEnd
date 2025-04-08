@@ -22,7 +22,7 @@ const PlayButton = () => {
       style={{
         background: isActive ? baseGradient : "linear-gradient(to right, #ff5500, #ff7b00,  #fe5e00)",
         border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
-        width: isActive ? "178px" : "143px",
+        width: isActive ? "143px" : "143px",
         height: "37px",
         fontWeight: "bold",
         font: "Poppins",
@@ -38,7 +38,7 @@ const PlayButton = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: "-140px"
+        marginLeft: "-50px"
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
