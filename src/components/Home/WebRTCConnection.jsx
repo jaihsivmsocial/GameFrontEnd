@@ -694,7 +694,7 @@ const WebRTCStream = forwardRef(
                 .catch((err) => {
                   console.error("Error playing fallback video:", err)
                   if (isMountedRef.current) {
-                    setError("Could not play video. Click to play.")
+                    setError(".")
                   }
                 })
             }
@@ -1072,7 +1072,7 @@ const WebRTCStream = forwardRef(
         />
 
         {/* Quality indicator */}
-        <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+        {/* <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
           {getQualityIndicator()}
         </div>
 
@@ -1080,7 +1080,7 @@ const WebRTCStream = forwardRef(
           <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
             Fallback
           </div>
-        )}
+        )} */}
       </div>
     )
   },
