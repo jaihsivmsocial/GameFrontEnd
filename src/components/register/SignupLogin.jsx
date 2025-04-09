@@ -296,7 +296,7 @@ export default function AuthHeaderButtons({
             style={{
               backgroundColor: "#050505",
               border: "1px solid #0dcaf0",
-              width: "141px",
+              width: "101px",
               height: "37px",
               fontWeight: "bold",
               font: "Poppins",
@@ -331,7 +331,7 @@ export default function AuthHeaderButtons({
             style={{
               backgroundColor: "#050505",
               border: "2px solid #0dcaf0",
-              width: "141px",
+              width: "101px",
               height: "37px",
               fontWeight: "bold",
               font: "Poppins",
