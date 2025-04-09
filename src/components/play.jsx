@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useNavigation } from "./context/NavigationContext"
 
@@ -7,6 +7,25 @@ const PlayButton = () => {
   const [hover, setHover] = useState(false)
   const { activeButton, setActiveButton } = useNavigation()
   const isActive = activeButton === "play"
+  const [isMobileView, setIsMobileView] = useState(false)
+
+  // Check if mobile view
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768)
+    }
+
+    // Set initial state
+    handleResize()
+
+    // Add event listener
+    window.addEventListener("resize", handleResize)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("resize", handleResize)
+    }
+  }, [])
 
   // Base gradient for the button
   const baseGradient = "linear-gradient(90deg, #00a0e9 0%, #0073d5 50%, #0046c0 100%)"
@@ -22,15 +41,12 @@ const PlayButton = () => {
       style={{
         background: isActive ? baseGradient : "linear-gradient(to right, #ff5500, #ff7b00,  #fe5e00)",
         border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
-        width: isActive ? "143px" : "143px",
+        width: "141px", // Use 100% width for responsiveness
         height: "37px",
         fontWeight: "bold",
         font: "Poppins",
         letterSpacing: "1px",
-        boxShadow
-          : hover
-            ? "0 0 10px rgba(0, 160, 233, 0.5)"
-            : "0 0 5px rgba(0, 70, 192, 0.4)",
+        boxShadow: hover ? "0 0 10px rgba(0, 160, 233, 0.5)" : "0 0 5px rgba(0, 70, 192, 0.4)",
         padding: "0",
         overflow: "hidden",
         gap: "8px",
@@ -38,7 +54,7 @@ const PlayButton = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: "-50px"
+        marginLeft: isMobileView ? "0" : "-50px", // Remove negative margin on mobile
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -57,4 +73,3 @@ const PlayButton = () => {
 }
 
 export default PlayButton
-
