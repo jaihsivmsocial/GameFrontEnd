@@ -342,7 +342,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       <div
         className={styles.chatSection}
         style={{
-          backgroundColor: "rgba(13, 18, 30, 0.95)",
+       background: "linear-gradient(90deg, #0b1526 0%, #0a1a2e 100%)",
           backdropFilter: "blur(10px)",
           overflow: "hidden",
           display: "flex",
@@ -366,7 +366,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
               className={styles.systemMessage}
               style={{
                 textAlign: "center",
-                color: "rgba(255, 255, 255, 0.5)",
+                color: "#202c36",
                 padding: "10px",
                 fontSize: "12px",
               }}

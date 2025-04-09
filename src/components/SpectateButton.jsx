@@ -8,10 +8,28 @@ import apiService from "../components/contexts/api-service"
 const SpectateButton = ({ streamId = "stream-1" }) => {
   const [hover, setHover] = useState(false)
   const { activeButton, setActiveButton } = useNavigation()
-  // const navigationIsActive = activeButton === "spectate"
-    const isActive = activeButton === "spectate"
+  const isActive = activeButton === "spectate"
   const [viewerCount, setViewerCount] = useState(0)
   const [isStreamActive, setIsStreamActive] = useState(false)
+  const [isMobileView, setIsMobileView] = useState(false)
+
+  // Check if mobile view
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768)
+    }
+
+    // Set initial state
+    handleResize()
+
+    // Add event listener
+    window.addEventListener("resize", handleResize)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("resize", handleResize)
+    }
+  }, [])
 
   // Use a ref to track if this instance has already incremented the count
   const hasIncrementedRef = useRef(false)
@@ -194,43 +212,40 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-       <Link
-      href="/Shop"
-      className="btn text-white d-flex align-items-center justify-content-center"
-      style={{
-        background: isActive ? baseGradient : "#071019",
-        border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
-        width: isActive ? "142px" : "143px",
-        height: "37px",
-        fontWeight: "bold",
-        font: "Poppins",
-        letterSpacing: "1px",
-        boxShadow
-          : hover
-            ? "0 0 5px rgba(0, 160, 233, 0.5)"
-            : "0 0 5px rgba(0, 70, 192, 0.4)",
-        padding: "0",
-        overflow: "hidden",
-        gap: "8px",
-        borderRadius: "8px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        marginLeft: "-70px" 
-      }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onClick={handleClick}
-    >
-      <img
-        src={isActive ? "/assets/img/iconImage/eye 1.png" : "/assets/img/iconImage/eye 1.png"}
-        alt="shopping bag icon"
-        width="20"
-        height="20"
-        style={{ marginRight: "4px" }}
-      />
-   SPECTATE
-    </Link>
+      <Link
+        href="/Shop"
+        className="btn text-white d-flex align-items-center justify-content-center"
+        style={{
+          background: isActive ? baseGradient : "#071019",
+          border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
+          width: "141px", // Use 100% width for responsiveness
+          height: "37px",
+          fontWeight: "bold",
+          font: "Poppins",
+          letterSpacing: "1px",
+          boxShadow: hover ? "0 0 5px rgba(0, 160, 233, 0.5)" : "0 0 5px rgba(0, 70, 192, 0.4)",
+          padding: "0",
+          overflow: "hidden",
+          gap: "8px",
+          borderRadius: "8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginLeft: isMobileView ? "0" : "-70px", // Remove negative margin on mobile
+        }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        onClick={handleClick}
+      >
+        <img
+          src={isActive ? "/assets/img/iconImage/eye 1.png" : "/assets/img/iconImage/eye 1.png"}
+          alt="eye icon"
+          width="20"
+          height="20"
+          style={{ marginRight: "4px" }}
+        />
+        SPECTATE
+      </Link>
 
       {/* Viewer count display */}
       <div
@@ -244,12 +259,12 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
         }}
       >
         <img
-          src="/assets/img/bg/Rectangle 39343.png" 
+          src="/assets/img/bg/Rectangle 39343.png"
           alt="Red indicator"
           width="10px"
           height="10px"
           style={{
-            marginLeft: "-50px",
+            marginLeft: isMobileView ? "0" : "-50px", // Remove negative margin on mobile
           }}
           onError={(e) => {
             // Fallback to the original red dot div if image fails to load
@@ -260,8 +275,8 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
             redDot.style.height = "30px"
             redDot.style.backgroundColor = "#ff0000"
             redDot.style.borderRadius = "50%"
-            redDot.style.marginLeft = "200px"
-            
+            redDot.style.marginLeft = isMobileView ? "0" : "200px"
+
             parent.insertBefore(redDot, e.target)
           }}
         />
@@ -271,6 +286,4 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
   )
 }
 
-
 export default SpectateButton
-

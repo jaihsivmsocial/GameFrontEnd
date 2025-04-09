@@ -3,8 +3,6 @@ import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import SpectateButton from "./SpectateButton"
-// import { Login } from "./Login"
-// import { Signup } from "./Signup"
 import Shop from "./cloths/Shop"
 import PlayButton from "./play"
 import Clip from "./Clip"
@@ -17,7 +15,6 @@ const HeaderOne = () => {
   const location = usePathname()
   const [isMobileView, setIsMobileView] = useState(false)
   const [isTabletView, setIsTabletView] = useState(false)
-
 
   // Handle scroll behavior
   useEffect(() => {
@@ -62,136 +59,145 @@ const HeaderOne = () => {
     <NavigationProvider>
       {/* Body overlay for mobile menu */}
       <div className="body-overlay" id="body-overlay" ref={bodyOverlayRef} />
+
       {/* Desktop Navigation */}
       {!isMobileView && (
         <nav
-          className={`navbar main navbar-area navbar-area-1 navbar-border navbar-expand-lg ${scroll ? "sticky-active" : ""
-            }`}
+          className={`navbar main navbar-area navbar-area-1 navbar-border navbar-expand-lg ${scroll ? "sticky-active" : ""}`}
           style={{ background: "linear-gradient(to right, #07090ef,#070f17)" }}
         >
-         <div className="container nav-container">
-      <div className="logo">
-        <div className="d-flex items-center">
-          <Link href="/" style={{ marginLeft: "-105px" }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <img src="/assets/img/logo/headlogo.png" alt="img" />
-              <span
-
-                style={{
-                  color: "white",
-                  fontWeight: "Rajdhani",
-                  font:"bold",
-                  fontSize: "27.58px",
-                  marginLeft: "8px",
-                  width: "103px",
-                  height: "46px",
-                  lineHeight: "85%",
-                  letterSpacing: "-4%",
-                  stroke:"FFFFFF"
-                }}
-              ></span>
-            </div>
-          </Link>
-        </div>
-      </div>
-      <div className={styles.liveIcon} style={{ marginLeft: "-100px" }}>
-        <img
-          src="/assets/img/bg/live.png"
-          width={16}
-          height={16}
-          alt="Live"
-          className={styles.icon || ""}
-          onError={(e) => {
-            e.currentTarget.src = "/placeholder.svg?height=16&width=16"
-            console.log("Failed to load image: /assets/img/live.png")
-          }}
-        />
-        LIVE
-      </div>
-      {/* Navigation Buttons with fixed positioning */}
-      <div className="d-flex align-items-center" style={{ gap: "20px" }}>
-        <div style={{ width: "180px", height: "37px" }}>
-          <Shop />
-        </div>
-
-        <div style={{ width: "180px", height: "37px" }}>
-          <SpectateButton />
-        </div>
-        <div style={{ width: "180px", height: "37px" }}>
-          <PlayButton />
-        </div>
-        <div style={{ width: "180px", height: "37px" }}>
-          <Clip />
-        </div>
-        <div style={{ minWidth: "180px" }}>
-          <AuthHeaderButtons />
-        </div>
-      </div>
-    </div>
-        </nav>
-      )}
-      {/* Mobile/Tablet Navigation */}
-      {(isMobileView || isTabletView) && (
-        <nav
-          className={`navbar mobile navbar-area navbar-area-1 navbar-border navbar-expand-lg ${scroll ? "sticky-active" : ""
-            }`}
-        >
-          <div className="container nav-container px-lg-0">
-            {/* Mobile Menu Toggle Button */}
-            <div className="responsive-mobile-menu">
-              <button
-                className={`menu toggle-btn d-block ${isMobileMenuOpen ? "open" : ""}`}
-                onClick={handleMobileMenuToggle}
-                aria-expanded={isMobileMenuOpen}
-                aria-label="Toggle navigation"
-              >
-                <span className="icon-left"></span>
-                <span className="icon-right"></span>
-              </button>
-            </div>
-
-            {/* Logo */}
+          <div className="container nav-container">
             <div className="logo">
-              <Link href="/">
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <img src="assets/fonts/logo.png" alt="img" />
-                  <span
-                    style={{
-                      color: "white",
-                      fontWeight: "bold",
-                      fontSize: "1.2rem",
-                      marginLeft: "5px",
-                    }}
-                  >
-
-                  </span>
-                </div>
-              </Link>
+              <div className="d-flex items-center">
+                <Link href="/" style={{ marginLeft: "-105px" }}>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <img src="/assets/img/logo/headlogo.png" alt="img" />
+                    <span
+                      style={{
+                        color: "white",
+                        fontWeight: "Rajdhani",
+                        font: "bold",
+                        fontSize: "27.58px",
+                        marginLeft: "8px",
+                        width: "103px",
+                        height: "46px",
+                        lineHeight: "85%",
+                        letterSpacing: "-4%",
+                        stroke: "FFFFFF",
+                      }}
+                    ></span>
+                  </div>
+                </Link>
+              </div>
             </div>
+            <div className={styles.liveIcon} style={{ marginLeft: "-100px" }}>
+              <img
+                src="/assets/img/bg/live.png"
+                width={16}
+                height={16}
+                alt="Live"
+                className={styles.icon || ""}
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholder.svg?height=16&width=16"
+                  console.log("Failed to load image: /assets/img/live.png")
+                }}
+              />
+              LIVE
+            </div>
+            {/* Navigation Buttons with fixed positioning */}
+            <div className="d-flex align-items-center" style={{ gap: "20px" }}>
+              <div style={{ width: "180px", height: "37px" }}>
+                <Shop />
+              </div>
 
-            {/* Mobile Navigation Menu */}
-            <div className={`collapse navbar-collapse ${isMobileMenuOpen ? "sopen" : ""}`} id="xdyat_main_menu">
-              <ul className="navbar-nav menu-open ps-lg-5 pe-xl-4 text-end">
-                <li className="mb-3">
-                  <Clip />
-                </li>
-                <li className="mb-3">
-                  <SpectateButton />
-                </li>
-                <li className="mb-3">
-                  <PlayButton />
-                </li>
-                <li className="mb-3">
-                  <Shop />
-                </li>
-              </ul>
+              <div style={{ width: "180px", height: "37px" }}>
+                <SpectateButton />
+              </div>
+              <div style={{ width: "180px", height: "37px" }}>
+                <PlayButton />
+              </div>
+              <div style={{ width: "180px", height: "37px" }}>
+                <Clip />
+              </div>
+              <div style={{ minWidth: "180px" }}>
+                <AuthHeaderButtons />
+              </div>
             </div>
           </div>
         </nav>
+      )}
+
+      {/* Mobile Navigation */}
+      {isMobileView && (
+        <div
+          className="mobile-header"
+          style={{
+            background: "#0a1624",
+            padding: "15px 0",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
+          {/* Title and Auth Buttons */}
+          <div
+            style={{
+              padding: "0 15px 15px",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              marginBottom: "15px",
+              display: "flex",
+            }}
+          >
+            {/* Title */}
+            <div
+              style={{
+                color: "#06b6d4",
+                fontSize: "14px",
+                fontWeight: "bold",
+                textAlign: "center",
+                marginBottom: "15px",
+                fontFamily: "'Rajdhani', sans-serif",
+                textShadow: "0 0 10px rgba(6, 182, 212, 0.5)",
+                lineHeight: "1",
+              }}
+            >
+              5 Minutes
+              <br />
+              Of Fame
+            </div>
+
+            {/* Login/Signup Buttons */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "10px",
+                padding: "0 10px",
+              }}
+            >
+              <AuthHeaderButtons />
+            </div>
+          </div>
+
+          {/* Spectate and Play Buttons - MODIFIED FOR HORIZONTAL LAYOUT */}
+          <div
+            style={{
+              padding: "0 15px",
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: "20px", // Increased from 10px to 20px for more spacing between buttons
+            }}
+          >
+            <div style={{ position: "relative", flex: 1 }}>
+              <SpectateButton />
+            </div>
+            <div style={{ position: "relative", flex: 1 }}>
+              <PlayButton />
+            </div>
+          </div>
+        </div>
       )}
     </NavigationProvider>
   )
 }
 
 export default HeaderOne
-
