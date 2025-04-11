@@ -60,9 +60,11 @@ export default function RootLayout({ children }) {
         <LoadPhosphorIcons />
         <RouteScrollToTop />
 
-        <HeaderOne />
+      
         <div className={styles.container}>
+        <HeaderOne />
           <div className={styles.contentWrapper}>
+            
             {children}
             <button
               className={`${styles.chatToggleBtn} ${!isChatOpen ? styles.chatToggleBtnClosed : ""
