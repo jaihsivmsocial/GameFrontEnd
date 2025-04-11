@@ -9,6 +9,7 @@ import Clip from "./Clip"
 import AuthHeaderButtons from "../components/register/SignupLogin"
 import { NavigationProvider } from "./context/NavigationContext"
 import styles from "../viewscreen/screen.module.css"
+import "../viewscreen/header-style.css" // Import the mobile-specific CSS
 
 const HeaderOne = () => {
   const [scroll, setScroll] = useState(false)
@@ -132,7 +133,8 @@ const HeaderOne = () => {
         <div
           className="mobile-header"
           style={{
-            background: "#0a1624",
+            background: "linear-gradient(to right, #090909, #081e2e)",
+
             padding: "15px 0",
             borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
           }}
@@ -144,16 +146,18 @@ const HeaderOne = () => {
               borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
               marginBottom: "15px",
               display: "flex",
+              justifyContent: "space-between", // Added to distribute content
+              alignItems: "center", // Added to center vertically
             }}
           >
             {/* Title */}
             <div
               style={{
                 color: "#06b6d4",
-                fontSize: "14px",
+                fontSize: "22px",
                 fontWeight: "bold",
-                textAlign: "center",
-                marginBottom: "15px",
+                textAlign: "left", // Changed from center to left
+                marginBottom: "0", // Removed bottom margin
                 fontFamily: "'Rajdhani', sans-serif",
                 textShadow: "0 0 10px rgba(6, 182, 212, 0.5)",
                 lineHeight: "1",
@@ -168,9 +172,9 @@ const HeaderOne = () => {
             <div
               style={{
                 display: "flex",
-                justifyContent: "center",
+                justifyContent: "flex-end", // Changed to flex-end
                 gap: "10px",
-                padding: "0 10px",
+                padding: "0",
               }}
             >
               <AuthHeaderButtons />
@@ -183,14 +187,14 @@ const HeaderOne = () => {
               padding: "0 15px",
               display: "flex",
               flexDirection: "row",
-              justifyContent: "space-between",
-              gap: "20px", // Increased from 10px to 20px for more spacing between buttons
+              justifyContent: "center", // Changed to center
+              gap: "20px",
             }}
           >
-            <div style={{ position: "relative", flex: 1 }}>
+            <div style={{ position: "relative",  maxWidth: "45%" }}>
               <SpectateButton />
             </div>
-            <div style={{ position: "relative", flex: 1 }}>
+            <div style={{ position: "relative",  maxWidth: "45%" }}>
               <PlayButton />
             </div>
           </div>

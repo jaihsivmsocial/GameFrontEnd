@@ -146,7 +146,7 @@ const VideoQualitySettings = ({ streamId, onQualityChange, initialQuality = "aut
         onClick={() => setShowSettings(!showSettings)}
         aria-label="Video settings"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
             d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
             stroke="white"
@@ -161,7 +161,12 @@ const VideoQualitySettings = ({ streamId, onQualityChange, initialQuality = "aut
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-        </svg>
+        </svg> */}
+         <img
+    src="/assets/img/iconImage/settings 1.png" 
+    alt="Settings"
+    style={{ width: "24px", height: "24px",  strokeL:"white"}}
+  />
       </button>
 
       {/* Settings menu */}
