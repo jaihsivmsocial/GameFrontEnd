@@ -218,9 +218,10 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
         style={{
           background: isActive ? baseGradient : "#071019",
           border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
-          width: "141px", // Use 100% width for responsiveness
-          height: "37px",
+          width: "115.98px", // Use 100% width for responsiveness
+          height: "30px",
           fontWeight: "bold",
+          fontSize:"12px",
           font: "Poppins",
           letterSpacing: "1px",
           boxShadow: hover ? "0 0 5px rgba(0, 160, 233, 0.5)" : "0 0 5px rgba(0, 70, 192, 0.4)",
@@ -242,7 +243,7 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
           alt="eye icon"
           width="20"
           height="20"
-          style={{ marginRight: "4px" }}
+          style={{ marginRight: "4px", }}
         />
         SPECTATE
       </Link>
@@ -252,8 +253,8 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
         style={{
           display: "flex",
           alignItems: "center",
-          marginTop: "-5px",
-          fontSize: "18px",
+          marginTop: "5px",
+          fontSize: "12px",
           color: "white",
           fontWeight: "normal",
         }}

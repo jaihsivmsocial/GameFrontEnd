@@ -1,16 +1,87 @@
-
 "use client"
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import { BASEURL } from "@/utils/apiservice"
 import ForgotPasswordModal from "../../components/register/forgetpassword"
 import VerifyCodeModal from "./verify-code"
 import GameHeader from "../game-header"
+
+// Update the mobile styles with specific mobile dimensions
+const mobileStyles = `
+/* Mobile S (320px) */
+@media screen and (min-width: 320px) and (max-width: 374px) and (max-height: 642px) {
+  .auth-button-mobile {
+    margin-right: 0 !important;
+    width: 75px !important;
+    height: 26px !important;
+    font-size: 12px !important;
+    padding: 0 !important;
+    border-radius: 4px !important;
+    flex: 0 0 auto !important;
+    background: linear-gradient(to right, #090e12, #081e2e) !important;
+  }
+  
+  .auth-buttons-container {
+    gap: 15px !important;
+  }
+}
+
+/* Mobile M (375px) */
+@media screen and (min-width: 375px) and (max-width: 424px) and (max-height: 642px) {
+  .auth-button-mobile {
+    margin-right: 0 !important;
+    width: 75px !important;
+    height: 26px !important;
+    font-size: 12px !important;
+    padding: 0 !important;
+    border-radius: 4px !important;
+    background: linear-gradient(to right, #090e12, #081e2e) !important;
+  }
+  
+  .auth-buttons-container {
+    gap: 8px !important;
+  }
+}
+
+/* Mobile L (425px) */
+@media screen and (min-width: 425px) and (max-width: 767px) and (max-height: 642px) {
+  .auth-button-mobile {
+    margin-right: 0 !important;
+    width: 75px !important;
+    height: 26px !important;
+    font-size: 12px !important;
+    padding: 0 !important;
+    border-radius: 4px !important;
+    background: linear-gradient(to right, #090e12, #081e2e) !important;
+  }
+  
+  .auth-buttons-container {
+    gap: 8px !important;
+  }
+}
+
+/* General mobile styles (for other mobile dimensions) */
+@media screen and (max-width: 767px) {
+  .auth-button-mobile {
+    margin-right: 0 !important;
+    width: 75px !important;
+    height: 26px !important;
+    font-size: 12px !important;
+    padding: 0 !important;
+    border-radius: 4px !important;
+    background: linear-gradient(to right, #090e12, #081e2e) !important;
+  }
+  
+  .auth-buttons-container {
+    gap: 8px !important;
+  }
+}
+`
+
 export default function AuthHeaderButtons({
   initialView = null,
-  onAuthStateChange = () => { },
+  onAuthStateChange = () => {},
   isModal = false,
-  onClose = () => { },
+  onClose = () => {},
 }) {
   // State for modals and authentication
   const [showLoginModal, setShowLoginModal] = useState(initialView === "login")
@@ -21,6 +92,8 @@ export default function AuthHeaderButtons({
   const [userData, setUserData] = useState(null)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState("")
+  const [isMobileView, setIsMobileView] = useState(false)
+  const [mobileSize, setMobileSize] = useState(null) // 'S', 'M', or 'L'
 
   // State for form data
   const [loginFormData, setLoginFormData] = useState({ username: "", password: "" })
@@ -32,6 +105,42 @@ export default function AuthHeaderButtons({
   const [error, setError] = useState("")
   const [usernameTaken, setUsernameTaken] = useState(false)
   const suggestedUsernames = ["@mark2407", "@markJ007"]
+
+  // Check if mobile view and determine size
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth
+      const height = window.innerHeight
+
+      if (width <= 767) {
+        setIsMobileView(true)
+
+        if (width >= 425 && width <= 767 && height <= 642) {
+          setMobileSize("L")
+        } else if (width >= 375 && width < 425 && height <= 642) {
+          setMobileSize("M")
+        } else if (width >= 320 && width < 375 && height <= 642) {
+          setMobileSize("S")
+        } else {
+          setMobileSize(null)
+        }
+      } else {
+        setIsMobileView(false)
+        setMobileSize(null)
+      }
+    }
+
+    // Set initial state
+    handleResize()
+
+    // Add event listener
+    window.addEventListener("resize", handleResize)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("resize", handleResize)
+    }
+  }, [])
 
   // Check if user is already logged in on component mount
   useEffect(() => {
@@ -171,7 +280,6 @@ export default function AuthHeaderButtons({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-
         },
         credentials: "include",
         body: JSON.stringify(signupFormData),
@@ -285,19 +393,28 @@ export default function AuthHeaderButtons({
     }
   }
 
+  // Check if current view is one of the specified mobile dimensions
+  const isSpecificMobileSize = mobileSize === "S" || mobileSize === "M" || mobileSize === "L"
+
   return (
     <>
+      {/* Add the style tag with media queries */}
+      <style jsx global>
+        {mobileStyles}
+      </style>
+
       {!isModal && !isLoggedIn ? (
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 auth-buttons-container">
           {/* Login Button */}
           <button
             type="button"
-            className="btn btn-dark border border-info text-white"
+            className="btn btn-dark border border-info text-white auth-button-mobile"
             style={{
-              backgroundColor: "#050505",
+              backgroundColor: isSpecificMobileSize ? "#081e2e" : "#050505",
+              background: isSpecificMobileSize ? "linear-gradient(to right, #090e12, #070a0f)" : "#050505",
               border: "1px solid #0dcaf0",
-              width: "101px",
-              height: "37px",
+              width: isSpecificMobileSize ? "75px" : "141px",
+              height: isSpecificMobileSize ? "26px" : "37px",
               fontWeight: "bold",
               font: "Poppins",
               letterSpacing: "1px",
@@ -309,10 +426,8 @@ export default function AuthHeaderButtons({
               alignItems: "center",
               justifyContent: "center",
               marginRight: "6px",
-              paddingtop: "10px",
-              paddingright: "30px",
-              paddingbottom: "10px",
-              paddingleft: "30px",
+              borderRadius: "4px",
+              fontSize: isSpecificMobileSize ? "12px" : "inherit",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.boxShadow = "0 0 10px rgba(13, 202, 240, 0.8)"
@@ -327,12 +442,13 @@ export default function AuthHeaderButtons({
           {/* Signup Button */}
           <button
             type="button"
-            className="btn btn-dark border border-info text-white"
+            className="btn btn-dark border border-info text-white auth-button-mobile"
             style={{
-              backgroundColor: "#050505",
-              border: "2px solid #0dcaf0",
-              width: "101px",
-              height: "37px",
+              backgroundColor: isSpecificMobileSize ? "#081e2e" : "#050505",
+              background: isSpecificMobileSize ? "linear-gradient(to right, #070a0f, #070a0f)" : "#050505",
+              border: "1px solid #0dcaf0",
+              width: isSpecificMobileSize ? "75px" : "141px",
+              height: isSpecificMobileSize ? "26px" : "37px",
               fontWeight: "bold",
               font: "Poppins",
               letterSpacing: "1px",
@@ -343,11 +459,9 @@ export default function AuthHeaderButtons({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginRight: "-95px",
-              paddingtop: "10px",
-              paddingright: "30px",
-              paddingbottom: "10px",
-              paddingleft: "30px",
+              marginRight: isSpecificMobileSize ? "0" : "-95px",
+              borderRadius: "4px",
+              fontSize: isSpecificMobileSize ? "12px" : "inherit",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.boxShadow = "0 0 10px rgba(13, 202, 240, 0.8)"
@@ -357,46 +471,20 @@ export default function AuthHeaderButtons({
             }}
             onClick={() => setShowSignupModal(true)}
           >
-            SIGNUP
+            {isSpecificMobileSize ? "SIGN UP" : "SIGNUP"}
           </button>
         </div>
       ) : !isModal && isLoggedIn ? (
         /* User Profile Section - Matches the screenshot design */
-
         <div className="position-relative">
           <div
             className="d-flex align-items-center gap-5"
             style={{
-              // border: "1px solid rgba(255, 255, 255, 0.1)",
               minWidth: "250px",
               marginRight: "-190px",
-
             }}
           >
-            {/* Settings Icon - Now as a link to settings page */}
-       
-
             <GameHeader />
-            {/* <button
-              onClick={handleLogout}
-              className="d-block w-100 text-start px-4 py-2 text-white bg-transparent border-0"
-              style={{
-                transition: "background-color 0.2s",
-                marginRight: "50px",
-                width: "100%"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-                e.currentTarget.style.transform = "translateX(-3px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.transform = "translateX(0)";
-              }}
-            >
-              SIGNOUT
-            </button> */}
-
           </div>
 
           {/* Dropdown Menu - Updated with username on left and image on right */}
@@ -410,42 +498,14 @@ export default function AuthHeaderButtons({
                 borderColor: "#333",
               }}
             >
-              {/* Profile Info at Top of Dropdown */}
-              {/* <div className="d-flex align-items-center p-3 border-bottom" style={{ borderColor: "#333" }}>
-                <div>
-                  <div className="fw-bold text-white">{userData?.username || "MARK9874"}</div>
-                  <div className="text-secondary small">View your profile</div>
-                </div>
-                <div className="ms-auto">
-                  <div
-                    className="rounded-circle overflow-hidden"
-                    style={{
-                      width: "32px",
-                      height: "32px",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
-                    }}
-                  >
-                    <Image
-                      src={userData?.avatar || "/placeholder.svg?height=32&width=32"}
-                      alt="Profile"
-                      width={32}
-                      height={32}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div> */}
-
               {/* Menu Items */}
-
             </div>
           )}
         </div>
       ) : null}
+
+      {/* The rest of the component remains unchanged */}
+      {/* (Modal code would remain the same) */}
       {/* When in modal mode, show the appropriate modal */}
       {isModal && (
         <>
@@ -904,12 +964,12 @@ export default function AuthHeaderButtons({
                   <small>
                     Don't have an account?{" "}
                     <a
-                      className="text-info"
-                      style={{ cursor: "pointer" }}
                       onClick={() => {
                         setShowLoginModal(false)
                         setShowSignupModal(true)
                       }}
+                      className="text-info"
+                      style={{ cursor: "pointer" }}
                     >
                       Sign up
                     </a>
@@ -1099,5 +1159,3 @@ export default function AuthHeaderButtons({
     </>
   )
 }
-
-

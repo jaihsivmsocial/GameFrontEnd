@@ -227,7 +227,7 @@ export default function HomeCustom() {
                 fill
                 className={styles.videoPlayer}
                 onLoad={handleVideoPlay}
-                onError={() => {}}
+                onError={() => { }}
               />
             ) : (
               <video
@@ -313,12 +313,20 @@ export default function HomeCustom() {
         </div>
 
         {/* Add Video Quality Settings component */}
-        <VideoQualitySettings
-          streamId={mainCamera.streamId}
-          initialQuality={qualitySettings[mainCamera.streamId]?.quality || "auto"}
-          initialFrameRate={qualitySettings[mainCamera.streamId]?.frameRate || "60"}
-          onQualityChange={(quality, frameRate) => handleQualityChange(quality, frameRate, mainCamera.streamId)}
-        />
+        <div
+          className="position-absolute bottom-0 end-0 p-2 d-none d-md-block"
+          style={{ zIndex: 20 }}
+        >
+          <VideoQualitySettings
+            streamId={mainCamera.streamId}
+            initialQuality={qualitySettings[mainCamera.streamId]?.quality || "auto"}
+            initialFrameRate={qualitySettings[mainCamera.streamId]?.frameRate || "60"}
+            onQualityChange={(quality, frameRate) =>
+              handleQualityChange(quality, frameRate, mainCamera.streamId)
+            }
+          />
+        </div>
+
 
         {/* Show active indicator */}
         {isActive && (
@@ -381,7 +389,8 @@ export default function HomeCustom() {
           style={{
             flex: "1 1 auto",
             width: "100%",
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            background: "linear-gradient(to right, #090909, #081e2e)",
+
             borderTopLeftRadius: "16px",
             borderTopRightRadius: "16px",
             overflow: "hidden",
@@ -390,6 +399,7 @@ export default function HomeCustom() {
             boxShadow: "0px -4px 10px rgba(0, 0, 0, 0.3)",
             display: "flex",
             flexDirection: "column",
+            marginTop: "-61px"
           }}
         >
           <div
@@ -398,10 +408,11 @@ export default function HomeCustom() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              // borderBottom: "1px solid rgba(40, 5, 5, 0.1)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center" }}>
+            <div className="container"  style={{ display: "flex", alignItems: "center" ,background: "linear-gradient(to right, rgb(15, 67, 72) 0%, rgb(8 22 23) 40%, rgba(2, 2, 2, 0) 100%)"}}>
+
               <Image
                 src="/assets/img/chat/chatmob.png?height=16&width=16"
                 width={16}
@@ -409,9 +420,20 @@ export default function HomeCustom() {
                 alt="Chat"
                 style={{ marginRight: "6px" }}
               />
-              <span style={{ color: "#fff", fontSize: "14px" }}>{viewerCount}</span>
+              <span style={{
+                color: "#fff", 
+                fontSize: "19px"
+              }}>{viewerCount} Chatting right now</span>
+
             </div>
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div style={{ position: "absolute", top: "190px", right: "10px", zIndex: "20" }}>        <VideoQualitySettings
+              streamId={mainCamera.streamId}
+              initialQuality={qualitySettings[mainCamera.streamId]?.quality || "auto"}
+              initialFrameRate={qualitySettings[mainCamera.streamId]?.frameRate || "60"}
+              onQualityChange={(quality, frameRate) => handleQualityChange(quality, frameRate, mainCamera.streamId)}
+            />
+            </div>
+            {/* <div style={{ display: "flex", gap: "10px" }}>
               <button
                 style={{
                   background: "none",
@@ -420,7 +442,8 @@ export default function HomeCustom() {
                   padding: 0,
                 }}
               >
-                {/* <Image src="/placeholder.svg?height=20&width=20" width={20} height={20} alt="Settings" /> */}
+                
+               
               </button>
               <button
                 style={{
@@ -430,11 +453,11 @@ export default function HomeCustom() {
                   padding: 0,
                 }}
               >
-                {/* <Image src="/placeholder.svg?height=20&width=20" width={20} height={20} alt="Fullscreen" /> */}
+               
               </button>
-            </div>
+            </div> */}
           </div>
-          <div style={{ flex: 1, overflow: "hidden" }}>
+          <div style={{ flex: 1, overflow: "hidden" , marginTop:"22px"}}>
             <RealTimeChatCompWrapper streamId={mainCamera.streamId} />
           </div>
 
@@ -452,13 +475,13 @@ export default function HomeCustom() {
               gap: "5px",
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 9L12 16L5 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             SCROLL DOWN
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 9L12 16L5 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            </svg> */}
           </div>
         </div>
 
@@ -469,13 +492,15 @@ export default function HomeCustom() {
             bottom: 0,
             left: 0,
             right: 0,
-            backgroundColor: "#0f172a",
+            backgroundColor: "#040404",
             display: "flex",
             justifyContent: "space-around",
             alignItems: "center",
             height: "60px",
             borderTop: "1px solid rgba(255, 255, 255, 0.1)",
             zIndex: 40,
+            borderTopLeftRadius: "20px",  // Added rounded corner for top left
+            borderTopRightRadius: "20px"
           }}
         >
           <StreamBottomBar />
@@ -539,7 +564,7 @@ export default function HomeCustom() {
           bottom: 0,
           width: "100%",
           zIndex: 40, // Increase from 20 to 40
-          backgroundColor: "rgba(0, 0, 0, 0.8)", // Add background color for better visibility
+          backgroundColor: "#211c17", // Add background color for better visibility
         }}
       >
         <StreamBottomBar />

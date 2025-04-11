@@ -349,7 +349,11 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
           flexDirection: "column",
           height: "100%",
           position: "relative",
-          paddingBottom: "30px", // Add padding at the bottom for the scroll indicator
+          paddingBottom: "30px",
+          marginLeft:"12px",
+          marginRight:"12px", 
+          paddingTop:"25px"
+          
         }}
       >
         <div
@@ -358,7 +362,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
             flex: 1,
             overflowY: "auto",
             padding: "0",
-            marginBottom: "80px", // Increased to make room for input and scroll indicator
+            marginBottom: "48px", // Increased to make room for input and scroll indicator
           }}
         >
           {messages.length === 0 ? (
@@ -371,7 +375,6 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                 fontSize: "12px",
               }}
             >
-              No messages yet. Start chatting!
             </div>
           ) : (
             <div style={{ width: "100%" }}>
@@ -496,7 +499,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
         </div>
 
         {/* Show reply UI when replying to a message */}
-        {showReplyUI && replyTo && (
+        {/* {showReplyUI && replyTo && (
           <ReplyMessage
             username={replyTo.sender.username}
             onSend={handleAfterReplySent}
@@ -507,7 +510,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
             replyTo={replyTo}
             socket={socket}
           />
-        )}
+        )} */}
 
         {!showReplyUI && (
           <form
@@ -554,8 +557,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                   outline: "none",
                 }}
               />
-            </div>
-            <button
+                 <button
               type="submit"
               disabled={!connected || !message.trim()}
               style={{
@@ -583,6 +585,8 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                 />
               </svg>
             </button>
+            </div>
+         
           </form>
         )}
 
@@ -701,18 +705,103 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       </div>
 
       {/* Show reply UI when replying to a message */}
-      {showReplyUI && replyTo && (
-        <ReplyMessage
-          username={replyTo.sender.username}
-          onSend={handleAfterReplySent}
-          onCancel={handleCancelReply}
-          message={message}
-          setMessage={setMessage}
-          streamId={streamId}
-          replyTo={replyTo}
-          socket={socket}
-        />
-      )}
+      {!showReplyUI && isMobile && (
+  // <form
+  //   onSubmit={handleSendMessage}
+  //   style={{
+  //     display: "flex",
+  //     alignItems: "center",
+  //     padding: "10px 15px",
+  //     backgroundColor: "transparent",
+  //     position: "absolute",
+  //     bottom: "30px",
+  //     left: 0,
+  //     right: 0,
+  //     width: "100%",
+  //     zIndex: 5,
+  //   }}
+  // >
+  //   <div
+  //     style={{
+  //       flex: 1,
+  //       backgroundColor: "white",
+  //       borderRadius: "25px",
+  //       display: "flex",
+  //       alignItems: "center",
+  //       height: "45px",
+  //       overflow: "hidden",
+  //     }}
+  //   >
+  //     <input
+  //       type="text"
+  //       placeholder="Type Here..."
+  //       value={message}
+  //       onChange={(e) => setMessage(e.target.value)}
+  //       disabled={!connected}
+  //       style={{
+  //         flex: 1,
+  //         backgroundColor: "transparent",
+  //         color: "#999",
+  //         border: "none",
+  //         padding: "8px 15px",
+  //         fontSize: "16px",
+  //         height: "100%",
+  //         outline: "none",
+  //       }}
+  //     />
+  //     <div style={{ marginRight: "10px", cursor: "pointer" }}>
+  //       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  //         <path
+  //           d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+  //           stroke="#CCCCCC"
+  //           strokeWidth="2"
+  //           strokeLinecap="round"
+  //           strokeLinejoin="round"
+  //         />
+  //         <path
+  //           d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14"
+  //           stroke="#CCCCCC"
+  //           strokeWidth="2"
+  //           strokeLinecap="round"
+  //           strokeLinejoin="round"
+  //         />
+  //         <path d="M9 9H9.01" stroke="#CCCCCC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  //         <path d="M15 9H15.01" stroke="#CCCCCC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  //       </svg>
+  //     </div>
+  //     <button
+  //       type="submit"
+  //       disabled={!connected || !message.trim()}
+  //       style={{
+  //         backgroundColor: "#00A3FF",
+  //         border: "none",
+  //         borderRadius: "4px",
+  //         cursor: "pointer",
+  //         padding: 0,
+  //         display: "flex",
+  //         alignItems: "center",
+  //         justifyContent: "center",
+  //         height: "40px",
+  //         width: "50px",
+  //         margin: "0 2px 0 0",
+  //         transition: "transform 0.2s",
+  //       }}
+  //     >
+  //       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  //         <path d="M5 12H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  //         <path
+  //           d="M12 5L19 12L12 19"
+  //           stroke="white"
+  //           strokeWidth="2"
+  //           strokeLinecap="round"
+  //           strokeLinejoin="round"
+  //         />
+  //       </svg>
+  //     </button>
+  //   </div>
+  // </form>
+ <></>
+)}
 
       {!showReplyUI && (
         <form onSubmit={handleSendMessage} className={styles.chatInput}>

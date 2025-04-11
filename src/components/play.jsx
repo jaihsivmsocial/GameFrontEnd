@@ -41,13 +41,14 @@ const PlayButton = () => {
       style={{
         background: isActive ? baseGradient : "linear-gradient(to right, #ff5500, #ff7b00,  #fe5e00)",
         border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
-        width: "141px", // Use 100% width for responsiveness
-        height: "37px",
+        width: "115.98px", // Use 100% width for responsiveness
+        height: "30px",
         fontWeight: "bold",
         font: "Poppins",
         letterSpacing: "1px",
         boxShadow: hover ? "0 0 10px rgba(0, 160, 233, 0.5)" : "0 0 5px rgba(0, 70, 192, 0.4)",
         padding: "0",
+        fontSize:"12px",
         overflow: "hidden",
         gap: "8px",
         borderRadius: "8px",
