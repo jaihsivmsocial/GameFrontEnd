@@ -388,6 +388,8 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                     backgroundColor: "rgba(30, 30, 40, 0.4)",
                     borderRadius: "8px",
                     margin: "6px 10px",
+                      border: "1px solid white",
+                    
                   }}
                 >
                   <div
