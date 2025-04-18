@@ -1377,6 +1377,8 @@ export default function StreamBottomBar() {
                         )}
                     </div>
 
+
+
                     {/* Auth Modal */}
                     {showAuthModal && (
                         <div
