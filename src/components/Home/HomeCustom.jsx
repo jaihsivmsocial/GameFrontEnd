@@ -14,7 +14,6 @@ import { useMediaQuery } from "../../components/chat/use-mobile"
 export default function HomeCustom() {
   // Media query for mobile detection
   const isMobile = useMediaQuery("(max-width: 768px)")
-
   // IMPROVED: Use environment variable with fallback for pixel streaming URL
   const pixelStreamingUrl = "http://15.237.174.180"
 
