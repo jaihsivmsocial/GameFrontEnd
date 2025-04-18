@@ -11,20 +11,23 @@ import RealTimeChatCompWrapper from "../chat/RealTimeChatCompWrapper"
 import StreamBottomBar from "../../components/stream-bottom-bar"
 import { useMediaQuery } from "../../components/chat/use-mobile"
 
-
 export default function HomeCustom() {
   // Media query for mobile detection
   const isMobile = useMediaQuery("(max-width: 768px)")
 
-  // Main camera definition
+  // IMPROVED: Use environment variable with fallback for pixel streaming URL
+  const pixelStreamingUrl = "http://15.237.174.180"
+
+  // Main camera definition - IMPROVED: Use the pixel streaming URL
   const mainCamera = useMemo(
     () => ({
       id: 1,
-      src: "/assets/videos/videoplayback.mp4",
+      src: pixelStreamingUrl, // Use the pixel streaming URL
       streamId: "stream-1",
       image: "/assets/img/camera/video-camera.png",
+      isPixelStreaming: true, // Flag to indicate this is pixel streaming
     }),
-    [],
+    [pixelStreamingUrl],
   )
 
   const socketContext = useSocket()
@@ -39,6 +42,7 @@ export default function HomeCustom() {
     "stream-1": { quality: "auto", frameRate: "60" },
   })
   const videoRef = useRef(null)
+  const iframeRef = useRef(null) // ADDED: Reference for iframe
 
   // Handle video pause - decrement viewer count
   const handleVideoPause = useCallback(() => {
@@ -187,9 +191,40 @@ export default function HomeCustom() {
         // For regular videos, we can just set the CSS properties
         videoRef.current.style.objectFit = "cover" // Maintain aspect ratio but fill container
       }
+
+      // ADDED: For pixel streaming, we could send a message to the iframe
+      if (iframeRef.current && mainCamera.isPixelStreaming) {
+        try {
+          // Example of sending quality settings to the pixel streaming iframe
+          iframeRef.current.contentWindow.postMessage(
+            {
+              type: "qualityChange",
+              quality: quality,
+              frameRate: frameRate,
+            },
+            "*",
+          )
+        } catch (err) {
+          console.error("Error sending quality settings to iframe:", err)
+        }
+      }
     },
-    [useWebRTC],
+    [useWebRTC, mainCamera.isPixelStreaming],
   )
+
+  // ADDED: Handle iframe load event
+  const handleIframeLoad = useCallback(() => {
+    console.log("Pixel streaming iframe loaded")
+    setIsLoading(false)
+    handleVideoPlay()
+  }, [handleVideoPlay])
+
+  // ADDED: Handle iframe error
+  const handleIframeError = useCallback(() => {
+    console.error("Pixel streaming iframe failed to load")
+    setIsLoading(false)
+    // You could implement a fallback here if needed
+  }, [])
 
   const renderCameraView = useCallback(() => {
     const isActive = activeVideo
@@ -206,8 +241,26 @@ export default function HomeCustom() {
           <Image src="/placeholder.svg?height=16&width=16" width={16} height={16} alt="Info" />
         </div>
 
-        {/* WebRTC Stream or fallback video */}
-        {useWebRTC ? (
+        {/* IMPROVED: Render iframe for pixel streaming or WebRTC for regular streaming */}
+        {mainCamera.isPixelStreaming ? (
+          <div className={styles.videoPlayer} style={{ width: "100%", height: "100%", position: "relative" }}>
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+              </div>
+            )}
+            <iframe
+              ref={iframeRef}
+              src={mainCamera.src}
+              className={styles.videoPlayer}
+              style={{ width: "100%", height: "100%", border: "none" }}
+              allow="autoplay; fullscreen; microphone; camera"
+              allowFullScreen
+              onLoad={handleIframeLoad}
+              onError={handleIframeError}
+            />
+          </div>
+        ) : useWebRTC ? (
           <WebRTCStream
             streamId={mainCamera.streamId}
             className={styles.videoPlayer}
@@ -219,65 +272,39 @@ export default function HomeCustom() {
           />
         ) : (
           // Fallback to regular video element
-          <>
-            {mainCamera.src.endsWith(".png") || mainCamera.src.endsWith(".jpg") || mainCamera.src.endsWith(".jpeg") ? (
-              <Image
-                src={mainCamera.src || "/placeholder.svg"}
-                alt={mainCamera.name}
-                fill
-                className={styles.videoPlayer}
-                onLoad={handleVideoPlay}
-                onError={() => { }}
-              />
-            ) : (
-              <video
-                ref={(el) => setVideoRef(el)}
-                className={styles.videoPlayer}
-                muted
-                loop
-                playsInline
-                autoPlay
-                controls
-                onPlay={handleVideoPlay}
-                onPause={handleVideoPause}
-                onEnded={handleVideoPause}
-                onError={(e) => {
-                  console.log(`Failed to load video: ${mainCamera.src}`)
-                  // Try alternative path if the original fails
-                  const videoElement = e.target
-                  const originalSrc = mainCamera.src
-                  const alternativeSrc = originalSrc.startsWith("/assets/")
-                    ? originalSrc.replace("/assets/", "/")
-                    : `/assets${originalSrc}`
-
-                  videoElement.src = alternativeSrc
-                  console.log(`Trying alternative path: ${alternativeSrc}`)
-
-                  // If that also fails, show a placeholder
-                  videoElement.onerror = () => {
-                    console.log(`Alternative path also failed: ${alternativeSrc}`)
-                    // Replace with a placeholder image
-                    const parent = videoElement.parentElement
-                    if (parent) {
-                      const img = document.createElement("img")
-                      img.src = "/placeholder.svg?height=480&width=640"
-                      img.alt = mainCamera.name
-                      img.className = videoElement.className
-                      parent.replaceChild(img, videoElement)
-                    }
-                  }
-                }}
-              >
-                <source src={mainCamera.src} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            )}
-          </>
+          <video
+            ref={(el) => setVideoRef(el)}
+            className={styles.videoPlayer}
+            muted
+            loop
+            playsInline
+            autoPlay
+            controls
+            onPlay={handleVideoPlay}
+            onPause={handleVideoPause}
+            onEnded={handleVideoPause}
+            onError={(e) => {
+              console.log(`Failed to load video: ${mainCamera.src}`)
+              // Show a placeholder image on error
+              const videoElement = e.target
+              const parent = videoElement.parentElement
+              if (parent) {
+                const img = document.createElement("img")
+                img.src = "/placeholder.svg?height=480&width=640"
+                img.alt = mainCamera.name || "Camera Feed"
+                img.className = videoElement.className
+                parent.replaceChild(img, videoElement)
+              }
+            }}
+          >
+            <source src={mainCamera.src} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
         )}
 
         {/* Camera name */}
         <div className={styles.cameraLabel}>
-          <span>{mainCamera.name}</span>
+          <span>{mainCamera.name || "Camera Feed"}</span>
         </div>
 
         <div className={styles.mainCam} style={{ zIndex: 30 }}>
@@ -291,7 +318,7 @@ export default function HomeCustom() {
             />
           </div>
           <div className={styles.camText}>
-            <div>{mainCamera.name}</div>
+            <div>{mainCamera.name || "Camera Feed"}</div>
           </div>
         </div>
 
@@ -313,20 +340,14 @@ export default function HomeCustom() {
         </div>
 
         {/* Add Video Quality Settings component */}
-        <div
-          className="position-absolute bottom-0 end-0 p-2 d-none d-md-block"
-          style={{ zIndex: 20 }}
-        >
+        <div className="position-absolute bottom-0 end-0 p-2 d-none d-md-block" style={{ zIndex: 20 }}>
           <VideoQualitySettings
             streamId={mainCamera.streamId}
             initialQuality={qualitySettings[mainCamera.streamId]?.quality || "auto"}
             initialFrameRate={qualitySettings[mainCamera.streamId]?.frameRate || "60"}
-            onQualityChange={(quality, frameRate) =>
-              handleQualityChange(quality, frameRate, mainCamera.streamId)
-            }
+            onQualityChange={(quality, frameRate) => handleQualityChange(quality, frameRate, mainCamera.streamId)}
           />
         </div>
-
 
         {/* Show active indicator */}
         {isActive && (
@@ -346,6 +367,9 @@ export default function HomeCustom() {
     setVideoRef,
     handleQualityChange,
     viewerCount,
+    isLoading,
+    handleIframeLoad,
+    handleIframeError,
   ])
 
   // Mobile layout
@@ -390,16 +414,14 @@ export default function HomeCustom() {
             flex: "1 1 auto",
             width: "100%",
             background: "linear-gradient(to right, #090909, #081e2e)",
-
             borderTopLeftRadius: "16px",
             borderTopRightRadius: "16px",
             overflow: "hidden",
             zIndex: 30,
-            marginTop: "-40px", // Slightly overlap with video section
+            marginTop: "-61px", // Overlap with video section
             boxShadow: "0px -4px 10px rgba(0, 0, 0, 0.3)",
             display: "flex",
             flexDirection: "column",
-            marginTop: "-61px"
           }}
         >
           <div
@@ -408,11 +430,16 @@ export default function HomeCustom() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              // borderBottom: "1px solid rgba(40, 5, 5, 0.1)",
             }}
           >
-            <div className="container"  style={{ display: "flex", alignItems: "center" ,background: "linear-gradient(to right, rgb(15, 67, 72) 0%, rgb(8 22 23) 40%, rgba(2, 2, 2, 0) 100%)"}}>
-
+            <div
+              className="container"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                background: "linear-gradient(to right, rgb(15, 67, 72) 0%, rgb(8 22 23) 40%, rgba(2, 2, 2, 0) 100%)",
+              }}
+            >
               <Image
                 src="/assets/img/chat/chatmob.png?height=16&width=16"
                 width={16}
@@ -420,44 +447,25 @@ export default function HomeCustom() {
                 alt="Chat"
                 style={{ marginRight: "6px" }}
               />
-              <span style={{
-                color: "#fff", 
-                fontSize: "19px"
-              }}>{viewerCount} Chatting right now</span>
-
-            </div>
-            <div style={{ position: "absolute", top: "190px", right: "10px", zIndex: "20" }}>        <VideoQualitySettings
-              streamId={mainCamera.streamId}
-              initialQuality={qualitySettings[mainCamera.streamId]?.quality || "auto"}
-              initialFrameRate={qualitySettings[mainCamera.streamId]?.frameRate || "60"}
-              onQualityChange={(quality, frameRate) => handleQualityChange(quality, frameRate, mainCamera.streamId)}
-            />
-            </div>
-            {/* <div style={{ display: "flex", gap: "10px" }}>
-              <button
+              <span
                 style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
+                  color: "#fff",
+                  fontSize: "15px",
                 }}
               >
-                
-               
-              </button>
-              <button
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
-              >
-               
-              </button>
-            </div> */}
+                {viewerCount} chatting right now
+              </span>
+            </div>
+            <div style={{ position: "absolute", top: "190px", right: "10px", zIndex: "20" }}>
+              <VideoQualitySettings
+                streamId={mainCamera.streamId}
+                initialQuality={qualitySettings[mainCamera.streamId]?.quality || "auto"}
+                initialFrameRate={qualitySettings[mainCamera.streamId]?.frameRate || "60"}
+                onQualityChange={(quality, frameRate) => handleQualityChange(quality, frameRate, mainCamera.streamId)}
+              />
+            </div>
           </div>
-          <div style={{ flex: 1, overflow: "hidden" , marginTop:"22px"}}>
+          <div style={{ flex: 1, overflow: "hidden", marginTop: "22px" }}>
             <RealTimeChatCompWrapper streamId={mainCamera.streamId} />
           </div>
 
@@ -474,15 +482,7 @@ export default function HomeCustom() {
               justifyContent: "center",
               gap: "5px",
             }}
-          >
-            {/* <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 9L12 16L5 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            SCROLL DOWN
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 9L12 16L5 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg> */}
-          </div>
+          ></div>
         </div>
 
         {/* Mobile Bottom Navigation Bar */}
@@ -499,8 +499,8 @@ export default function HomeCustom() {
             height: "60px",
             borderTop: "1px solid rgba(255, 255, 255, 0.1)",
             zIndex: 40,
-            borderTopLeftRadius: "20px",  // Added rounded corner for top left
-            borderTopRightRadius: "20px"
+            borderTopLeftRadius: "20px",
+            borderTopRightRadius: "20px",
           }}
         >
           <StreamBottomBar />
@@ -525,15 +525,15 @@ export default function HomeCustom() {
         className={styles.mainContent}
         style={{
           flex: 1,
-          overflow: "hidden", // Change from "auto" to "hidden"
-          position: "relative", // Add position relative
+          overflow: "hidden",
+          position: "relative",
         }}
       >
         {/* Single View Mode - Only showing main camera */}
         <div
           className={styles.videoSection}
           style={{
-            height: "100%", // Change from 80% to 100%
+            height: "100%",
             position: "relative",
             zIndex: 1,
           }}
@@ -549,7 +549,7 @@ export default function HomeCustom() {
             right: "10px",
             height: "65%",
             width: "300px",
-            zIndex: 25, // Increase from 10 to 25
+            zIndex: 25,
             overflow: "hidden",
           }}
         >
@@ -563,8 +563,8 @@ export default function HomeCustom() {
           position: "sticky",
           bottom: 0,
           width: "100%",
-          zIndex: 40, // Increase from 20 to 40
-          backgroundColor: "#211c17", // Add background color for better visibility
+          zIndex: 40,
+          backgroundColor: "#211c17",
         }}
       >
         <StreamBottomBar />
@@ -572,4 +572,3 @@ export default function HomeCustom() {
     </div>
   )
 }
-

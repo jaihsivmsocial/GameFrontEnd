@@ -1,9 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 const GameHeader = () => {
   const [timeLeft, setTimeLeft] = useState("05:12")
+  const [username, setUsername] = useState("MoJo") // Default username
+  const [userLevel, setUserLevel] = useState("64")
+  const [userXP, setUserXP] = useState({ current: 8450, total: 13500 })
+  const [userBalance, setUserBalance] = useState(300)
+
+  // Get the username from localStorage when component mounts
+  useEffect(() => {
+    // Check if we're in the browser environment
+    if (typeof window !== "undefined") {
+      const storedUsername = localStorage.getItem("username")
+      if (storedUsername) {
+        setUsername(storedUsername)
+      }
+    }
+  }, [])
+
+  // Calculate XP percentage
+  const xpPercentage = (userXP.current / userXP.total) * 100
 
   return (
     <div
@@ -16,6 +34,7 @@ const GameHeader = () => {
         height: "60px",
         width: "100%",
         position: "relative",
+        marginRight: "93px",
       }}
     >
       {/* Settings Icon */}
@@ -35,7 +54,7 @@ const GameHeader = () => {
         </a>
       </div>
 
-      {/* Character 1: MoJo */}
+      {/* Character 1: Dynamic Username (was MoJo) */}
       <div style={{ display: "flex", alignItems: "center", marginLeft: "30px" }}>
         <div
           style={{
@@ -69,7 +88,7 @@ const GameHeader = () => {
                 marginBottom: "1px",
               }}
             >
-              MoJo
+              {username}
             </div>
             {/* Currency Button - Positioned beside the name */}
             <div
@@ -88,10 +107,10 @@ const GameHeader = () => {
               }}
             >
               <span style={{ marginRight: "2px", fontSize: "14px" }}>$</span>
-              300 <span style={{ marginLeft: "2px", fontSize: "14px" }}>+</span>
+              {userBalance} <span style={{ marginLeft: "2px", fontSize: "14px" }}>+</span>
             </div>
           </div>
-          <div style={{ color: "#999", fontSize: "12px", lineHeight: "1", marginBottom: "3px" }}>LEVEL 64</div>
+          <div style={{ color: "#999", fontSize: "12px", lineHeight: "1", marginBottom: "3px" }}>LEVEL {userLevel}</div>
           <div style={{ width: "120px" }}>
             <div
               style={{
@@ -105,13 +124,15 @@ const GameHeader = () => {
               <div
                 style={{
                   height: "100%",
-                  width: "62%", // 8,450/13,500 ≈ 62%
+                  width: `${xpPercentage}%`,
                   backgroundColor: "#00e5ff",
                   borderRadius: "2px",
                 }}
               ></div>
             </div>
-            <div style={{ color: "#666", fontSize: "10px", lineHeight: "1" }}>8,450/13,500 XP</div>
+            <div style={{ color: "#666", fontSize: "10px", lineHeight: "1" }}>
+              {userXP.current.toLocaleString()}/{userXP.total.toLocaleString()} XP
+            </div>
           </div>
         </div>
       </div>
@@ -201,5 +222,6 @@ const GameHeader = () => {
     </div>
   )
 }
+
 
 export default GameHeader

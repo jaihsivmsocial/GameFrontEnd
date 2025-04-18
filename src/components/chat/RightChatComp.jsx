@@ -523,7 +523,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
               padding: "10px 15px",
               backgroundColor: "transparent",
               position: "absolute",
-              bottom: "30px", // Move up from the bottom to make room for scroll indicator
+              bottom: "49px", // Move up from the bottom to make room for scroll indicator
               left: 0,
               right: 0,
               width: "100%",
@@ -667,7 +667,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     <div className={styles.chatSection}>
       <div className={styles.chatMessages}>
         {messages.length === 0 ? (
-          <div className={styles.systemMessage}>No messages yet. Start chatting!</div>
+          <div className={styles.systemMessage}>No messages yet</div>
         ) : (
           <table className={styles.chatTable} cellSpacing="0" cellPadding="0" border="0">
             <tbody>
