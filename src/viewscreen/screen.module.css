@@ -663,16 +663,6 @@
   
   
 
-  /*////* this is video quality setting css*
-  /* Add these styles to your existing screen.module.css file */
-
-/* .videoQualitySettings {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  z-index: 50;
-} */
-
 .settingsButton {
   background-color: rgba(0, 0, 0, 0.5);
   border: none;
@@ -684,6 +674,20 @@
   justify-content: center;
   cursor: pointer;
   transition: background-color 0.2s;
+  margin-left: -70px;
+}
+.settingsButtons {
+  background-color: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-right: "-125px" 
 }
 
 .settingsButton:hover {
