@@ -49,8 +49,7 @@ const CustomCursor = () => {
 
   return (
     <>
-      <div className='cursor' ref={cursorRef}></div>
-      <div className='cursor-follower' ref={followerRef}></div>
+
     </>
   );
 };
