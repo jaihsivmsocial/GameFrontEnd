@@ -1,27 +1,219 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useWallet } from "../components/wallet-service/walletContext"
+import { walletAPI } from "../components/wallet-service/api"
+
 
 const GameHeader = () => {
   const [timeLeft, setTimeLeft] = useState("05:12")
   const [username, setUsername] = useState("MoJo") // Default username
   const [userLevel, setUserLevel] = useState("64")
   const [userXP, setUserXP] = useState({ current: 8450, total: 13500 })
-  const [userBalance, setUserBalance] = useState(300)
+  const [balanceChanged, setBalanceChanged] = useState(false)
 
-  // Get the username from localStorage when component mounts
+  // Use the wallet context
+  const { balance, updateBalance, loading } = useWallet()
+
+  // Add a keyframe animation for balance changes
   useEffect(() => {
-    // Check if we're in the browser environment
-    if (typeof window !== "undefined") {
+    // Add the keyframe animation to the document if it doesn't exist
+    if (!document.getElementById("balance-animation-style")) {
+      const style = document.createElement("style")
+      style.id = "balance-animation-style"
+      style.innerHTML = `
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); background-color: #ff3333; }
+        100% { transform: scale(1); }
+      }
+    `
+      document.head.appendChild(style)
+    }
+
+    return () => {
+      // Clean up the style element when component unmounts
+      const style = document.getElementById("balance-animation-style")
+      if (style) {
+        document.head.removeChild(style)
+      }
+    }
+  }, [])
+
+  // Trigger animation when balance changes
+  useEffect(() => {
+    if (balance < 5000) {
+      setBalanceChanged(true)
+      const timer = setTimeout(() => {
+        setBalanceChanged(false)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [balance])
+
+  // Fetch wallet balance on component mount and set up socket listener
+  useEffect(() => {
+    // Fetch initial wallet balance
+    const fetchWalletBalance = async () => {
+      try {
+        const response = await walletAPI.getBalance()
+        if (response.success && response.balance !== undefined) {
+          console.log("Updating wallet balance in header to:", response.balance)
+          updateBalance(Number(response.balance))
+        }
+      } catch (error) {
+        console.error("Error fetching wallet balance:", error)
+      }
+    }
+
+    fetchWalletBalance()
+
+    // Get user data from localStorage
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}")
+    if (userData.username) {
+      setUsername(userData.username)
+    } else {
       const storedUsername = localStorage.getItem("username")
       if (storedUsername) {
         setUsername(storedUsername)
       }
     }
-  }, [])
+
+    if (userData.level) {
+      setUserLevel(userData.level)
+    }
+
+    if (userData.xp) {
+      setUserXP(userData.xp)
+    }
+
+    // Set up socket listener for wallet updates
+    try {
+      const socket = window.io ? window.io() : null
+      if (socket) {
+        socket.on("wallet_update", (data) => {
+          console.log("Wallet update received in header:", data)
+          if (data.newBalance !== undefined) {
+            // Immediately update the UI with the new balance
+            updateBalance(Number(data.newBalance))
+
+            // Trigger animation
+            setBalanceChanged(true)
+            setTimeout(() => setBalanceChanged(false), 1000)
+          }
+        })
+
+        socket.on("bet_response", (data) => {
+          console.log("Bet response received in header:", data)
+          if (data.success && data.newBalance !== undefined) {
+            // Immediately update the UI with the new balance
+            updateBalance(Number(data.newBalance))
+
+            // Trigger animation
+            setBalanceChanged(true)
+            setTimeout(() => setBalanceChanged(false), 1000)
+          }
+        })
+
+        // Listen for direct balance updates
+        socket.on("direct_balance_update", (data) => {
+          console.log("Direct balance update received in header:", data)
+          if (data.newBalance !== undefined) {
+            // Immediately update the UI with the new balance
+            updateBalance(Number(data.newBalance))
+
+            // Trigger animation
+            setBalanceChanged(true)
+            setTimeout(() => setBalanceChanged(false), 1000)
+          }
+        })
+      }
+    } catch (error) {
+      console.error("Error setting up socket listeners:", error)
+    }
+
+    // Listen for custom wallet balance update events
+    const handleWalletUpdate = (event) => {
+      console.log("Custom wallet update event received:", event.detail)
+      if (event.detail && event.detail.newBalance !== undefined) {
+        // Immediately update the UI with the new balance
+        updateBalance(Number(event.detail.newBalance))
+
+        // Trigger animation
+        setBalanceChanged(true)
+        setTimeout(() => setBalanceChanged(false), 1000)
+      }
+    }
+
+    window.addEventListener("wallet_balance_updated", handleWalletUpdate)
+
+    // Listen for API responses
+    const handleApiResponse = (event) => {
+      if (event.detail && event.detail.type === "API_RESPONSE" && event.detail.endpoint === "/api/bets/place") {
+        const responseData = event.detail.data
+        console.log("API response intercepted in header:", responseData)
+
+        if (responseData.success && responseData.newBalance !== undefined) {
+          console.log("Updating balance from API response:", responseData.newBalance)
+          updateBalance(Number(responseData.newBalance))
+
+          // Trigger animation
+          setBalanceChanged(true)
+          setTimeout(() => setBalanceChanged(false), 1000)
+        }
+      }
+    }
+
+    window.addEventListener("api_response", handleApiResponse)
+
+    // Set up timer for reward countdown
+    const timer = setInterval(() => {
+      // This is just for UI display, in a real app you'd calculate this from the server
+      const [minutes, seconds] = timeLeft.split(":").map(Number)
+      let newSeconds = seconds - 1
+      let newMinutes = minutes
+
+      if (newSeconds < 0) {
+        newSeconds = 59
+        newMinutes -= 1
+      }
+
+      if (newMinutes < 0) {
+        newMinutes = 5
+        newSeconds = 0
+      }
+
+      setTimeLeft(`${newMinutes.toString().padStart(2, "0")}:${newSeconds.toString().padStart(2, "0")}`)
+    }, 1000)
+
+    return () => {
+      if (window.io) {
+        const socket = window.io()
+        socket.off("wallet_update")
+        socket.off("bet_response")
+        socket.off("direct_balance_update")
+      }
+      window.removeEventListener("wallet_balance_updated", handleWalletUpdate)
+      window.removeEventListener("api_response", handleApiResponse)
+      clearInterval(timer)
+    }
+  }, [timeLeft, updateBalance])
 
   // Calculate XP percentage
   const xpPercentage = (userXP.current / userXP.total) * 100
+
+  // Update the formatBalance function to ensure proper formatting
+  const formatBalance = (balance) => {
+    if (balance === undefined || balance === null) return "0"
+
+    // Convert to number if it's a string
+    const numBalance = typeof balance === "string" ? Number.parseFloat(balance) : balance
+
+    if (isNaN(numBalance)) return "0"
+
+    // Format with commas for thousands
+    return numBalance.toLocaleString()
+  }
 
   return (
     <div
@@ -54,7 +246,7 @@ const GameHeader = () => {
         </a>
       </div>
 
-      {/* Character 1: Dynamic Username (was MoJo) */}
+      {/* Character 1: Dynamic Username */}
       <div style={{ display: "flex", alignItems: "center", marginLeft: "30px" }}>
         <div
           style={{
@@ -68,7 +260,7 @@ const GameHeader = () => {
           }}
         >
           <img
-            src="/placeholder.svg?height=48&width=48"
+            src="/assets/img/userprofile/userpic.png"
             alt="Character Avatar"
             style={{
               width: "100%",
@@ -98,16 +290,17 @@ const GameHeader = () => {
                 borderRadius: "4px",
                 padding: "1px 6px",
                 marginLeft: "8px",
-                cursor: "pointer",
                 fontWeight: "bold",
                 fontSize: "14px",
                 display: "flex",
                 alignItems: "center",
                 height: "20px",
+                transition: "all 0.3s ease",
+                animation: balanceChanged ? "pulse 1s" : "none",
               }}
             >
               <span style={{ marginRight: "2px", fontSize: "14px" }}>$</span>
-              {userBalance} <span style={{ marginLeft: "2px", fontSize: "14px" }}>+</span>
+              {loading ? "..." : formatBalance(balance)}
             </div>
           </div>
           <div style={{ color: "#999", fontSize: "12px", lineHeight: "1", marginBottom: "3px" }}>LEVEL {userLevel}</div>
@@ -151,7 +344,7 @@ const GameHeader = () => {
           }}
         >
           <img
-            src="/placeholder.svg?height=48&width=48"
+            src="/assets/img/userprofile/asist.png"
             alt="POM Avatar"
             style={{
               width: "100%",
@@ -222,6 +415,5 @@ const GameHeader = () => {
     </div>
   )
 }
-
 
 export default GameHeader
