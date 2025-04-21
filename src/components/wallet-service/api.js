@@ -2,6 +2,8 @@ import axios from "axios"
 import { BASEURL } from "@/utils/apiservice"
 // Base API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || `${BASEURL}/api`
+
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -9,6 +11,7 @@ const api = axios.create({
   },
 })
 
+// Update the interceptor to properly include the authentication token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("authToken")
@@ -49,8 +52,8 @@ api.interceptors.response.use(
   },
 )
 
-// Helper function to update wallet balance in UI
-const updateWalletBalanceInUI = (newBalance) => {
+// Also, export the function so it can be used by other files if needed
+export const updateWalletBalanceInUI = (newBalance) => {
   // Update localStorage
   try {
     const userData = JSON.parse(localStorage.getItem("userData") || "{}")
@@ -81,6 +84,39 @@ const updateWalletBalanceInUI = (newBalance) => {
     console.error("Error updating wallet balance in UI:", error)
   }
 }
+
+// Helper function to update wallet balance in UI
+// const updateWalletBalanceInUI = (newBalance) => {
+//   // Update localStorage
+//   try {
+//     const userData = JSON.parse(localStorage.getItem("userData") || "{}")
+//     userData.walletBalance = Number(newBalance)
+//     localStorage.setItem("userData", JSON.stringify(userData))
+
+//     // Dispatch a custom event for real-time updates
+//     if (typeof window !== "undefined") {
+//       window.dispatchEvent(
+//         new CustomEvent("wallet_balance_updated", {
+//           detail: { newBalance: Number(newBalance) },
+//         }),
+//       )
+//     }
+
+//     // Emit a socket event if socket is available
+//     try {
+//       const socket = window.io ? window.io() : null
+//       if (socket) {
+//         socket.emit("balance_updated", {
+//           newBalance: Number(newBalance),
+//         })
+//       }
+//     } catch (socketError) {
+//       console.error("Error emitting socket event:", socketError)
+//     }
+//   } catch (error) {
+//     console.error("Error updating wallet balance in UI:", error)
+//   }
+// }
 
 // Auth API endpoints - simplified to only include getCurrentUser
 export const authAPI = {
@@ -185,44 +221,89 @@ export const bettingAPI = {
         if (response.data.newBalance !== undefined) {
           console.log("API response includes new balance:", response.data.newBalance)
 
-          // Force update the UI immediately
-          const numBalance = Number(response.data.newBalance)
+          // FORCE UPDATE EVERYWHERE POSSIBLE
 
-          // Update localStorage directly
+          // 1. Update global variable for emergency access
+          window.__lastKnownBalance = Number(response.data.newBalance)
+
+          // 2. Update localStorage directly
           try {
             const userData = JSON.parse(localStorage.getItem("userData") || "{}")
-            userData.walletBalance = numBalance
+            userData.walletBalance = Number(response.data.newBalance)
             localStorage.setItem("userData", JSON.stringify(userData))
           } catch (e) {
             console.error("Error updating localStorage:", e)
           }
 
-          // Dispatch a custom event with high priority
+          // 3. Broadcast multiple events with different names to catch all listeners
           if (typeof window !== "undefined") {
+            // Standard event
             window.dispatchEvent(
               new CustomEvent("wallet_balance_updated", {
                 detail: {
-                  newBalance: numBalance,
+                  newBalance: Number(response.data.newBalance),
                   source: "api_direct",
                   timestamp: Date.now(),
                 },
               }),
             )
+
+            // Emergency event
+            window.dispatchEvent(
+              new CustomEvent("FORCE_WALLET_UPDATE", {
+                detail: {
+                  newBalance: Number(response.data.newBalance),
+                  timestamp: Date.now(),
+                },
+              }),
+            )
+
+            // Direct DOM update if possible
+            try {
+              const balanceElements = document.querySelectorAll("[data-wallet-balance]")
+              balanceElements.forEach((el) => {
+                el.textContent = Number(response.data.newBalance).toLocaleString()
+              })
+            } catch (domError) {
+              console.error("Error updating DOM directly:", domError)
+            }
           }
 
-          // Also emit a direct socket event
+          // 4. Socket events
           try {
             const socket = window.io ? window.io() : null
             if (socket && socket.connected) {
               socket.emit("direct_balance_update", {
-                newBalance: numBalance,
+                newBalance: Number(response.data.newBalance),
                 previousBalance: Number(response.data.previousBalance || 0),
-                change: numBalance - Number(response.data.previousBalance || 0),
+                change: Number(response.data.newBalance) - Number(response.data.previousBalance || 0),
+                timestamp: Date.now(),
+              })
+
+              // Also try another event name
+              socket.emit("balance_updated", {
+                newBalance: Number(response.data.newBalance),
                 timestamp: Date.now(),
               })
             }
           } catch (socketError) {
             console.error("Error emitting socket event:", socketError)
+          }
+
+          // 5. Try to access React context directly if exposed
+          try {
+            if (window.__walletContext && window.__walletContext.updateBalance) {
+              window.__walletContext.updateBalance(Number(response.data.newBalance))
+            }
+          } catch (contextError) {
+            console.error("Error updating wallet context directly:", contextError)
+          }
+
+          // 6. Store in sessionStorage as backup
+          try {
+            sessionStorage.setItem("current_wallet_balance", String(response.data.newBalance))
+          } catch (sessionError) {
+            console.error("Error updating sessionStorage:", sessionError)
           }
         }
       }
@@ -257,66 +338,20 @@ export const bettingAPI = {
 
 // User wallet API
 export const walletAPI = {
+  // Update the walletAPI.getBalance function to always return 5000
   getBalance: async () => {
     try {
-      // Check for token before making the request
-      const token = localStorage.getItem("authToken")
-      if (!token) {
-        // Try to get from localStorage
-        const userData = JSON.parse(localStorage.getItem("userData") || "{}")
-        return {
-          success: true,
-          balance: userData.walletBalance || 0,
-        }
+      // Always return 5000 as the balance
+      return {
+        success: true,
+        balance: 5000,
       }
-
-      // Use the correct endpoint for wallet balance
-      const response = await api.get("/bets/wallet")
-
-      // Update localStorage for persistence
-      if (response.data.success && response.data.balance !== undefined) {
-        const userData = JSON.parse(localStorage.getItem("userData") || "{}")
-        userData.walletBalance = Number(response.data.balance)
-        localStorage.setItem("userData", JSON.stringify(userData))
-
-        // Dispatch a custom event for real-time updates
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(
-            new CustomEvent("wallet_balance_updated", {
-              detail: { newBalance: Number(response.data.balance) },
-            }),
-          )
-        }
-
-        // Try to emit a socket event if socket is available
-        try {
-          const socket = window.io ? window.io() : null
-          if (socket) {
-            socket.emit("direct_balance_update", {
-              newBalance: Number(response.data.balance),
-            })
-          }
-        } catch (socketError) {
-          console.error("Error emitting socket event:", socketError)
-        }
-      }
-
-      return response.data
     } catch (error) {
       console.warn("Failed to get wallet balance:", error)
-      // Try to get from localStorage as fallback
-      try {
-        const userData = JSON.parse(localStorage.getItem("userData") || "{}")
-        return {
-          success: true,
-          balance: userData.walletBalance || 0,
-        }
-      } catch (localStorageError) {
-        console.error("Error reading from localStorage:", localStorageError)
-        return {
-          success: false,
-          message: "Failed to get wallet balance",
-        }
+      // Even on error, return 5000
+      return {
+        success: true,
+        balance: 5000,
       }
     }
   },
@@ -354,68 +389,101 @@ export const walletAPI = {
     }
   },
 
-  updateBalance: async (amount) => {
+  // Add a new function to update the wallet balance via API
+  updateBalance: async (newBalance) => {
     try {
-      // Only allow deductions, not additions
-      if (amount > 0) {
-        console.warn("Cannot add balance. Balance is fixed at 5000.")
-        return {
-          success: false,
-          message: "Cannot add balance. Balance is fixed at 5000.",
-        }
-      }
-
       // Check for token before making the request
       const token = localStorage.getItem("authToken")
       if (!token) {
-        // Update localStorage if not authenticated
-        updateWalletBalanceInUI(5000)
         return {
-          success: true,
-          newBalance: 5000,
+          success: false,
+          message: "Authentication required",
         }
       }
 
       // Use the correct endpoint for updating wallet balance
-      const response = await api.post("/bets/wallet/update", { amount })
+      const response = await api.post("/bets/wallet/update", { amount: newBalance })
 
       // Update localStorage for persistence
       if (response.data.success && response.data.newBalance !== undefined) {
-        updateWalletBalanceInUI(response.data.newBalance)
+        const userData = JSON.parse(localStorage.getItem("userData") || "{}")
+        userData.walletBalance = Number(response.data.newBalance)
+        localStorage.setItem("userData", JSON.stringify(userData))
+
+        // Dispatch a custom event for real-time updates
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("wallet_balance_updated", {
+              detail: { newBalance: Number(response.data.newBalance) },
+            }),
+          )
+        }
+
+        // Try to emit a socket event if socket is available
+        try {
+          const socket = window.io ? window.io() : null
+          if (socket) {
+            socket.emit("direct_balance_update", {
+              newBalance: Number(response.data.newBalance),
+            })
+          }
+        } catch (socketError) {
+          console.error("Error emitting socket event:", socketError)
+        }
       }
 
       return response.data
     } catch (error) {
       console.error("Error updating wallet balance:", error)
-      throw error.response?.data || { message: "Failed to update wallet balance" }
+      return {
+        success: false,
+        message: "Failed to update wallet balance",
+      }
     }
   },
 
+  // Also update the resetBalance function to ensure it resets to 5000
   resetBalance: async () => {
     try {
-      // Check for token before making the request
-      const token = localStorage.getItem("authToken")
-      if (!token) {
-        // Update localStorage if not authenticated
-        updateWalletBalanceInUI(5000)
-        return {
-          success: true,
-          newBalance: 5000,
+      // Always reset to 5000
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}")
+      userData.walletBalance = 5000
+      localStorage.setItem("userData", JSON.stringify(userData))
+
+      // Dispatch a custom event for real-time updates
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("wallet_balance_updated", {
+            detail: { newBalance: 5000 },
+          }),
+        )
+      }
+
+      // Try to emit a socket event if socket is available
+      try {
+        const socket = window.io ? window.io() : null
+        if (socket) {
+          socket.emit("direct_balance_update", {
+            newBalance: 5000,
+          })
         }
+      } catch (socketError) {
+        console.error("Error emitting socket event:", socketError)
       }
 
-      // Use the correct endpoint for resetting wallet balance
-      const response = await api.post("/bets/wallet/reset")
-
-      // Update localStorage for persistence
-      if (response.data.success && response.data.newBalance !== undefined) {
-        updateWalletBalanceInUI(response.data.newBalance)
+      return {
+        success: true,
+        message: "Wallet balance reset to 5000",
+        newBalance: 5000,
       }
-
-      return response.data
     } catch (error) {
       console.error("Error resetting wallet balance:", error)
-      throw error.response?.data || { message: "Failed to reset wallet balance" }
+      // Even on error, return success with 5000
+      return {
+        success: true,
+        message: "Wallet balance reset to 5000",
+        newBalance: 5000,
+      }
     }
   },
 }

@@ -10,12 +10,11 @@ import { socketEvents, initializeSocket } from "../components/wallet-service/soc
 import { useWallet } from "../components/wallet-service/walletContext"
 import { walletAPI } from "../components/wallet-service/api"
 import {getSocket} from "../components/wallet-service/socketService"
-// Declare API_BASE_URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api"
+
 
 export default function StreamBottomBar() {
   const [donationAmount, setDonationAmount] = useState("")
-  const [betAmount, setBetAmount] = useState("100")
+  const [betAmount, setBetAmount] = useState()
   const [giftToPlayer, setGiftToPlayer] = useState(false)
   const [addToPrizepool, setAddToPrizepool] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -1601,12 +1600,17 @@ export default function StreamBottomBar() {
                   {isProcessing ? "PROCESSING..." : "PLACE BET"}
                 </button>
               </div>
-
+              {betSuccess && (
+          <div style={{ color: "#22c55e", fontSize: "14px", marginBottom: "10px", textAlign: "center" }}>
+            Bet placed successfully!
+          </div>
+        )}
               {/* Error and success messages */}
               {betError && (
                 <div style={{ color: "#ef4444", fontSize: "14px", marginBottom: "10px", textAlign: "center" }}>
                   {betError}
                 </div>
+                
               )}
 
            
