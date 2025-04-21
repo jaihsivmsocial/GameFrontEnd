@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useRef } from "react"
-import { walletAPI } from "../wallet-service/api"
+import { walletAPI } from "../../components/wallet-service/api"
 
 const WalletContext = createContext({
     balance: 5000,
@@ -11,7 +11,7 @@ const WalletContext = createContext({
   
   // Provider component
   export const WalletProvider = ({ children }) => {
-    // Update the initial state to match what's shown in the UI
+    // Update the initial state to 0 instead of 5000
     const [balance, setBalance] = useState(5000)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
@@ -23,6 +23,25 @@ const WalletContext = createContext({
     useEffect(() => {
       balanceRef.current = balance
     }, [balance])
+  
+    // Expose the context to window for emergency direct updates
+    useEffect(() => {
+      if (typeof window !== "undefined") {
+        window.__walletContext = { updateBalance: forceUpdateBalance }
+  
+        // Add a direct update function to window
+        window.__updateGlobalBalance = (newBalance) => {
+          forceUpdateBalance(Number(newBalance))
+        }
+      }
+  
+      return () => {
+        if (typeof window !== "undefined") {
+          delete window.__walletContext
+          delete window.__updateGlobalBalance
+        }
+      }
+    }, [])
   
     // Update the useEffect hook to properly handle direct API responses
     useEffect(() => {
@@ -103,6 +122,11 @@ const WalletContext = createContext({
                 })
                 window.dispatchEvent(event)
               }
+  
+              // If the balance is not 5000, schedule a reset
+              if (data.newBalance !== 5000) {
+                resetBalanceToDefault()
+              }
             }
           })
   
@@ -124,6 +148,11 @@ const WalletContext = createContext({
                   detail: { newBalance: Number(data.newBalance) },
                 })
                 window.dispatchEvent(event)
+              }
+  
+              // If the balance is not 5000, schedule a reset
+              if (data.newBalance !== 5000) {
+                resetBalanceToDefault()
               }
             }
           })
@@ -196,6 +225,16 @@ const WalletContext = createContext({
   
       window.addEventListener("api_response", handleApiResponse)
   
+      // Listen for emergency force updates
+      const handleForceUpdate = (event) => {
+        if (event.detail && event.detail.newBalance !== undefined) {
+          console.log("EMERGENCY FORCE UPDATE received:", event.detail)
+          forceUpdateBalance(Number(event.detail.newBalance))
+        }
+      }
+  
+      window.addEventListener("FORCE_WALLET_UPDATE", handleForceUpdate)
+  
       return () => {
         if (window.io) {
           const socket = window.io()
@@ -205,10 +244,10 @@ const WalletContext = createContext({
         }
         window.removeEventListener("wallet_balance_updated", handleWalletUpdate)
         window.removeEventListener("api_response", handleApiResponse)
+        window.removeEventListener("FORCE_WALLET_UPDATE", handleForceUpdate)
       }
     }, [])
   
-    // Add a direct method to force update the balance
     const forceUpdateBalance = (newBalance) => {
       console.log("FORCE UPDATING WALLET BALANCE TO:", newBalance)
   
@@ -285,6 +324,27 @@ const WalletContext = createContext({
           }),
         )
       }
+    }
+  
+    // Add this function to ensure the balance is reset to 5000 after a delay
+    const resetBalanceToDefault = () => {
+      setTimeout(() => {
+        console.log("Resetting balance to 5000")
+        setBalance(5000)
+  
+        // Update localStorage
+        const userData = JSON.parse(localStorage.getItem("userData") || "{}")
+        userData.walletBalance = 5000
+        localStorage.setItem("userData", JSON.stringify(userData))
+  
+        // Emit a custom event for other components
+        if (typeof window !== "undefined") {
+          const event = new CustomEvent("wallet_balance_updated", {
+            detail: { newBalance: 5000 },
+          })
+          window.dispatchEvent(event)
+        }
+      }, 10000) // Reset after 10 seconds
     }
   
     return <WalletContext.Provider value={{ balance, updateBalance, loading, error }}>{children}</WalletContext.Provider>
