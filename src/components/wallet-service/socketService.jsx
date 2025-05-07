@@ -1,19 +1,88 @@
-
-
-const io = require("socket.io-client")
+import { io } from "socket.io-client"
+import { getCameraHolder } from "../../components/wallet-service/api"
 
 // Socket.io connection
 let socket
+let cameraHolderMonitoringActive = false
 
-const initializeSocket = () => {
+// Add this function to check for camera holder changes and request a question if needed
+export const startCameraHolderMonitoring = () => {
+  // Don't start multiple monitoring instances
+  if (cameraHolderMonitoringActive) {
+    console.log("Camera holder monitoring already active")
+    return () => {}
+  }
+
+  let lastCameraHolderName = null
+  cameraHolderMonitoringActive = true
+
+  // Function to check camera holder and request question if needed
+  const checkCameraHolder = async () => {
+    try {
+      const { success, cameraHolder } = await getCameraHolder()
+
+      if (!success || !cameraHolder) {
+        return
+      }
+
+      const currentName = cameraHolder.CameraHolderName
+      console.log("Current camera holder name:", currentName, "Last camera holder name:", lastCameraHolderName)
+
+      // If camera holder changed from None/empty to a valid name, request a question immediately
+      if (
+        (lastCameraHolderName === null || lastCameraHolderName === "" || lastCameraHolderName === "None") &&
+        currentName &&
+        currentName !== "None"
+      ) {
+        console.log("Camera holder changed to a valid name, requesting question immediately")
+
+        // Emit event to request a new question
+        if (socket && socket.connected) {
+          socket.emit("get_active_question")
+
+          // Also emit a custom event that UI components can listen for
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("camera_holder_changed", {
+                detail: { cameraHolder: currentName },
+              }),
+            )
+          }
+        }
+      }
+
+      // Update the last camera holder name
+      lastCameraHolderName = currentName
+    } catch (error) {
+      console.error("Error monitoring camera holder:", error)
+    }
+  }
+
+  // Check immediately on start
+  checkCameraHolder()
+
+  // Then check every 2 seconds
+  const intervalId = setInterval(checkCameraHolder, 2000)
+
+  // Return a function to stop monitoring
+  return () => {
+    clearInterval(intervalId)
+    cameraHolderMonitoringActive = false
+  }
+}
+
+// Update the initializeSocket function to start monitoring
+export const initializeSocket = () => {
   if (!socket) {
-    socket = io("http://localhost:5000", {
+    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
       transports: ["websocket"],
       autoConnect: true,
     })
 
     socket.on("connect", () => {
       console.log("Socket connected:", socket.id)
+      // Start monitoring camera holder changes when socket connects
+      startCameraHolderMonitoring()
     })
 
     socket.on("connect_error", (error) => {
@@ -22,37 +91,124 @@ const initializeSocket = () => {
 
     socket.on("disconnect", (reason) => {
       console.log("Socket disconnected:", reason)
+      cameraHolderMonitoringActive = false
+    })
+
+    // Listen for new questions and broadcast to UI
+    socket.on("new_question", (data) => {
+      console.log("New question received from server:", data)
+
+      // Dispatch a custom event for components that might not be directly using the socket
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("new_question_received", {
+            detail: { question: data },
+          }),
+        )
+      }
+    })
+
+    // Listen for current question responses
+    socket.on("current_question", (data) => {
+      console.log("Current question received from server:", data)
+
+      // Dispatch a custom event for components that might not be directly using the socket
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("current_question_received", {
+            detail: { question: data },
+          }),
+        )
+      }
     })
   }
 
   return socket
 }
 
-const getSocket = () => {
+export const getSocket = () => {
   if (!socket) {
     return initializeSocket()
   }
   return socket
 }
 
-const disconnectSocket = () => {
+export const disconnectSocket = () => {
   if (socket) {
     socket.disconnect()
     socket = null
+    cameraHolderMonitoringActive = false
   }
 }
 
-// Update the socket event listeners to properly handle betting stats
-const socketEvents = {
+// Add this function to check if questions should be generated based on camera holder
+export const shouldGenerateQuestions = async () => {
+  try {
+    const { success, cameraHolder } = await getCameraHolder()
+
+    if (!success || !cameraHolder) {
+      console.log("Failed to get camera holder or no camera holder data")
+      return false
+    }
+
+    console.log("Camera holder name:", cameraHolder.CameraHolderName)
+
+    // Only generate questions if camera holder name is not empty and not "None"
+    return cameraHolder.CameraHolderName && cameraHolder.CameraHolderName !== "None"
+  } catch (error) {
+    console.error("Error checking if questions should be generated:", error)
+    return false
+  }
+}
+
+// Update the socket event listeners to properly handle betting questions
+export const socketEvents = {
   // Listen for new questions
   onNewQuestion: (callback) => {
-    getSocket().on("new_question", (data) => {
+    getSocket().on("new_question", async (data) => {
       console.log("New question received:", data)
+
+      // Check if questions should be generated
+      const generate = await shouldGenerateQuestions()
+      if (generate) {
+        callback(data)
+      } else {
+        console.log("Ignoring question - camera holder conditions not met")
+      }
+    })
+
+    // Also listen for current question responses
+    getSocket().on("current_question", async (data) => {
+      console.log("Current question received:", data)
+
+      // Always process current_question responses
       callback(data)
+    })
+
+    // Also listen for no questions available event
+    getSocket().on("no_questions_available", (data) => {
+      console.log("No questions available:", data)
     })
   },
 
-  // Listen for bet updates
+  // Request a question only if conditions are met
+  requestQuestion: async () => {
+    const generate = await shouldGenerateQuestions()
+    if (generate) {
+      console.log("Requesting question - camera holder conditions met")
+      getSocket().emit("get_active_question")
+    } else {
+      console.log("Not requesting question - camera holder conditions not met")
+    }
+  },
+
+  // Force request a question regardless of conditions (for manual requests)
+  forceRequestQuestion: () => {
+    console.log("Forcing question request")
+    getSocket().emit("get_active_question")
+  },
+
+  // Keep the rest of the existing socket events...
   onBetPlaced: (callback) => {
     getSocket().on("bet_placed", (data) => {
       console.log("Bet placed received:", data)
@@ -82,7 +238,6 @@ const socketEvents = {
     })
   },
 
-  // Listen for question resolution
   onQuestionResolved: (callback) => {
     getSocket().on("question_resolved", (data) => {
       console.log("Question resolved received:", data)
@@ -90,7 +245,6 @@ const socketEvents = {
     })
   },
 
-  // Listen for betting stats updates
   onBettingStats: (callback) => {
     getSocket().on("betting_stats", (data) => {
       console.log("Received betting stats from socket:", data)
@@ -109,7 +263,6 @@ const socketEvents = {
     })
   },
 
-  // Listen for total bets updates
   onTotalBetsUpdate: (callback) => {
     getSocket().on("total_bets_update", (data) => {
       console.log("Received total_bets_update from socket:", data)
@@ -117,7 +270,6 @@ const socketEvents = {
     })
   },
 
-  // Listen for player count updates
   onPlayerCountUpdate: (callback) => {
     getSocket().on("player_count_update", (data) => {
       console.log("Received player_count_update from socket:", data)
@@ -125,7 +277,6 @@ const socketEvents = {
     })
   },
 
-  // Add a specific handler for wallet balance updates
   onWalletUpdate: (callback) => {
     getSocket().on("wallet_update", (data) => {
       console.log("Wallet update received:", data)
@@ -147,11 +298,4 @@ const socketEvents = {
   removeListener: (event) => {
     getSocket().off(event)
   },
-}
-
-module.exports = {
-  initializeSocket,
-  getSocket,
-  disconnectSocket,
-  socketEvents,
 }
