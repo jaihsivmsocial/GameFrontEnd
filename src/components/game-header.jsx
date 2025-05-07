@@ -1,8 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useWallet } from "../components/wallet-service/walletContext"
-import { walletAPI } from "../components/wallet-service/api"
+import dynamic from "next/dynamic"
+
+const PaymentModal = dynamic(() => import("../components/subscribes/PaymentModal"), {
+  ssr: false,
+})
 
 
 const GameHeader = () => {
@@ -11,9 +14,11 @@ const GameHeader = () => {
   const [userLevel, setUserLevel] = useState("64")
   const [userXP, setUserXP] = useState({ current: 8450, total: 13500 })
   const [balanceChanged, setBalanceChanged] = useState(false)
-
-  // Use the wallet context
-  const { balance, updateBalance, loading } = useWallet()
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState(100)
+  const [currentBalance, setCurrentBalance] = useState(0)
+  const [walletBalance, setWalletBalance] = useState(0)
+  const [loading, setLoading] = useState(true)
 
   // Add a keyframe animation for balance changes
   useEffect(() => {
@@ -40,32 +45,84 @@ const GameHeader = () => {
     }
   }, [])
 
-  // Trigger animation when balance changes
-  useEffect(() => {
-    if (balance < 5000) {
-      setBalanceChanged(true)
-      const timer = setTimeout(() => {
-        setBalanceChanged(false)
-      }, 1000)
-      return () => clearTimeout(timer)
+  // Function to fetch wallet balance directly
+  const fetchWalletBalance = async () => {
+    try {
+      setLoading(true)
+
+      // First try to get from localStorage for immediate display
+      try {
+        const userData = JSON.parse(localStorage.getItem("userData") || "{}")
+        if (userData.walletBalance !== undefined) {
+          setWalletBalance(Number(userData.walletBalance))
+          setCurrentBalance(Number(userData.walletBalance))
+        }
+      } catch (e) {
+        console.error("Error reading from localStorage:", e)
+      }
+
+      // Then try to get from API
+      const balance = await getWalletBalance()
+      console.log("Fetched wallet balance:", balance)
+
+      setWalletBalance(Number(balance))
+      setCurrentBalance(Number(balance))
+
+      // Trigger animation if balance changed
+      const prevBalance = localStorage.getItem("prevBalance")
+        ? Number(localStorage.getItem("prevBalance"))
+        : walletBalance
+      if (balance !== prevBalance) {
+        setBalanceChanged(true)
+        setTimeout(() => setBalanceChanged(false), 1000)
+        localStorage.setItem("prevBalance", String(balance))
+      }
+
+      return balance
+    } catch (error) {
+      console.error("Error fetching wallet balance:", error)
+
+      // Try to get from localStorage as fallback
+      try {
+        const userData = JSON.parse(localStorage.getItem("userData") || "{}")
+        const localBalance = userData.walletBalance || 0
+        setWalletBalance(Number(localBalance))
+        setCurrentBalance(Number(localBalance))
+        return localBalance
+      } catch (e) {
+        return 0
+      }
+    } finally {
+      setLoading(false)
     }
-  }, [balance])
+  }
+
+  // Function to update wallet balance
+  const updateWalletBalance = (newBalance) => {
+    console.log("Updating wallet balance to:", newBalance)
+    setWalletBalance(Number(newBalance))
+    setCurrentBalance(Number(newBalance))
+
+    // Update localStorage
+    try {
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}")
+      userData.walletBalance = Number(newBalance)
+      localStorage.setItem("userData", JSON.stringify(userData))
+    } catch (error) {
+      console.error("Error updating localStorage:", error)
+    }
+
+    // Trigger animation
+    setBalanceChanged(true)
+    setTimeout(() => setBalanceChanged(false), 1000)
+
+    // Store current balance as previous for next comparison
+    localStorage.setItem("prevBalance", String(newBalance))
+  }
 
   // Fetch wallet balance on component mount and set up socket listener
   useEffect(() => {
-    // Fetch initial wallet balance
-    const fetchWalletBalance = async () => {
-      try {
-        const response = await walletAPI.getBalance()
-        if (response.success && response.balance !== undefined) {
-          console.log("Updating wallet balance in header to:", response.balance)
-          updateBalance(Number(response.balance))
-        }
-      } catch (error) {
-        console.error("Error fetching wallet balance:", error)
-      }
-    }
-
+    // Immediately fetch the wallet balance
     fetchWalletBalance()
 
     // Get user data from localStorage
@@ -95,11 +152,7 @@ const GameHeader = () => {
           console.log("Wallet update received in header:", data)
           if (data.newBalance !== undefined) {
             // Immediately update the UI with the new balance
-            updateBalance(Number(data.newBalance))
-
-            // Trigger animation
-            setBalanceChanged(true)
-            setTimeout(() => setBalanceChanged(false), 1000)
+            updateWalletBalance(Number(data.newBalance))
           }
         })
 
@@ -107,11 +160,7 @@ const GameHeader = () => {
           console.log("Bet response received in header:", data)
           if (data.success && data.newBalance !== undefined) {
             // Immediately update the UI with the new balance
-            updateBalance(Number(data.newBalance))
-
-            // Trigger animation
-            setBalanceChanged(true)
-            setTimeout(() => setBalanceChanged(false), 1000)
+            updateWalletBalance(Number(data.newBalance))
           }
         })
 
@@ -120,11 +169,7 @@ const GameHeader = () => {
           console.log("Direct balance update received in header:", data)
           if (data.newBalance !== undefined) {
             // Immediately update the UI with the new balance
-            updateBalance(Number(data.newBalance))
-
-            // Trigger animation
-            setBalanceChanged(true)
-            setTimeout(() => setBalanceChanged(false), 1000)
+            updateWalletBalance(Number(data.newBalance))
           }
         })
       }
@@ -135,13 +180,17 @@ const GameHeader = () => {
     // Listen for custom wallet balance update events
     const handleWalletUpdate = (event) => {
       console.log("Custom wallet update event received:", event.detail)
-      if (event.detail && event.detail.newBalance !== undefined) {
-        // Immediately update the UI with the new balance
-        updateBalance(Number(event.detail.newBalance))
+      // Check for all possible balance properties
+      const newBalanceValue =
+        event.detail.newBalance !== undefined
+          ? event.detail.newBalance
+          : event.detail.wBalance !== undefined
+            ? event.detail.wBalance
+            : null
 
-        // Trigger animation
-        setBalanceChanged(true)
-        setTimeout(() => setBalanceChanged(false), 1000)
+      if (newBalanceValue !== null) {
+        // Immediately update the UI with the new balance
+        updateWalletBalance(Number(newBalanceValue))
       }
     }
 
@@ -155,16 +204,35 @@ const GameHeader = () => {
 
         if (responseData.success && responseData.newBalance !== undefined) {
           console.log("Updating balance from API response:", responseData.newBalance)
-          updateBalance(Number(responseData.newBalance))
-
-          // Trigger animation
-          setBalanceChanged(true)
-          setTimeout(() => setBalanceChanged(false), 1000)
+          updateWalletBalance(Number(responseData.newBalance))
         }
       }
     }
 
     window.addEventListener("api_response", handleApiResponse)
+
+    // Listen for payment success events
+    const handlePaymentSuccess = (event) => {
+      if (event.detail && event.detail.newBalance !== undefined) {
+        console.log("Payment success event received:", event.detail)
+        updateWalletBalance(Number(event.detail.newBalance))
+      }
+    }
+
+    window.addEventListener("payment_success", handlePaymentSuccess)
+
+    // Listen for open payment modal events from other components
+    const handleOpenPaymentModal = (event) => {
+      if (event.detail && event.detail.amount) {
+        setPaymentAmount(event.detail.amount)
+        setShowPaymentModal(true)
+      } else {
+        setPaymentAmount(100) // Default amount
+        setShowPaymentModal(true)
+      }
+    }
+
+    window.addEventListener("open_payment_modal", handleOpenPaymentModal)
 
     // Set up timer for reward countdown
     const timer = setInterval(() => {
@@ -186,6 +254,14 @@ const GameHeader = () => {
       setTimeLeft(`${newMinutes.toString().padStart(2, "0")}:${newSeconds.toString().padStart(2, "0")}`)
     }, 1000)
 
+    const handleBetPlacedEvent = (event) => {
+      if (event.detail && event.detail.betData) {
+        handleBetPlaced(event.detail.betData)
+      }
+    }
+
+    window.addEventListener("bet_placed", handleBetPlacedEvent)
+
     return () => {
       if (window.io) {
         const socket = window.io()
@@ -195,24 +271,82 @@ const GameHeader = () => {
       }
       window.removeEventListener("wallet_balance_updated", handleWalletUpdate)
       window.removeEventListener("api_response", handleApiResponse)
+      window.removeEventListener("payment_success", handlePaymentSuccess)
+      window.removeEventListener("open_payment_modal", handleOpenPaymentModal)
+      window.removeEventListener("bet_placed", handleBetPlacedEvent)
       clearInterval(timer)
     }
-  }, [timeLeft, updateBalance])
+  }, [timeLeft])
 
   // Calculate XP percentage
   const xpPercentage = (userXP.current / userXP.total) * 100
 
   // Update the formatBalance function to ensure proper formatting
   const formatBalance = (balance) => {
-    if (balance === undefined || balance === null) return "0"
+    // If balance is undefined, null, or loading, show loading indicator
+    if (balance === undefined || balance === null) {
+      return loading ? "..." : "0.00"
+    }
 
     // Convert to number if it's a string
     const numBalance = typeof balance === "string" ? Number.parseFloat(balance) : balance
 
-    if (isNaN(numBalance)) return "0"
+    // If NaN, return zero
+    if (isNaN(numBalance)) return "0.00"
 
     // Format with commas for thousands
     return numBalance.toLocaleString()
+  }
+
+  // Handle payment success
+  const handlePaymentSuccess = (paymentData) => {
+    console.log("Payment successful:", paymentData)
+
+    // Update wallet balance if provided
+    if (paymentData.newBalance !== undefined) {
+      const newBalance = Number(paymentData.newBalance)
+      console.log("Updating balance to:", newBalance)
+
+      updateWalletBalance(newBalance)
+
+      // Emit a custom event for other components to update
+      const event = new CustomEvent("wallet_balance_updated", {
+        detail: {
+          newBalance: newBalance,
+          source: "game_header_payment",
+        },
+      })
+      window.dispatchEvent(event)
+    } else if (paymentData.amount) {
+      // If newBalance is not provided, use amount
+      const newAmount = Number(paymentData.amount)
+      console.log("Using payment amount as balance:", newAmount)
+
+      updateWalletBalance(newAmount)
+    }
+
+    // Close the payment modal
+    setShowPaymentModal(false)
+  }
+
+  // Handle add funds click
+  const handleAddFundsClick = (amount = 100) => {
+    setPaymentAmount(amount)
+    setShowPaymentModal(true)
+  }
+
+  const handleBetPlaced = (betData) => {
+    console.log("Bet placed event received in game header:", betData)
+    if (betData && betData.newBalance !== undefined) {
+      // Update the wallet balance
+      updateWalletBalance(betData.newBalance)
+    }
+  }
+
+  // Manual refresh function
+  const handleRefreshBalance = async () => {
+    console.log("Manually refreshing wallet balance")
+    await fetchWalletBalance()
   }
 
   return (
@@ -297,10 +431,14 @@ const GameHeader = () => {
                 height: "20px",
                 transition: "all 0.3s ease",
                 animation: balanceChanged ? "pulse 1s" : "none",
+                cursor: "pointer",
               }}
+              data-wallet-balance="true"
+              onClick={handleRefreshBalance}
+              title="Click to refresh balance"
             >
               <span style={{ marginRight: "2px", fontSize: "14px" }}>$</span>
-              {loading ? "..." : formatBalance(balance)}
+              {formatBalance(walletBalance)}
             </div>
           </div>
           <div style={{ color: "#999", fontSize: "12px", lineHeight: "1", marginBottom: "3px" }}>LEVEL {userLevel}</div>
@@ -412,6 +550,17 @@ const GameHeader = () => {
         <div style={{ color: "#999", fontSize: "11px", marginBottom: "2px", textAlign: "right" }}>Next Reward in</div>
         <div style={{ color: "#ffcc00", fontSize: "22px", fontWeight: "bold", lineHeight: "1" }}>{timeLeft}</div>
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <PaymentModal
+          show={showPaymentModal}
+          onHide={() => setShowPaymentModal(false)}
+          amount={paymentAmount}
+          onPaymentSuccess={handlePaymentSuccess}
+          currentBalance={currentBalance} // Pass current balance to PaymentModal
+        />
+      )}
     </div>
   )
 }
