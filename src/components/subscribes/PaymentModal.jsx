@@ -644,7 +644,7 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
 export default function PaymentModal(props) {
   // Use more options to ensure Stripe loads properly
   const stripeOptions = {
-    locale: "auto", // This handles region automatically
+    locale: "auto", 
   }
 
   console.log("PaymentModal wrapper rendered with amountNeeded:", props.amountNeeded)
