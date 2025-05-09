@@ -103,7 +103,6 @@ const GameHeader = () => {
     setWalletBalance(Number(newBalance))
     setCurrentBalance(Number(newBalance))
 
-    // Update localStorage
     try {
       const userData = JSON.parse(localStorage.getItem("userData") || "{}")
       userData.walletBalance = Number(newBalance)
