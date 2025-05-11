@@ -1245,7 +1245,7 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                           alt="Visa"
                           width={40}
                           height={24}
-                          style={{ marginRight: 270 }}
+                          style={{ marginRight: 337 }}
                         />
                       </div>
                     </div>
