@@ -131,6 +131,7 @@
   padding: 12px 15px;
   color: white;
   width: 450px;
+  margin-left: -116px;
 }
 
 .stripe-card-number-wrapper {
@@ -168,6 +169,7 @@
   padding: 12px 15px;
   color: white;
   width: 122px;
+  margin-left: -111px;
 }
 
 .card-expiry-wrapper,
@@ -227,7 +229,7 @@
   border-radius: 6px;
   padding: 15px;
   color: white;
-  width: 450px;
+  width: 391px;
 }
 
 .error-message {
@@ -277,12 +279,12 @@
   transition: background-color 0.2s;
   cursor: pointer !important;
   pointer-events: auto !important;
+
 }
 
 .continue-button:hover {
   background-color: #0976d9;
 }
-
 .continue-button:disabled {
   background-color: #2a5275;
   cursor: not-allowed !important;
