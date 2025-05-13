@@ -380,7 +380,7 @@ export const startCameraHolderMonitoring = () => {
 // Update the initializeSocket function to handle camera holder updates
 export const initializeSocket = () => {
   if (!socket) {
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
+    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://apitest.tribez.gg", {
       transports: ["websocket"],
       autoConnect: true,
     })
