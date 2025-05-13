@@ -675,7 +675,7 @@ import paymentApi from "../../components/subscribes/paymentApi"
 import styles from "./modal.module.css"
 
 const STRIPE_PUBLISHABLE_KEY =
-  "pk_test_51NSgbNLI0jeNQhyDiJ8YYAOYlZHKf0GQ7CtpQIZF8PoEi0iXz22HS1ywEF7N01bl4jOSqozywkNtVnL5It4Gg85t00DfhbhWhq"
+  "pk_test_51NSgbNLI0jeNQhyDrM3RhCrUYTf9ysZ0ToyirVLcSYDxH9V4drpUHBKhSzWdanBWo4aXd0GVKcSqaLmLSIBYShSl00ivYVFZG0"
 
 // Initialize Stripe with locale setting to handle region automatically
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY, {
