@@ -316,6 +316,7 @@ export const startCameraHolderMonitoring = () => {
     console.log("Camera holder monitoring already active")
     return () => {}
   }
+
   let lastCameraHolderName = null
   cameraHolderMonitoringActive = true
 
@@ -329,27 +330,27 @@ export const startCameraHolderMonitoring = () => {
       }
 
       const currentName = cameraHolder.CameraHolderName
-      console.log("Current camera holder name:", currentName, "Last camera holder name:", lastCameraHolderName)
 
       // Store the camera holder globally
       globalCameraHolder = cameraHolder
 
-      // If camera holder changed from None/empty to a valid name, request a question immediately
-      if (
-        (lastCameraHolderName === null || lastCameraHolderName === "" || lastCameraHolderName === "None") &&
-        currentName &&
-        currentName !== "None"
-      ) {
-        console.log("Camera holder changed to a valid name, requesting question immediately")
+      // If camera holder changed, dispatch event immediately
+      if (lastCameraHolderName !== currentName) {
+        console.log("Camera holder changed from", lastCameraHolderName, "to", currentName)
 
         // Emit event to request a new question
         if (socket && socket.connected) {
           socket.emit("get_active_question")
 
-          // Also emit a custom event that UI components can listen for
+          // Force create a question if we have a valid camera holder
+          if (currentName && currentName !== "None") {
+            socket.emit("create_bet_question", { streamId: getStreamId() })
+          }
+
+          // Dispatch a custom event that UI components can listen for
           if (typeof window !== "undefined") {
             window.dispatchEvent(
-              new CustomEvent("camera_holder_changed", {
+              new CustomEvent("camera_holder_updated", {
                 detail: { cameraHolder: cameraHolder },
               }),
             )
@@ -367,7 +368,7 @@ export const startCameraHolderMonitoring = () => {
   // Check immediately on start
   checkCameraHolder()
 
-  // Then check every 2 seconds
+  // Check less frequently to prevent flickering - every 2 seconds instead of 500ms
   const intervalId = setInterval(checkCameraHolder, 2000)
 
   // Return a function to stop monitoring
@@ -377,44 +378,93 @@ export const startCameraHolderMonitoring = () => {
   }
 }
 
+// Helper function to get stream ID from URL
+export const getStreamId = () => {
+  if (typeof window === "undefined") return "default-stream"
+  const currentUrl = window.location.pathname
+  return currentUrl.includes("/stream/") ? currentUrl.split("/stream/")[1].split("/")[0] : "default-stream"
+}
+
 // Update the initializeSocket function to handle camera holder updates
 export const initializeSocket = () => {
   if (!socket) {
     socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://apitest.tribez.gg", {
       transports: ["websocket"],
       autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
     })
 
     socket.on("connect", () => {
       console.log("Socket connected:", socket.id)
+
       // Start monitoring camera holder changes when socket connects
       startCameraHolderMonitoring()
-      
+
       // Request the current camera holder from the server
       socket.emit("get_camera_holder")
+
+      // Request active question immediately on connect
+      socket.emit("get_active_question")
+
+      // Force create a question if we have a camera holder
+      const currentCameraHolder = getCurrentCameraHolder()
+      if (
+        currentCameraHolder &&
+        currentCameraHolder.CameraHolderName &&
+        currentCameraHolder.CameraHolderName !== "None"
+      ) {
+        socket.emit("create_bet_question", { streamId: getStreamId() })
+      }
+
+      // Dispatch a connection event
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("socket_connected"))
+      }
     })
 
     socket.on("connect_error", (error) => {
       console.error("Socket connection error:", error)
+
+      // Try to reconnect
+      setTimeout(() => {
+        socket.connect()
+      }, 1000)
     })
 
     socket.on("disconnect", (reason) => {
       console.log("Socket disconnected:", reason)
-      cameraHolderMonitoringActive = false
+
+      // Dispatch a disconnection event
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("socket_disconnected"))
+      }
+
+      // Try to reconnect
+      setTimeout(() => {
+        socket.connect()
+      }, 1000)
     })
 
     // Add listener for camera holder updates from the server
     socket.on("camera_holder_update", (data) => {
       console.log("Camera holder update received from server:", data)
       globalCameraHolder = data.cameraHolder
-      
+
       // Dispatch a custom event for components that might not be directly using the socket
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("camera_holder_updated", {
             detail: { cameraHolder: data.cameraHolder },
-          })
+          }),
         )
+
+        // If we have a valid camera holder, immediately request a question
+        if (data.cameraHolder && data.cameraHolder.CameraHolderName && data.cameraHolder.CameraHolderName !== "None") {
+          socket.emit("get_active_question")
+          socket.emit("create_bet_question", { streamId: getStreamId() })
+        }
       }
     })
 
@@ -441,6 +491,34 @@ export const initializeSocket = () => {
         window.dispatchEvent(
           new CustomEvent("current_question_received", {
             detail: { question: data },
+          }),
+        )
+      }
+    })
+
+    // Add a listener for question_created events
+    socket.on("question_created", (data) => {
+      console.log("Question created received:", data)
+
+      // Dispatch a custom event
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("question_created", {
+            detail: { question: data },
+          }),
+        )
+      }
+    })
+
+    // Add a listener for question_update events
+    socket.on("question_update", (data) => {
+      console.log("Question update received:", data)
+
+      // Dispatch a custom event
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("question_updated", {
+            detail: { question: data.question },
           }),
         )
       }
@@ -475,10 +553,9 @@ export const shouldGenerateQuestions = async () => {
   try {
     // First check if we have a global camera holder
     if (globalCameraHolder) {
-      console.log("Using global camera holder for question generation check:", globalCameraHolder.CameraHolderName)
       return globalCameraHolder.CameraHolderName && globalCameraHolder.CameraHolderName !== "None"
     }
-    
+
     // Fallback to API call
     const { success, cameraHolder } = await getCameraHolder()
 
@@ -486,8 +563,6 @@ export const shouldGenerateQuestions = async () => {
       console.log("Failed to get camera holder or no camera holder data")
       return false
     }
-
-    console.log("Camera holder name:", cameraHolder.CameraHolderName)
 
     // Only generate questions if camera holder name is not empty and not "None"
     return cameraHolder.CameraHolderName && cameraHolder.CameraHolderName !== "None"
@@ -503,27 +578,35 @@ export const socketEvents = {
   onNewQuestion: (callback) => {
     getSocket().on("new_question", async (data) => {
       console.log("New question received:", data)
-
-      // Check if questions should be generated
-      const generate = await shouldGenerateQuestions()
-      if (generate) {
-        callback(data)
-      } else {
-        console.log("Ignoring question - camera holder conditions not met")
-      }
+      console.log("BACKEND SOCKET QUESTION TEXT:", data.question)
+      // IMPORTANT: Pass the complete question data to the callback without modification
+      callback(data)
     })
 
     // Also listen for current question responses
     getSocket().on("current_question", async (data) => {
       console.log("Current question received:", data)
-
-      // Always process current_question responses
+      console.log("BACKEND CURRENT QUESTION TEXT:", data.question)
+      // IMPORTANT: Pass the complete question data to the callback without modification
       callback(data)
     })
 
-    // Also listen for no questions available event
-    getSocket().on("no_questions_available", (data) => {
-      console.log("No questions available:", data)
+    // Also listen for question_created events
+    getSocket().on("question_created", (data) => {
+      console.log("Question created received:", data)
+      console.log("BACKEND CREATED QUESTION TEXT:", data.question)
+      // IMPORTANT: Pass the complete question data to the callback without modification
+      callback(data)
+    })
+
+    // Also listen for question_update events
+    getSocket().on("question_update", (data) => {
+      console.log("Question update received:", data)
+      if (data && data.question) {
+        console.log("BACKEND UPDATED QUESTION TEXT:", data.question.question)
+        // IMPORTANT: Pass the complete question data to the callback without modification
+        callback(data.question)
+      }
     })
   },
 
