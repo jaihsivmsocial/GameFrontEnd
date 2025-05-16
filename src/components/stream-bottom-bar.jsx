@@ -11,6 +11,7 @@ import {
   initializeSocket,
   getSocket,
   getCurrentCameraHolder,
+  getStreamId,
 } from "../components/wallet-service/socketService"
 import { walletAPI } from "../components/wallet-service/api"
 
@@ -54,6 +55,8 @@ export default function StreamBottomBar() {
   const [socketConnected, setSocketConnected] = useState(false)
   // Add this state to track the last update time
   const [lastCameraHolderUpdate, setLastCameraHolderUpdate] = useState(0)
+  // Add state to track if timer is visible - always true now
+  const [timerVisible, setTimerVisible] = useState(true)
 
   // Add refs to track timer and question state
   const timerRef = useRef(null)
@@ -62,6 +65,10 @@ export default function StreamBottomBar() {
   const cameraHolderCheckRef = useRef(null)
   // Create a lastCameraHolderCheck ref to track when we last checked
   const lastCameraHolderCheckRef = useRef(Date.now())
+  // Create a socket ref to track the socket
+  const socketRef = useRef(null)
+  // Create a ref to track the last camera holder name
+  const lastCameraHolderNameRef = useRef(null)
 
   // Get wallet balance from context
   const [walletBalance, setWalletBalance] = useState(0)
@@ -234,7 +241,9 @@ export default function StreamBottomBar() {
     return potentialPayout
   }
 
-  // Modify the handleNewQuestion function to not create default questions
+  // Add this function to the stream-bottom-bar.jsx file to handle the competition time
+
+  // Modify the handleNewQuestion function to include competitionTime
   const handleNewQuestion = (data) => {
     // Skip if data is empty
     if (!data) {
@@ -244,6 +253,19 @@ export default function StreamBottomBar() {
     console.log("Processing new question:", data)
     // Add debug logging to track the exact question text from backend
     console.log("EXACT BACKEND QUESTION TEXT:", data.question)
+
+    // Extract competition time from question text if not provided
+    let competitionTime = data.competitionTime
+    if (!competitionTime && data.question) {
+      // Look for patterns like "30 sec", "20 Sec", etc.
+      const match = data.question.match(/(\d+)\s*Sec/i)
+      if (match && match[1]) {
+        competitionTime = Number.parseInt(match[1], 10)
+        console.log("COMPETITION TIME EXTRACTED FROM QUESTION:", competitionTime)
+      }
+    } else if (competitionTime) {
+      console.log("COMPETITION TIME FROM BACKEND:", competitionTime)
+    }
 
     // Mark this question as processed
     if (data.id) {
@@ -263,9 +285,10 @@ export default function StreamBottomBar() {
       totalPlayers: data.totalPlayers || 0,
       resolved: false,
       outcome: null,
+      competitionTime: competitionTime, // Include the competition time (extracted or from backend)
     }
 
-    // Update the current question
+    // Update the current question immediately
     setCurrentQuestion(normalizedQuestion)
 
     // Use the countdown value from the server if available, otherwise calculate it
@@ -285,15 +308,18 @@ export default function StreamBottomBar() {
       timeLeft = 36
     }
 
-    // Set the countdown
+    // Set the countdown immediately
     setCountdown(timeLeft)
+
+    // Always ensure timer is visible
+    setTimerVisible(true)
 
     // Clear any existing timer
     if (timerRef.current) {
       clearInterval(timerRef.current)
     }
 
-    // Start the timer
+    // Start the timer immediately
     timerRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -336,10 +362,38 @@ export default function StreamBottomBar() {
     }
   }
 
+  // Watch for camera holder changes to reset timer and fetch new question
+  useEffect(() => {
+    if (cameraHolder && cameraHolder.CameraHolderName) {
+      // Check if camera holder name has changed
+      if (lastCameraHolderNameRef.current !== cameraHolder.CameraHolderName) {
+        console.log("Camera holder changed from", lastCameraHolderNameRef.current, "to", cameraHolder.CameraHolderName)
+
+        // Update the last camera holder name
+        lastCameraHolderNameRef.current = cameraHolder.CameraHolderName
+
+        // If this is a valid camera holder (not "None"), fetch a new question with a fresh timer
+        if (cameraHolder.CameraHolderName !== "None") {
+          console.log("New camera holder detected, fetching fresh question with new timer")
+
+          // Force create a new question for this camera holder
+          const socket = getSocket()
+          if (socket && socket.connected) {
+            socket.emit("create_bet_question", { streamId: getStreamId() })
+          }
+
+          // Fetch the active question with a fresh timer
+          fetchActiveQuestion(0, true)
+        }
+      }
+    }
+  }, [cameraHolder])
+
   // Initialize socket connection and fetch active question
   useEffect(() => {
     // Initialize socket
     const socket = initializeSocket()
+    socketRef.current = socket
 
     // Track socket connection status
     socket.on("connect", () => {
@@ -374,6 +428,8 @@ export default function StreamBottomBar() {
     const initialCameraHolder = getCurrentCameraHolder()
     if (initialCameraHolder) {
       setCameraHolder(initialCameraHolder)
+      // Store the initial camera holder name
+      lastCameraHolderNameRef.current = initialCameraHolder.CameraHolderName
       // Immediately fetch a question when we have a camera holder
       fetchActiveQuestion(0, true)
     } else {
@@ -381,6 +437,8 @@ export default function StreamBottomBar() {
       getCameraHolder().then(({ success, cameraHolder }) => {
         if (success && cameraHolder) {
           setCameraHolder(cameraHolder)
+          // Store the initial camera holder name
+          lastCameraHolderNameRef.current = cameraHolder.CameraHolderName
           // Immediately fetch a question when we have a camera holder
           fetchActiveQuestion(0, true)
         }
@@ -395,15 +453,6 @@ export default function StreamBottomBar() {
         if (now - lastCameraHolderUpdate > 2000) {
           setLastCameraHolderUpdate(now)
           setCameraHolder(event.detail.cameraHolder)
-
-          // When camera holder changes, fetch a new question immediately
-          if (event.detail.cameraHolder.CameraHolderName && event.detail.cameraHolder.CameraHolderName !== "None") {
-            console.log("Camera holder updated, fetching question immediately")
-            // Use a timeout of 0 to ensure this runs right after the current execution
-            setTimeout(() => {
-              fetchActiveQuestion(0, true)
-            }, 0)
-          }
         }
       }
     }
@@ -424,11 +473,31 @@ export default function StreamBottomBar() {
       }
     }
 
+    // Add listener for socket connection events
+    const handleSocketConnected = () => {
+      setSocketConnected(true)
+    }
+
+    const handleSocketDisconnected = () => {
+      setSocketConnected(false)
+    }
+
+    // Add listener for cached questions
+    const handleCachedQuestionLoaded = (event) => {
+      if (event.detail && event.detail.question) {
+        console.log("Cached question loaded:", event.detail.question)
+        handleNewQuestion(event.detail.question)
+      }
+    }
+
     window.addEventListener("camera_holder_updated", handleCameraHolderUpdate)
     window.addEventListener("new_question_received", handleNewQuestionReceived)
     window.addEventListener("current_question_received", handleCurrentQuestionReceived)
     window.addEventListener("active_question_loaded", handleActiveQuestionLoaded)
     window.addEventListener("question_refreshed", handleQuestionRefreshed)
+    window.addEventListener("socket_connected", handleSocketConnected)
+    window.addEventListener("socket_disconnected", handleSocketDisconnected)
+    window.addEventListener("cached_question_loaded", handleCachedQuestionLoaded)
 
     // Fetch active question immediately
     fetchActiveQuestion(0, true)
@@ -592,12 +661,6 @@ export default function StreamBottomBar() {
           detail: { cameraHolder: data.cameraHolder },
         })
         window.dispatchEvent(event)
-
-        // When camera holder changes, fetch a new question immediately
-        // but only if we don't already have one
-        if (!currentQuestion && data.cameraHolder.CameraHolderName && data.cameraHolder.CameraHolderName !== "None") {
-          fetchActiveQuestion(0, true)
-        }
       }
     })
 
@@ -691,11 +754,16 @@ export default function StreamBottomBar() {
       socket.off("bet_result")
       socket.off("biggest_win_update")
       socket.off("camera_holder_update")
+      socket.off("question_update")
+      socket.off("question_created")
       window.removeEventListener("camera_holder_updated", handleCameraHolderUpdate)
       window.removeEventListener("new_question_received", handleNewQuestionReceived)
       window.removeEventListener("current_question_received", handleCurrentQuestionReceived)
       window.removeEventListener("active_question_loaded", handleActiveQuestionLoaded)
       window.removeEventListener("question_refreshed", handleQuestionRefreshed)
+      window.removeEventListener("socket_connected", handleSocketConnected)
+      window.removeEventListener("socket_disconnected", handleSocketDisconnected)
+      window.removeEventListener("cached_question_loaded", handleCachedQuestionLoaded)
 
       // Clear any active timer
       if (timerRef.current) {
@@ -797,6 +865,51 @@ export default function StreamBottomBar() {
   const formatCountdown = (seconds) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+  }
+
+  // Update the formatCompetitionTime function to use the extracted competition time
+  const formatCompetitionTime = (question) => {
+    if (!question) return ""
+
+    // Use the competition time if available
+    if (question.competitionTime) {
+      return `${question.competitionTime} sec`
+    }
+
+    return ""
+  }
+
+  // Remove the displayCompetitionTime function since we won't be using it
+  // Update the formatCompetitionTime function to be more robust
+
+  const formatCompetitionTimeRobust = (question) => {
+    if (!question || !question.competitionTime) {
+      // If no competition time, show a fixed 36 seconds
+      return "00:36"
+    }
+
+    const now = new Date()
+    let competitionTime
+
+    // Handle string or Date object
+    if (typeof question.competitionTime === "string") {
+      competitionTime = new Date(question.competitionTime)
+    } else {
+      competitionTime = question.competitionTime
+    }
+
+    // If competition time is in the past, return "Completed"
+    if (competitionTime < now) {
+      return "Completed"
+    }
+
+    // Calculate time difference in seconds
+    const diffSeconds = Math.floor((competitionTime - now) / 1000)
+
+    // Format as MM:SS
+    const mins = Math.floor(diffSeconds / 60)
+    const secs = diffSeconds % 60
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
@@ -1279,6 +1392,7 @@ export default function StreamBottomBar() {
         (error.message.includes("Authentication required") ||
           error.message.includes("session has expired") ||
           error.message.includes("token expired") ||
+          error.message.includes("invalid token") ||
           error.message.includes("unauthorized"))
       ) {
         // Handle authentication errors with automatic logout
@@ -1711,7 +1825,10 @@ export default function StreamBottomBar() {
               <div>
                 {/* Use the full question text from the server instead of constructing it */}
                 <span style={{ fontSize: "16px", color: "white" }}>{currentQuestion?.question || ""}</span>
+
+                {/* Add the competition time display */}
               </div>
+              {/* Always show timer when question is available */}
               <div
                 style={{
                   position: "absolute",
@@ -2193,6 +2310,7 @@ export default function StreamBottomBar() {
                       {/* Use the full question text from the server instead of constructing it */}
                       <span style={{ color: "white" }}>{currentQuestion?.question || ""}</span>
                     </div>
+                    {/* Always show timer when question is available */}
                     <div
                       style={{
                         position: "absolute",
@@ -2203,6 +2321,7 @@ export default function StreamBottomBar() {
                         color: "white",
                         padding: "2px 8px",
                         fontSize: "14px",
+                        fontWeight: "bold",
                       }}
                     >
                       {formatCountdown(countdown)}
@@ -2390,7 +2509,7 @@ export default function StreamBottomBar() {
                       style={{ marginRight: "6px" }}
                     >
                       <path
-                        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 2 12C2 17.5228 6.47715 22 12 22Z"
+                        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
                         stroke="white"
                         strokeWidth="2"
                         strokeLinecap="round"
@@ -2615,9 +2734,8 @@ export default function StreamBottomBar() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
-                      <path d="M12 22V7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       <path
-                        d="M12 7H16.5C17.163 7 17.7989 6.73661 18.2678 6.26777C18.7366 5.79893 19 5.16304 19 4.5C19 3.83696 18.7366 3.20107 18.2678 2.73223C17.7989 2.26339 17.163 2 16.5 2C13 2 12 7 12 7Z"
+                        d="M12 7H16.5C17.163 7 17.7989 6.73661 18.2678 6.26777C18.7322 5.79893 19 5.16304 19 4.5C19 3.83696 18.7366 3.20107 18.2678 2.73223C17.7989 2.26339 17.163 2 16.5 2C13 2 12 7 12 7Z"
                         stroke="white"
                         strokeWidth="2"
                         strokeLinecap="round"
