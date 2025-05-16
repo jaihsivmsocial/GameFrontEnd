@@ -1,307 +1,22 @@
-// import { io } from "socket.io-client"
-// import { getCameraHolder } from "../../components/wallet-service/api"
-
-// // Socket.io connection
-// let socket
-// let cameraHolderMonitoringActive = false
-
-// // Add this function to check for camera holder changes and request a question if needed
-// export const startCameraHolderMonitoring = () => {
-//   // Don't start multiple monitoring instances
-//   if (cameraHolderMonitoringActive) {
-//     console.log("Camera holder monitoring already active")
-//     return () => {}
-//   }
-//   let lastCameraHolderName = null
-//   cameraHolderMonitoringActive = true
-
-//   // Function to check camera holder and request question if needed
-//   const checkCameraHolder = async () => {
-//     try {
-//       const { success, cameraHolder } = await getCameraHolder()
-
-//       if (!success || !cameraHolder) {
-//         return
-//       }
-
-//       const currentName = cameraHolder.CameraHolderName
-//       console.log("Current camera holder name:", currentName, "Last camera holder name:", lastCameraHolderName)
-
-//       // If camera holder changed from None/empty to a valid name, request a question immediately
-//       if (
-//         (lastCameraHolderName === null || lastCameraHolderName === "" || lastCameraHolderName === "None") &&
-//         currentName &&
-//         currentName !== "None"
-//       ) {
-//         console.log("Camera holder changed to a valid name, requesting question immediately")
-
-//         // Emit event to request a new question
-//         if (socket && socket.connected) {
-//           socket.emit("get_active_question")
-
-//           // Also emit a custom event that UI components can listen for
-//           if (typeof window !== "undefined") {
-//             window.dispatchEvent(
-//               new CustomEvent("camera_holder_changed", {
-//                 detail: { cameraHolder: currentName },
-//               }),
-//             )
-//           }
-//         }
-//       }
-
-//       // Update the last camera holder name
-//       lastCameraHolderName = currentName
-//     } catch (error) {
-//       console.error("Error monitoring camera holder:", error)
-//     }
-//   }
-
-//   // Check immediately on start
-//   checkCameraHolder()
-
-//   // Then check every 2 seconds
-//   const intervalId = setInterval(checkCameraHolder, 2000)
-
-//   // Return a function to stop monitoring
-//   return () => {
-//     clearInterval(intervalId)
-//     cameraHolderMonitoringActive = false
-//   }
-// }
-
-// // Update the initializeSocket function to start monitoring
-// export const initializeSocket = () => {
-//   if (!socket) {
-//     socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
-//       transports: ["websocket"],
-//       autoConnect: true,
-//     })
-
-//     socket.on("connect", () => {
-//       console.log("Socket connected:", socket.id)
-//       // Start monitoring camera holder changes when socket connects
-//       startCameraHolderMonitoring()
-//     })
-
-//     socket.on("connect_error", (error) => {
-//       console.error("Socket connection error:", error)
-//     })
-
-//     socket.on("disconnect", (reason) => {
-//       console.log("Socket disconnected:", reason)
-//       cameraHolderMonitoringActive = false
-//     })
-
-//     // Listen for new questions and broadcast to UI
-//     socket.on("new_question", (data) => {
-//       console.log("New question received from server:", data)
-
-//       // Dispatch a custom event for components that might not be directly using the socket
-//       if (typeof window !== "undefined") {
-//         window.dispatchEvent(
-//           new CustomEvent("new_question_received", {
-//             detail: { question: data },
-//           }),
-//         )
-//       }
-//     })
-
-//     // Listen for current question responses
-//     socket.on("current_question", (data) => {
-//       console.log("Current question received from server:", data)
-
-//       // Dispatch a custom event for components that might not be directly using the socket
-//       if (typeof window !== "undefined") {
-//         window.dispatchEvent(
-//           new CustomEvent("current_question_received", {
-//             detail: { question: data },
-//           }),
-//         )
-//       }
-//     })
-//   }
-
-//   return socket
-// }
-
-// export const getSocket = () => {
-//   if (!socket) {
-//     return initializeSocket()
-//   }
-//   return socket
-// }
-
-// export const disconnectSocket = () => {
-//   if (socket) {
-//     socket.disconnect()
-//     socket = null
-//     cameraHolderMonitoringActive = false
-//   }
-// }
-
-// // Add this function to check if questions should be generated based on camera holder
-// export const shouldGenerateQuestions = async () => {
-//   try {
-//     const { success, cameraHolder } = await getCameraHolder()
-
-//     if (!success || !cameraHolder) {
-//       console.log("Failed to get camera holder or no camera holder data")
-//       return false
-//     }
-
-//     console.log("Camera holder name:", cameraHolder.CameraHolderName)
-
-//     // Only generate questions if camera holder name is not empty and not "None"
-//     return cameraHolder.CameraHolderName && cameraHolder.CameraHolderName !== "None"
-//   } catch (error) {
-//     console.error("Error checking if questions should be generated:", error)
-//     return false
-//   }
-// }
-
-// // Update the socket event listeners to properly handle betting questions
-// export const socketEvents = {
-//   // Listen for new questions
-//   onNewQuestion: (callback) => {
-//     getSocket().on("new_question", async (data) => {
-//       console.log("New question received:", data)
-
-//       // Check if questions should be generated
-//       const generate = await shouldGenerateQuestions()
-//       if (generate) {
-//         callback(data)
-//       } else {
-//         console.log("Ignoring question - camera holder conditions not met")
-//       }
-//     })
-
-//     // Also listen for current question responses
-//     getSocket().on("current_question", async (data) => {
-//       console.log("Current question received:", data)
-
-//       // Always process current_question responses
-//       callback(data)
-//     })
-
-//     // Also listen for no questions available event
-//     getSocket().on("no_questions_available", (data) => {
-//       console.log("No questions available:", data)
-//     })
-//   },
-
-//   // Request a question only if conditions are met
-//   requestQuestion: async () => {
-//     const generate = await shouldGenerateQuestions()
-//     if (generate) {
-//       console.log("Requesting question - camera holder conditions met")
-//       getSocket().emit("get_active_question")
-//     } else {
-//       console.log("Not requesting question - camera holder conditions not met")
-//     }
-//   },
-
-//   // Force request a question regardless of conditions (for manual requests)
-//   forceRequestQuestion: () => {
-//     console.log("Forcing question request")
-//     getSocket().emit("get_active_question")
-//   },
-
-//   // Keep the rest of the existing socket events...
-//   onBetPlaced: (callback) => {
-//     getSocket().on("bet_placed", (data) => {
-//       console.log("Bet placed received:", data)
-//       callback(data)
-//     })
-
-//     // Also listen for bet_update which contains percentage updates
-//     getSocket().on("bet_update", (data) => {
-//       console.log("Bet update received:", data)
-//       callback(data)
-//     })
-
-//     // Listen for the API response with balance updates
-//     getSocket().on("bet_response", (data) => {
-//       console.log("Bet response received:", data)
-//       if (data.success && data.newBalance !== undefined) {
-//         // Dispatch a custom event for real-time updates
-//         if (typeof window !== "undefined") {
-//           window.dispatchEvent(
-//             new CustomEvent("wallet_balance_updated", {
-//               detail: { newBalance: data.newBalance },
-//             }),
-//           )
-//         }
-//       }
-//       callback(data)
-//     })
-//   },
-
-//   onQuestionResolved: (callback) => {
-//     getSocket().on("question_resolved", (data) => {
-//       console.log("Question resolved received:", data)
-//       callback(data)
-//     })
-//   },
-
-//   onBettingStats: (callback) => {
-//     getSocket().on("betting_stats", (data) => {
-//       console.log("Received betting stats from socket:", data)
-//       callback(data)
-//     })
-
-//     // Also listen for alternative event names that might be used
-//     getSocket().on("bet_stats", (data) => {
-//       console.log("Received bet_stats from socket:", data)
-//       callback(data)
-//     })
-
-//     getSocket().on("stats_update", (data) => {
-//       console.log("Received stats_update from socket:", data)
-//       callback(data)
-//     })
-//   },
-
-//   onTotalBetsUpdate: (callback) => {
-//     getSocket().on("total_bets_update", (data) => {
-//       console.log("Received total_bets_update from socket:", data)
-//       callback(data)
-//     })
-//   },
-
-//   onPlayerCountUpdate: (callback) => {
-//     getSocket().on("player_count_update", (data) => {
-//       console.log("Received player_count_update from socket:", data)
-//       callback(data)
-//     })
-//   },
-
-//   onWalletUpdate: (callback) => {
-//     getSocket().on("wallet_update", (data) => {
-//       console.log("Wallet update received:", data)
-//       if (data.newBalance !== undefined) {
-//         // Dispatch a custom event for real-time updates
-//         if (typeof window !== "undefined") {
-//           window.dispatchEvent(
-//             new CustomEvent("wallet_balance_updated", {
-//               detail: { newBalance: data.newBalance },
-//             }),
-//           )
-//         }
-//       }
-//       callback(data)
-//     })
-//   },
-
-//   // Remove event listener
-//   removeListener: (event) => {
-//     getSocket().off(event)
-//   },
-// }
-
-
 import { io } from "socket.io-client"
 import { getCameraHolder } from "../../components/wallet-service/api"
+
+// Update the extractCompetitionTimeFromQuestion function to add 36 seconds to the extracted time
+export const extractCompetitionTimeFromQuestion = (questionText) => {
+  if (!questionText) return null
+
+  // Look for patterns like "30 sec", "20 Sec", etc.
+  const match = questionText.match(/(\d+)\s*Sec/i)
+  if (match && match[1]) {
+    // Return the number of seconds PLUS 36 seconds (base competition time)
+    const extractedTime = Number.parseInt(match[1], 10)
+    const totalCompetitionTime = 36 + extractedTime
+    console.log("Extracted time from question:", extractedTime)
+    console.log("Total competition time (36 + extracted):", totalCompetitionTime)
+    return totalCompetitionTime
+  }
+  return 36 // Default to 36 seconds if no time is found in the question
+}
 
 // Socket.io connection
 let socket
@@ -468,9 +183,25 @@ export const initializeSocket = () => {
       }
     })
 
-    // Listen for new questions and broadcast to UI
+    // Update all socket event handlers to use the updated extraction function
     socket.on("new_question", (data) => {
       console.log("New question received from server:", data)
+      console.log("BACKEND SOCKET QUESTION TEXT:", data.question)
+
+      // Extract competition time from question text if not provided
+      if (!data.competitionTime && data.question) {
+        const extractedTime = extractCompetitionTimeFromQuestion(data.question)
+        if (extractedTime) {
+          console.log("TOTAL COMPETITION TIME (36 + EXTRACTED):", extractedTime)
+          data.competitionTime = extractedTime
+        } else {
+          // Default to 36 seconds if no time is extracted
+          data.competitionTime = 36
+          console.log("DEFAULT COMPETITION TIME:", data.competitionTime)
+        }
+      } else if (data.competitionTime) {
+        console.log("COMPETITION TIME FROM BACKEND:", data.competitionTime)
+      }
 
       // Dispatch a custom event for components that might not be directly using the socket
       if (typeof window !== "undefined") {
@@ -482,9 +213,25 @@ export const initializeSocket = () => {
       }
     })
 
-    // Listen for current question responses
+    // Update the current_question handler similarly
     socket.on("current_question", (data) => {
       console.log("Current question received from server:", data)
+      console.log("BACKEND CURRENT QUESTION TEXT:", data.question)
+
+      // Extract competition time from question text if not provided
+      if (!data.competitionTime && data.question) {
+        const extractedTime = extractCompetitionTimeFromQuestion(data.question)
+        if (extractedTime) {
+          console.log("TOTAL COMPETITION TIME (36 + EXTRACTED):", extractedTime)
+          data.competitionTime = extractedTime
+        } else {
+          // Default to 36 seconds if no time is extracted
+          data.competitionTime = 36
+          console.log("DEFAULT COMPETITION TIME:", data.competitionTime)
+        }
+      } else if (data.competitionTime) {
+        console.log("COMPETITION TIME FROM BACKEND:", data.competitionTime)
+      }
 
       // Dispatch a custom event for components that might not be directly using the socket
       if (typeof window !== "undefined") {
@@ -496,11 +243,27 @@ export const initializeSocket = () => {
       }
     })
 
-    // Add a listener for question_created events
+    // Update the question_created handler similarly
     socket.on("question_created", (data) => {
       console.log("Question created received:", data)
+      console.log("BACKEND CREATED QUESTION TEXT:", data.question)
 
-      // Dispatch a custom event
+      // Extract competition time from question text if not provided
+      if (!data.competitionTime && data.question) {
+        const extractedTime = extractCompetitionTimeFromQuestion(data.question)
+        if (extractedTime) {
+          console.log("TOTAL COMPETITION TIME (36 + EXTRACTED):", extractedTime)
+          data.competitionTime = extractedTime
+        } else {
+          // Default to 36 seconds if no time is extracted
+          data.competitionTime = 36
+          console.log("DEFAULT COMPETITION TIME:", data.competitionTime)
+        }
+      } else if (data.competitionTime) {
+        console.log("COMPETITION TIME FROM BACKEND:", data.competitionTime)
+      }
+
+      // Dispatch a custom event for components that might not be directly using the socket
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("question_created", {
@@ -510,17 +273,35 @@ export const initializeSocket = () => {
       }
     })
 
-    // Add a listener for question_update events
+    // Update the question_update handler similarly
     socket.on("question_update", (data) => {
       console.log("Question update received:", data)
+      if (data && data.question) {
+        console.log("BACKEND UPDATED QUESTION TEXT:", data.question.question)
 
-      // Dispatch a custom event
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("question_updated", {
-            detail: { question: data.question },
-          }),
-        )
+        // Extract competition time from question text if not provided
+        if (!data.question.competitionTime && data.question.question) {
+          const extractedTime = extractCompetitionTimeFromQuestion(data.question.question)
+          if (extractedTime) {
+            console.log("TOTAL COMPETITION TIME (36 + EXTRACTED):", extractedTime)
+            data.question.competitionTime = extractedTime
+          } else {
+            // Default to 36 seconds if no time is extracted
+            data.question.competitionTime = 36
+            console.log("DEFAULT COMPETITION TIME:", data.question.competitionTime)
+          }
+        } else if (data.question.competitionTime) {
+          console.log("COMPETITION TIME FROM BACKEND:", data.question.competitionTime)
+        }
+
+        // Dispatch a custom event for components that might not be directly using the socket
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("question_updated", {
+              detail: { question: data.question },
+            }),
+          )
+        }
       }
     })
   }
@@ -574,11 +355,27 @@ export const shouldGenerateQuestions = async () => {
 
 // Update the socket event listeners to properly handle betting questions
 export const socketEvents = {
-  // Listen for new questions
+  // Update the socketEvents.onNewQuestion handler
   onNewQuestion: (callback) => {
     getSocket().on("new_question", async (data) => {
-      console.log("New question received:", data)
-      console.log("BACKEND SOCKET QUESTION TEXT:", data.question)
+      console.log("New question received from socket:", data)
+      console.log("EXACT BACKEND SOCKET QUESTION TEXT:", data.question)
+
+      // Extract competition time from question text if not provided
+      if (!data.competitionTime && data.question) {
+        const extractedTime = extractCompetitionTimeFromQuestion(data.question)
+        if (extractedTime) {
+          console.log("TOTAL COMPETITION TIME (36 + EXTRACTED):", extractedTime)
+          data.competitionTime = extractedTime
+        } else {
+          // Default to 36 seconds if no time is extracted
+          data.competitionTime = 36
+          console.log("DEFAULT COMPETITION TIME:", data.competitionTime)
+        }
+      } else if (data.competitionTime) {
+        console.log("COMPETITION TIME FROM BACKEND:", data.competitionTime)
+      }
+
       // IMPORTANT: Pass the complete question data to the callback without modification
       callback(data)
     })
@@ -586,7 +383,23 @@ export const socketEvents = {
     // Also listen for current question responses
     getSocket().on("current_question", async (data) => {
       console.log("Current question received:", data)
-      console.log("BACKEND CURRENT QUESTION TEXT:", data.question)
+      console.log("EXACT BACKEND CURRENT QUESTION TEXT:", data.question)
+
+      // Extract competition time from question text if not provided
+      if (!data.competitionTime && data.question) {
+        const extractedTime = extractCompetitionTimeFromQuestion(data.question)
+        if (extractedTime) {
+          console.log("TOTAL COMPETITION TIME (36 + EXTRACTED):", extractedTime)
+          data.competitionTime = extractedTime
+        } else {
+          // Default to 36 seconds if no time is extracted
+          data.competitionTime = 36
+          console.log("DEFAULT COMPETITION TIME:", data.competitionTime)
+        }
+      } else if (data.competitionTime) {
+        console.log("COMPETITION TIME FROM BACKEND:", data.competitionTime)
+      }
+
       // IMPORTANT: Pass the complete question data to the callback without modification
       callback(data)
     })
@@ -595,6 +408,22 @@ export const socketEvents = {
     getSocket().on("question_created", (data) => {
       console.log("Question created received:", data)
       console.log("BACKEND CREATED QUESTION TEXT:", data.question)
+
+      // Extract competition time from question text if not provided
+      if (!data.competitionTime && data.question) {
+        const extractedTime = extractCompetitionTimeFromQuestion(data.question)
+        if (extractedTime) {
+          console.log("TOTAL COMPETITION TIME (36 + EXTRACTED):", extractedTime)
+          data.competitionTime = extractedTime
+        } else {
+          // Default to 36 seconds if no time is extracted
+          data.competitionTime = 36
+          console.log("DEFAULT COMPETITION TIME:", data.competitionTime)
+        }
+      } else if (data.competitionTime) {
+        console.log("COMPETITION TIME FROM BACKEND:", data.competitionTime)
+      }
+
       // IMPORTANT: Pass the complete question data to the callback without modification
       callback(data)
     })
@@ -604,6 +433,22 @@ export const socketEvents = {
       console.log("Question update received:", data)
       if (data && data.question) {
         console.log("BACKEND UPDATED QUESTION TEXT:", data.question.question)
+
+        // Extract competition time from question text if not provided
+        if (!data.question.competitionTime && data.question.question) {
+          const extractedTime = extractCompetitionTimeFromQuestion(data.question.question)
+          if (extractedTime) {
+            console.log("TOTAL COMPETITION TIME (36 + EXTRACTED):", extractedTime)
+            data.question.competitionTime = extractedTime
+          } else {
+            // Default to 36 seconds if no time is extracted
+            data.question.competitionTime = 36
+            console.log("DEFAULT COMPETITION TIME:", data.question.competitionTime)
+          }
+        } else if (data.question.competitionTime) {
+          console.log("COMPETITION TIME FROM BACKEND:", data.question.competitionTime)
+        }
+
         // IMPORTANT: Pass the complete question data to the callback without modification
         callback(data.question)
       }
@@ -731,5 +576,17 @@ export const socketEvents = {
   // Remove event listener
   removeListener: (event) => {
     getSocket().off(event)
+  },
+
+  // Add a function to generate a new question
+  generateNewQuestion: (streamId = null) => {
+    const socket = getSocket()
+    if (socket && socket.connected) {
+      const currentStreamId = streamId || getStreamId()
+      console.log("Requesting to create a new question for stream:", currentStreamId)
+      socket.emit("create_bet_question", { streamId: currentStreamId })
+      return true
+    }
+    return false
   },
 }
