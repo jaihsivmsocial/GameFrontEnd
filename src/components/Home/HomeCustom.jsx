@@ -15,8 +15,7 @@ export default function HomeCustom() {
   // Media query for mobile detection
   const isMobile = useMediaQuery("(max-width: 768px)")
   // IMPROVED: Use environment variable with fallback for pixel streaming URL
-  const pixelStreamingUrl = "http://15.237.174.180"
-
+  const pixelStreamingUrl = "https://www.youtube.com/embed/live_stream?channel=UCil13nNe4DHOFJZdcMJFJSg"
   // Main camera definition - IMPROVED: Use the pixel streaming URL
   const mainCamera = useMemo(
     () => ({
@@ -302,9 +301,9 @@ export default function HomeCustom() {
         )}
 
         {/* Camera name */}
-        <div className={styles.cameraLabel}>
+        {/* <div className={styles.cameraLabel}>
           <span>{mainCamera.name || "Camera Feed"}</span>
-        </div>
+        </div> */}
 
         <div className={styles.mainCam} style={{ zIndex: 30 }}>
           <div className={styles.camIcon}>
@@ -339,14 +338,14 @@ export default function HomeCustom() {
         </div>
 
         {/* Add Video Quality Settings component */}
-        <div className="position-absolute bottom-0 end-0 p-2 d-none d-md-block" style={{ zIndex: 20 }}>
+        {/* <div className="position-absolute bottom-0 end-0 p-2 d-none d-md-block" style={{ zIndex: 20 }}>
           <VideoQualitySettings
             streamId={mainCamera.streamId}
             initialQuality={qualitySettings[mainCamera.streamId]?.quality || "auto"}
             initialFrameRate={qualitySettings[mainCamera.streamId]?.frameRate || "60"}
             onQualityChange={(quality, frameRate) => handleQualityChange(quality, frameRate, mainCamera.streamId)}
           />
-        </div>
+        </div> */}
 
         {/* Show active indicator */}
         {isActive && (
