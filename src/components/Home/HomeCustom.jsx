@@ -315,9 +315,9 @@ export default function HomeCustom() {
               className={styles.icon}
             />
           </div>
-          <div className={styles.camText}>
+          {/* <div className={styles.camText}>
             <div>{mainCamera.name || "Camera Feed"}</div>
-          </div>
+          </div> */}
         </div>
 
         <div className={styles.liveIndicator} style={{ zIndex: 30 }}>
