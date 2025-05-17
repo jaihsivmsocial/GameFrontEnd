@@ -1358,6 +1358,41 @@ export default function AuthHeaderButtons({
     }
   }
 
+  const syncAuthState = () => {
+    // Try to get token from multiple sources
+    const localToken = localStorage.getItem("authToken")
+    const sessionToken = sessionStorage.getItem("authToken")
+    const cookieToken = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("authToken="))
+      ?.split("=")[1]
+
+    // Use the first available token
+    const token = localToken || sessionToken || cookieToken
+
+    if (token) {
+      // Ensure token is stored in all places
+      localStorage.setItem("authToken", token)
+      sessionStorage.setItem("authToken", token)
+      document.cookie = `authToken=${token}; path=/; max-age=2592000; SameSite=Lax`
+
+      // Get user data
+      const localUserData = JSON.parse(localStorage.getItem("userData") || "{}")
+      const sessionUserData = JSON.parse(sessionStorage.getItem("userData") || "{}")
+
+      // Merge user data
+      const userData = { ...sessionUserData, ...localUserData }
+
+      // Update all storage
+      localStorage.setItem("userData", JSON.stringify(userData))
+      sessionStorage.setItem("userData", JSON.stringify(userData))
+
+      return { token, userData }
+    }
+
+    return { token: null, userData: null }
+  }
+
   // Update the handleLoginChange function
   const handleLoginChange = (e) => {
     const { name, value } = e.target
@@ -1415,13 +1450,22 @@ export default function AuthHeaderButtons({
 
       // Save token if needed
       if (data.token) {
+        // Store token in multiple places for cross-system compatibility
         localStorage.setItem("authToken", data.token)
-
-        // Also store in sessionStorage for cross-system compatibility
         sessionStorage.setItem("authToken", data.token)
 
-        // Set a cookie for additional cross-system support
-        document.cookie = `authToken=${data.token}; path=/; max-age=2592000; SameSite=None; Secure`
+        // Set a cookie with proper attributes for cross-domain support
+        document.cookie = `authToken=${data.token}; path=/; max-age=2592000; SameSite=Lax`
+
+        // Also store user data in all storage mechanisms
+        const userData = {
+          username: loginFormData.username,
+          walletBalance: data.walletBalance || 0,
+          avatar: data.profilePicture || "/placeholder.svg?height=40&width=40",
+        }
+
+        localStorage.setItem("userData", JSON.stringify(userData))
+        sessionStorage.setItem("userData", JSON.stringify(userData))
       }
 
       // Save PlayFab session ticket if available
@@ -1579,11 +1623,13 @@ export default function AuthHeaderButtons({
     localStorage.removeItem("username")
     localStorage.removeItem("avatar")
     localStorage.removeItem("playfabSessionTicket")
+    localStorage.removeItem("userData")
 
     sessionStorage.removeItem("authToken")
     sessionStorage.removeItem("username")
     sessionStorage.removeItem("avatar")
     sessionStorage.removeItem("playfabSessionTicket")
+    sessionStorage.removeItem("userData")
 
     // Clear cookies
     document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure"
@@ -1609,6 +1655,34 @@ export default function AuthHeaderButtons({
 
   // Check if current view is one of the specified mobile dimensions
   const isSpecificMobileSize = mobileSize === "S" || mobileSize === "M" || mobileSize === "L"
+
+  useEffect(() => {
+    const { token, userData } = syncAuthState()
+
+    if (token) {
+      // Verify the token with your backend
+      verifyToken(token).then((isValid) => {
+        if (isValid) {
+          setIsLoggedIn(true)
+          setUserData(
+            userData || {
+              username: localStorage.getItem("username") || sessionStorage.getItem("username") || "User",
+              avatar:
+                localStorage.getItem("avatar") ||
+                sessionStorage.getItem("avatar") ||
+                "/placeholder.svg?height=40&width=40",
+            },
+          )
+
+          // Notify parent component
+          onAuthStateChange(true, userData)
+        } else {
+          // Token is invalid, clear it
+          handleLogout()
+        }
+      })
+    }
+  }, [])
 
   return (
     <>
@@ -1853,12 +1927,12 @@ export default function AuthHeaderButtons({
                 <small>
                   Don't have an account?{" "}
                   <a
-                    className="text-info"
-                    style={{ cursor: "pointer" }}
                     onClick={() => {
                       setShowLoginModal(false)
                       setShowSignupModal(true)
                     }}
+                    className="text-info"
+                    style={{ cursor: "pointer" }}
                   >
                     Sign up
                   </a>
