@@ -145,8 +145,24 @@ export default function AuthHeaderButtons({
 
   // Check if user is already logged in on component mount
   useEffect(() => {
-    // First try to sync auth state across storage mechanisms
-    syncAuthState()
+    // First check local storage and cookies for authentication data
+    const checkLocalAuth = () => {
+      const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken")
+      const userData = JSON.parse(localStorage.getItem("userData") || sessionStorage.getItem("userData") || "{}")
+
+      if (token && userData && userData.username) {
+        // Set logged in state immediately based on local storage
+        // This prevents flashing of login buttons on page refresh
+        setIsLoggedIn(true)
+        setUserData(userData)
+
+        // Notify parent component
+        onAuthStateChange(true, userData)
+      }
+    }
+
+    // Run local check immediately
+    checkLocalAuth()
 
     // Then verify with the server
     checkAuthStatus()
@@ -240,8 +256,16 @@ export default function AuthHeaderButtons({
   // Add this function after syncAuthState
   const checkAuthStatus = async () => {
     try {
+      // First sync auth state across storage mechanisms
+      syncAuthState()
+
+      // Then verify with the server
       const response = await fetch(`${BASEURL}/api/verify-auth`, {
         method: "GET",
+        headers: {
+          // Include the token in the Authorization header
+          Authorization: `Bearer ${localStorage.getItem("authToken") || sessionStorage.getItem("authToken") || ""}`,
+        },
         credentials: "include", // Important for sending cookies
       })
 
@@ -270,15 +294,51 @@ export default function AuthHeaderButtons({
         onAuthStateChange(true, userData)
 
         return true
+      } else if (!response.ok) {
+        console.log("Auth check failed with status:", response.status)
+
+        // Only log out if the token is explicitly invalid (401)
+        // For other errors (like network issues), keep the user logged in based on local storage
+        if (response.status === 401) {
+          handleLogout()
+          return false
+        } else {
+          // For other errors, keep the user logged in if we have local data
+          const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken")
+          const userData = JSON.parse(localStorage.getItem("userData") || sessionStorage.getItem("userData") || "{}")
+
+          if (token && userData && userData.username) {
+            return true
+          } else {
+            handleLogout()
+            return false
+          }
+        }
       } else {
-        // If not authenticated, clear data
-        handleLogout()
-        return false
+        // If not authenticated according to server, check local storage as fallback
+        const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken")
+        const userData = JSON.parse(localStorage.getItem("userData") || sessionStorage.getItem("userData") || "{}")
+
+        if (token && userData && userData.username) {
+          return true
+        } else {
+          handleLogout()
+          return false
+        }
       }
     } catch (error) {
       console.error("Auth check error:", error)
-      handleLogout()
-      return false
+
+      // On network error, don't log out if we have local data
+      const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken")
+      const userData = JSON.parse(localStorage.getItem("userData") || sessionStorage.getItem("userData") || "{}")
+
+      if (token && userData && userData.username) {
+        return true
+      } else {
+        handleLogout()
+        return false
+      }
     }
   }
 
@@ -555,34 +615,6 @@ export default function AuthHeaderButtons({
 
   // Check if current view is one of the specified mobile dimensions
   const isSpecificMobileSize = mobileSize === "S" || mobileSize === "M" || mobileSize === "L"
-
-  useEffect(() => {
-    const { token, userData } = syncAuthState()
-
-    if (token) {
-      // Verify the token with your backend
-      verifyToken(token).then((isValid) => {
-        if (isValid) {
-          setIsLoggedIn(true)
-          setUserData(
-            userData || {
-              username: localStorage.getItem("username") || sessionStorage.getItem("username") || "User",
-              avatar:
-                localStorage.getItem("avatar") ||
-                sessionStorage.getItem("avatar") ||
-                "/placeholder.svg?height=40&width=40",
-            },
-          )
-
-          // Notify parent component
-          onAuthStateChange(true, userData)
-        } else {
-          // Token is invalid, clear it
-          handleLogout()
-        }
-      })
-    }
-  }, [])
 
   return (
     <>
