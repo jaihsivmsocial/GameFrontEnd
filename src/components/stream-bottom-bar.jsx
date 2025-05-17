@@ -1956,7 +1956,21 @@ export default function StreamBottomBar() {
                   <img src="/assets/img/paymenticon/ruppe.png" width="16" height="16" alt="help icon" />
                 </svg>
               </span>
-              <span style={{ color: "#06b6d4", fontSize: "18px", fontWeight: "bold" }}>{betAmount}</span>
+              <input
+                type="text"
+                value={betAmount}
+                onChange={(e) => setBetAmount(e.target.value)}
+                placeholder="Enter amount"
+                style={{
+                  backgroundColor: "transparent",
+                  border: "none",
+                  color: "#06b6d4",
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  width: "calc(100% - 100px)",
+                  outline: "none",
+                }}
+              />
               <span
                 style={{
                   position: "absolute",
@@ -2363,7 +2377,7 @@ export default function StreamBottomBar() {
                     countdown <= 0 ||
                     !cameraHolder ||
                     !cameraHolder.CameraHolderName ||
-                    cameraHolder.CameraHolderName === "None"
+                    cameraHolder.CameraHolderName !== "None"
                   }
                 >
                   YES
@@ -2415,7 +2429,7 @@ export default function StreamBottomBar() {
                     countdown <= 0 ||
                     !cameraHolder ||
                     !cameraHolder.CameraHolderName ||
-                    cameraHolder.CameraHolderName === "None"
+                    cameraHolder.CameraHolderName !== "None"
                   }
                 >
                   NO
@@ -2451,7 +2465,21 @@ export default function StreamBottomBar() {
                     <span style={{ color: "#06b6d4", marginLeft: "10px", marginRight: "5px" }}>
                       <img src="/assets/img/paymenticon/ruppe.png" width="16" height="16" alt="help icon" />
                     </span>
-                    <span style={{ color: "#06b6d4", fontSize: "16px", fontWeight: "bold" }}>{betAmount}</span>
+                    <input
+                      type="text"
+                      value={betAmount}
+                      onChange={(e) => setBetAmount(e.target.value)}
+                      placeholder="Enter amount"
+                      style={{
+                        backgroundColor: "transparent",
+                        border: "none",
+                        color: "#06b6d4",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        width: "100px",
+                        outline: "none",
+                      }}
+                    />
                     <div style={{ marginLeft: "auto", display: "flex" }}>
                       <span
                         style={{
@@ -2735,7 +2763,7 @@ export default function StreamBottomBar() {
                         strokeLinejoin="round"
                       />
                       <path
-                        d="M12 7H16.5C17.163 7 17.7989 6.73661 18.2678 6.26777C18.7322 5.79893 19 5.16304 19 4.5C19 3.83696 18.7366 3.20107 18.2678 2.73223C17.7989 2.26339 17.163 2 16.5 2C13 2 12 7 12 7Z"
+                        d="M12 7H16.5C17.163 7 17.7989 6.73661 18.2678 6.26777C18.7366 5.79893 19 5.16304 19 4.5C19 3.83696 18.7366 3.20107 18.2678 2.73223C17.7989 2.26339 17.163 2 16.5 2C13 2 12 7 12 7Z"
                         stroke="white"
                         strokeWidth="2"
                         strokeLinecap="round"
