@@ -1257,6 +1257,7 @@ export default function AuthHeaderButtons({
   const [verificationEmail, setVerificationEmail] = useState("")
   const [isMobileView, setIsMobileView] = useState(false)
   const [mobileSize, setMobileSize] = useState(null) // 'S', 'M', or 'L'
+  const [isMobile, setIsMobile] = useState(false)
 
   // State for form data
   const [loginFormData, setLoginFormData] = useState({ username: "", password: "" })
@@ -1307,51 +1308,51 @@ export default function AuthHeaderButtons({
 
   // Check if user is already logged in on component mount
   useEffect(() => {
-    // Try to get token from multiple sources
-    const localToken = localStorage.getItem("authToken")
-    const sessionToken = sessionStorage.getItem("authToken")
-    const cookieToken = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("authToken="))
-      ?.split("=")[1]
+    // First try to sync auth state across storage mechanisms
+    syncAuthState()
 
-    const token = localToken || sessionToken || cookieToken
+    // Then verify with the server
+    checkAuthStatus()
 
-    if (token) {
-      // Verify the token with your backend
-      verifyToken(token).then((isValid) => {
-        if (isValid) {
-          setIsLoggedIn(true)
-          // Set some basic user data
-          setUserData({
-            username: localStorage.getItem("username") || sessionStorage.getItem("username") || "User",
-            avatar:
-              localStorage.getItem("avatar") ||
-              sessionStorage.getItem("avatar") ||
-              "/placeholder.svg?height=40&width=40",
-          })
+    // Set up periodic checks every 15 minutes
+    const authCheckInterval = setInterval(
+      () => {
+        checkAuthStatus()
+      },
+      15 * 60 * 1000,
+    )
 
-          // Notify parent component
-          onAuthStateChange(true, userData)
-        } else {
-          // Token is invalid, clear it
-          handleLogout()
-        }
-      })
+    // Check if mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+
+    return () => {
+      window.removeEventListener("resize", checkMobile)
+      clearInterval(authCheckInterval)
     }
   }, [])
 
   // Function to verify token with backend
   const verifyToken = async (token) => {
     try {
-      const response = await fetch(`${BASEURL}/api/verify-token`, {
+      const response = await fetch(`${BASEURL}/api/verify-auth`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        credentials: "include", // Important for sending cookies
       })
 
-      return response.ok
+      if (!response.ok) {
+        return false
+      }
+
+      const data = await response.json()
+      return data.authenticated
     } catch (error) {
       console.error("Error verifying token:", error)
       return false
@@ -1380,17 +1381,68 @@ export default function AuthHeaderButtons({
       const localUserData = JSON.parse(localStorage.getItem("userData") || "{}")
       const sessionUserData = JSON.parse(sessionStorage.getItem("userData") || "{}")
 
-      // Merge user data
+      // Merge user data, preferring local storage
       const userData = { ...sessionUserData, ...localUserData }
 
       // Update all storage
       localStorage.setItem("userData", JSON.stringify(userData))
       sessionStorage.setItem("userData", JSON.stringify(userData))
 
+      // Also ensure username is stored separately for backward compatibility
+      if (userData.username) {
+        localStorage.setItem("username", userData.username)
+        sessionStorage.setItem("username", userData.username)
+      }
+
       return { token, userData }
     }
 
     return { token: null, userData: null }
+  }
+
+  // Add this function after syncAuthState
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch(`${BASEURL}/api/verify-auth`, {
+        method: "GET",
+        credentials: "include", // Important for sending cookies
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.authenticated) {
+        // Update user data with the latest from server
+        const userData = {
+          username: data.user.username,
+          email: data.user.email,
+          walletBalance: data.user.walletBalance || 0,
+          profilePicture: data.user.profilePicture || "/placeholder.svg?height=40&width=40",
+        }
+
+        // Update state
+        setIsLoggedIn(true)
+        setUserData(userData)
+
+        // Update storage
+        localStorage.setItem("userData", JSON.stringify(userData))
+        sessionStorage.setItem("userData", JSON.stringify(userData))
+        localStorage.setItem("username", data.user.username)
+        sessionStorage.setItem("username", data.user.username)
+
+        // Notify parent component
+        onAuthStateChange(true, userData)
+
+        return true
+      } else {
+        // If not authenticated, clear data
+        handleLogout()
+        return false
+      }
+    } catch (error) {
+      console.error("Auth check error:", error)
+      handleLogout()
+      return false
+    }
   }
 
   // Update the handleLoginChange function
@@ -1549,17 +1601,47 @@ export default function AuthHeaderButtons({
         localStorage.setItem("registrationComplete", "true")
         sessionStorage.setItem("registrationComplete", "true")
 
-        alert("Registration successful!")
+        // If the response includes a token, store it (for immediate login)
+        if (data.token) {
+          localStorage.setItem("authToken", data.token)
+          sessionStorage.setItem("authToken", data.token)
+          document.cookie = `authToken=${data.token}; path=/; max-age=2592000; SameSite=Lax`
 
-        // After successful signup, switch to login form
-        setShowSignupModal(false)
-        setShowLoginModal(true)
+          // Store username in lowercase to match backend
+          localStorage.setItem("username", data.user.username)
+          sessionStorage.setItem("username", data.user.username)
 
-        // Pre-fill the login form with the username from signup
-        setLoginFormData({
-          ...loginFormData,
-          username: signupFormData.username,
-        })
+          // Store user data
+          const userData = {
+            username: data.user.username,
+            email: data.user.email,
+            profilePicture: data.user.profilePicture || "/placeholder.svg?height=40&width=40",
+          }
+
+          localStorage.setItem("userData", JSON.stringify(userData))
+          sessionStorage.setItem("userData", JSON.stringify(userData))
+
+          // Set user as logged in
+          setIsLoggedIn(true)
+          setUserData(userData)
+
+          // Notify parent component
+          onAuthStateChange(true, userData)
+
+          // Close modals
+          closeAllModals()
+        } else {
+          // If no token, just show success and switch to login
+          alert("Registration successful!")
+          setShowSignupModal(false)
+          setShowLoginModal(true)
+
+          // Pre-fill the login form with the username from signup
+          setLoginFormData({
+            ...loginFormData,
+            username: signupFormData.username,
+          })
+        }
 
         // Reset signup form
         setSignupFormData({
@@ -1617,7 +1699,17 @@ export default function AuthHeaderButtons({
   }
 
   // Handle logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // Call the logout endpoint to clear HTTP-only cookies
+      await fetch(`${BASEURL}/api/logout`, {
+        method: "POST",
+        credentials: "include",
+      })
+    } catch (error) {
+      console.error("Logout API error:", error)
+    }
+
     // Clear all storage locations
     localStorage.removeItem("authToken")
     localStorage.removeItem("username")
