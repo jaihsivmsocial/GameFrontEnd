@@ -241,9 +241,7 @@ export default function StreamBottomBar() {
     return potentialPayout
   }
 
-  // Add this function to the stream-bottom-bar.jsx file to handle the competition time
-
-  // Modify the handleNewQuestion function to include competitionTime
+  // Modify the handleNewQuestion function to ensure timer appears immediately
   const handleNewQuestion = (data) => {
     // Skip if data is empty
     if (!data) {
@@ -253,19 +251,6 @@ export default function StreamBottomBar() {
     console.log("Processing new question:", data)
     // Add debug logging to track the exact question text from backend
     console.log("EXACT BACKEND QUESTION TEXT:", data.question)
-
-    // Extract competition time from question text if not provided
-    let competitionTime = data.competitionTime
-    if (!competitionTime && data.question) {
-      // Look for patterns like "30 sec", "20 Sec", etc.
-      const match = data.question.match(/(\d+)\s*Sec/i)
-      if (match && match[1]) {
-        competitionTime = Number.parseInt(match[1], 10)
-        console.log("COMPETITION TIME EXTRACTED FROM QUESTION:", competitionTime)
-      }
-    } else if (competitionTime) {
-      console.log("COMPETITION TIME FROM BACKEND:", competitionTime)
-    }
 
     // Mark this question as processed
     if (data.id) {
@@ -285,7 +270,6 @@ export default function StreamBottomBar() {
       totalPlayers: data.totalPlayers || 0,
       resolved: false,
       outcome: null,
-      competitionTime: competitionTime, // Include the competition time (extracted or from backend)
     }
 
     // Update the current question immediately
@@ -482,14 +466,6 @@ export default function StreamBottomBar() {
       setSocketConnected(false)
     }
 
-    // Add listener for cached questions
-    const handleCachedQuestionLoaded = (event) => {
-      if (event.detail && event.detail.question) {
-        console.log("Cached question loaded:", event.detail.question)
-        handleNewQuestion(event.detail.question)
-      }
-    }
-
     window.addEventListener("camera_holder_updated", handleCameraHolderUpdate)
     window.addEventListener("new_question_received", handleNewQuestionReceived)
     window.addEventListener("current_question_received", handleCurrentQuestionReceived)
@@ -497,7 +473,6 @@ export default function StreamBottomBar() {
     window.addEventListener("question_refreshed", handleQuestionRefreshed)
     window.addEventListener("socket_connected", handleSocketConnected)
     window.addEventListener("socket_disconnected", handleSocketDisconnected)
-    window.addEventListener("cached_question_loaded", handleCachedQuestionLoaded)
 
     // Fetch active question immediately
     fetchActiveQuestion(0, true)
@@ -763,7 +738,6 @@ export default function StreamBottomBar() {
       window.removeEventListener("question_refreshed", handleQuestionRefreshed)
       window.removeEventListener("socket_connected", handleSocketConnected)
       window.removeEventListener("socket_disconnected", handleSocketDisconnected)
-      window.removeEventListener("cached_question_loaded", handleCachedQuestionLoaded)
 
       // Clear any active timer
       if (timerRef.current) {
@@ -865,51 +839,6 @@ export default function StreamBottomBar() {
   const formatCountdown = (seconds) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
-  }
-
-  // Update the formatCompetitionTime function to use the extracted competition time
-  const formatCompetitionTime = (question) => {
-    if (!question) return ""
-
-    // Use the competition time if available
-    if (question.competitionTime) {
-      return `${question.competitionTime} sec`
-    }
-
-    return ""
-  }
-
-  // Remove the displayCompetitionTime function since we won't be using it
-  // Update the formatCompetitionTime function to be more robust
-
-  const formatCompetitionTimeRobust = (question) => {
-    if (!question || !question.competitionTime) {
-      // If no competition time, show a fixed 36 seconds
-      return "00:36"
-    }
-
-    const now = new Date()
-    let competitionTime
-
-    // Handle string or Date object
-    if (typeof question.competitionTime === "string") {
-      competitionTime = new Date(question.competitionTime)
-    } else {
-      competitionTime = question.competitionTime
-    }
-
-    // If competition time is in the past, return "Completed"
-    if (competitionTime < now) {
-      return "Completed"
-    }
-
-    // Calculate time difference in seconds
-    const diffSeconds = Math.floor((competitionTime - now) / 1000)
-
-    // Format as MM:SS
-    const mins = Math.floor(diffSeconds / 60)
-    const secs = diffSeconds % 60
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
@@ -1825,8 +1754,6 @@ export default function StreamBottomBar() {
               <div>
                 {/* Use the full question text from the server instead of constructing it */}
                 <span style={{ fontSize: "16px", color: "white" }}>{currentQuestion?.question || ""}</span>
-
-                {/* Add the competition time display */}
               </div>
               {/* Always show timer when question is available */}
               <div
@@ -1956,21 +1883,7 @@ export default function StreamBottomBar() {
                   <img src="/assets/img/paymenticon/ruppe.png" width="16" height="16" alt="help icon" />
                 </svg>
               </span>
-              <input
-                type="text"
-                value={betAmount}
-                onChange={(e) => setBetAmount(e.target.value)}
-                placeholder="Enter amount"
-                style={{
-                  backgroundColor: "transparent",
-                  border: "none",
-                  color: "#06b6d4",
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                  width: "calc(100% - 100px)",
-                  outline: "none",
-                }}
-              />
+              <span style={{ color: "#06b6d4", fontSize: "18px", fontWeight: "bold" }}>{betAmount}</span>
               <span
                 style={{
                   position: "absolute",
@@ -2335,7 +2248,6 @@ export default function StreamBottomBar() {
                         color: "white",
                         padding: "2px 8px",
                         fontSize: "14px",
-                        fontWeight: "bold",
                       }}
                     >
                       {formatCountdown(countdown)}
@@ -2377,7 +2289,7 @@ export default function StreamBottomBar() {
                     countdown <= 0 ||
                     !cameraHolder ||
                     !cameraHolder.CameraHolderName ||
-                    cameraHolder.CameraHolderName !== "None"
+                    cameraHolder.CameraHolderName === "None"
                   }
                 >
                   YES
@@ -2429,7 +2341,7 @@ export default function StreamBottomBar() {
                     countdown <= 0 ||
                     !cameraHolder ||
                     !cameraHolder.CameraHolderName ||
-                    cameraHolder.CameraHolderName !== "None"
+                    cameraHolder.CameraHolderName === "None"
                   }
                 >
                   NO
@@ -2465,21 +2377,7 @@ export default function StreamBottomBar() {
                     <span style={{ color: "#06b6d4", marginLeft: "10px", marginRight: "5px" }}>
                       <img src="/assets/img/paymenticon/ruppe.png" width="16" height="16" alt="help icon" />
                     </span>
-                    <input
-                      type="text"
-                      value={betAmount}
-                      onChange={(e) => setBetAmount(e.target.value)}
-                      placeholder="Enter amount"
-                      style={{
-                        backgroundColor: "transparent",
-                        border: "none",
-                        color: "#06b6d4",
-                        fontSize: "16px",
-                        fontWeight: "bold",
-                        width: "100px",
-                        outline: "none",
-                      }}
-                    />
+                    <span style={{ color: "#06b6d4", fontSize: "16px", fontWeight: "bold" }}>{betAmount}</span>
                     <div style={{ marginLeft: "auto", display: "flex" }}>
                       <span
                         style={{
@@ -2762,6 +2660,7 @@ export default function StreamBottomBar() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
+                      <path d="M12 22V7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       <path
                         d="M12 7H16.5C17.163 7 17.7989 6.73661 18.2678 6.26777C18.7366 5.79893 19 5.16304 19 4.5C19 3.83696 18.7366 3.20107 18.2678 2.73223C17.7989 2.26339 17.163 2 16.5 2C13 2 12 7 12 7Z"
                         stroke="white"
