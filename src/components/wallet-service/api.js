@@ -629,7 +629,7 @@ export const bettingAPI = {
       // Ensure we have a Stripe customer ID before placing a bet
       await walletAPI.getOrCreateCustomer()
 
-      const response = await fetch(`${API_BASE_URL}/bets/place-with-payment`, {
+      const response = await fetch(`${API_BASE_URL}/bets/place-partial`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -656,7 +656,7 @@ export const bettingAPI = {
       }
 
       // Then make the API call
-      const response = await fetch(`${API_BASE_URL}/bets/active-question`, {
+      const response = await fetch(`${API_BASE_URL}/bets/active`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

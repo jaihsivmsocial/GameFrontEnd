@@ -75,6 +75,8 @@ api.interceptors.response.use(
 // Payment API functions
 export const paymentApi = {
   // Check bet placement and get required amount if insufficient funds
+
+  
   checkBetPlacement: async (betData) => {
     try {
       console.log("Checking bet placement with data:", betData)
