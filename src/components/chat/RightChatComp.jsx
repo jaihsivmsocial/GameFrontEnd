@@ -523,7 +523,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
               padding: "10px 15px",
               backgroundColor: "transparent",
               position: "absolute",
-              bottom: "49px", // Move up from the bottom to make room for scroll indicator
+              bottom: "49px", 
               left: 0,
               right: 0,
               width: "100%",
@@ -563,7 +563,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
               type="submit"
               disabled={!connected || !message.trim()}
               style={{
-                backgroundColor: "#0ea5e9", // Brighter blue to match the screenshot
+                backgroundColor: "#0ea5e9", 
                 border: "none",
                 borderRadius: "50%",
                 cursor: "pointer",
