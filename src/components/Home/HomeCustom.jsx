@@ -15,15 +15,15 @@ export default function HomeCustom() {
   // Media query for mobile detection
   const isMobile = useMediaQuery("(max-width: 768px)")
   // IMPROVED: Use environment variable with fallback for pixel streaming URL
-  const pixelStreamingUrl = "https://www.youtube.com/embed/live_stream?channel=UCil13nNe4DHOFJZdcMJFJSg"
+  const pixelStreamingUrl = "https://www.youtube.com/embed/live_stream?channel=UCil13nNe4DHOFJZdcMJFJSg&autoplay=1&mute=1"
   // Main camera definition - IMPROVED: Use the pixel streaming URL
   const mainCamera = useMemo(
     () => ({
       id: 1,
-      src: pixelStreamingUrl, // Use the pixel streaming URL
+      src: pixelStreamingUrl, 
       streamId: "stream-1",
       image: "/assets/img/camera/video-camera.png",
-      isPixelStreaming: true, // Flag to indicate this is pixel streaming
+      isPixelStreaming: true, 
     }),
     [pixelStreamingUrl],
   )
