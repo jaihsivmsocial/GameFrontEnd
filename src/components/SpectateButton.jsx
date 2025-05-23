@@ -12,6 +12,7 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
   const [viewerCount, setViewerCount] = useState(0)
   const [isStreamActive, setIsStreamActive] = useState(false)
   const [isMobileView, setIsMobileView] = useState(false)
+  const [hasIncrementedCount, setHasIncrementedCount] = useState(false)
 
   // Check if mobile view
   useEffect(() => {
@@ -30,9 +31,6 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
       window.removeEventListener("resize", handleResize)
     }
   }, [])
-
-  // Use a ref to track if this instance has already incremented the count
-  const hasIncrementedRef = useRef(false)
 
   // Socket connection
   const socketContext = useSocket()
@@ -67,41 +65,56 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
   // Handle stream activation - increment viewer count
   const handleStreamActivate = useCallback(() => {
     // If already active or already incremented, don't do anything
-    if (isStreamActive || hasIncrementedRef.current) return
+    if (isStreamActive || hasIncrementedCount) return
 
     console.log(`Stream activated for ${streamId}`)
 
     // Mark stream as active
     setIsStreamActive(true)
 
-    // Mark that this instance has incremented the count
-    hasIncrementedRef.current = true
+    // Check if we've already incremented the count in this session
+    const sessionKey = `viewed-stream-${streamId}`
+    const hasViewedStream = sessionStorage.getItem(sessionKey)
 
-    // Join the stream room via socket
-    if (socket && isConnected) {
-      console.log(`Joining stream room for ${streamId}`)
-      socket.emit("join_stream", { streamId })
-    }
+    if (!hasViewedStream) {
+      // Mark that this instance has incremented the count
+      setHasIncrementedCount(true)
 
-    // Also increment via API as a fallback
-    apiService
-      .incrementViewerCount(streamId)
-      .then((response) => {
-        if (response.success) {
-          console.log(`Incremented viewer count for stream to ${response.viewerCount}`)
-          // Update local state with the new count
-          setViewerCount(response.viewerCount)
+      // Join the stream room via socket
+      if (socket && isConnected) {
+        console.log(`Joining stream room for ${streamId}`)
+        // Add viewer ID to socket auth
+        socket.auth = {
+          ...socket.auth,
+          viewerId: apiService.getViewerId()
         }
-      })
-      .catch((err) => {
-        console.error(`Failed to increment viewer count:`, err)
-      })
-  }, [isStreamActive, streamId, socket, isConnected])
+        socket.emit("join_stream", { streamId })
+      }
+
+      // Also increment via API as a fallback
+      apiService
+        .incrementViewerCount(streamId)
+        .then((response) => {
+          if (response.success) {
+            console.log(`Incremented viewer count for stream to ${response.viewerCount}`)
+            // Update local state with the new count
+            setViewerCount(response.viewerCount)
+            // Store in session storage to prevent duplicate counts on refresh
+            sessionStorage.setItem(sessionKey, "true")
+          }
+        })
+        .catch((err) => {
+          console.error(`Failed to increment viewer count:`, err)
+        })
+    } else {
+      console.log("Already counted as a viewer, not incrementing count")
+    }
+  }, [isStreamActive, hasIncrementedCount, streamId, socket, isConnected])
 
   // Handle stream deactivation - decrement viewer count
   const handleStreamDeactivate = useCallback(() => {
     // If not active or hasn't incremented, don't do anything
-    if (!isStreamActive || !hasIncrementedRef.current) return
+    if (!isStreamActive || !hasIncrementedCount) return
 
     console.log(`Stream deactivated for ${streamId}`)
 
@@ -109,7 +122,7 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
     setIsStreamActive(false)
 
     // Reset the increment flag
-    hasIncrementedRef.current = false
+    setHasIncrementedCount(false)
 
     // Leave the stream room via socket
     if (socket && isConnected) {
@@ -125,24 +138,38 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
           console.log(`Decremented viewer count for stream to ${response.viewerCount}`)
           // Update local state with the new count
           setViewerCount(response.viewerCount)
+          // Remove from session storage
+          sessionStorage.removeItem(`viewed-stream-${streamId}`)
         }
       })
       .catch((err) => {
         console.error(`Failed to decrement viewer count:`, err)
       })
-  }, [isStreamActive, streamId, socket, isConnected])
+  }, [isStreamActive, hasIncrementedCount, streamId, socket, isConnected])
 
   // Use the beforeunload event to ensure cleanup happens before page refresh
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (isStreamActive && hasIncrementedRef.current) {
-        // Synchronous API call to ensure it completes before page unloads
-        navigator.sendBeacon(`/api/viewer-count/decrement?streamId=${streamId}`, JSON.stringify({ streamId }))
-
+      if (isStreamActive && hasIncrementedCount) {
+        // Use sendBeacon for more reliable delivery during page unload
+        const viewerId = apiService.getViewerId()
+        const url = `${apiService.baseUrl}/streams/${streamId}/viewers/decrement`
+        
+        navigator.sendBeacon(
+          url,
+          JSON.stringify({
+            streamId,
+            viewerId
+          })
+        )
+        
         // Also try to send a socket message
         if (socket && isConnected) {
           socket.emit("leave_stream", { streamId })
         }
+        
+        // Remove from session storage
+        sessionStorage.removeItem(`viewed-stream-${streamId}`)
       }
     }
 
@@ -151,7 +178,7 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload)
     }
-  }, [isStreamActive, streamId, socket, isConnected])
+  }, [isStreamActive, streamId, socket, isConnected, hasIncrementedCount])
 
   // Fetch initial viewer count without incrementing
   useEffect(() => {
@@ -160,23 +187,22 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
     // Set up a session storage check to prevent multiple increments
     const hasViewedStream = sessionStorage.getItem(`viewed-stream-${streamId}`)
 
-    if (!hasViewedStream) {
+    if (!hasViewedStream && !hasIncrementedCount) {
       // This is a new session, increment the count
       handleStreamActivate()
-      // Mark this stream as viewed in this session
-      sessionStorage.setItem(`viewed-stream-${streamId}`, "true")
     } else {
       // Just mark the stream as active without incrementing
       setIsStreamActive(true)
+      console.log("Already counted as a viewer, not incrementing count")
     }
 
     // Clean up on component unmount
     return () => {
-      if (hasIncrementedRef.current) {
+      if (hasIncrementedCount) {
         handleStreamDeactivate()
       }
     }
-  }, [fetchViewerCount, handleStreamActivate, handleStreamDeactivate, streamId])
+  }, [fetchViewerCount, handleStreamActivate, handleStreamDeactivate, streamId, hasIncrementedCount])
 
   // Socket connection for real-time viewer count
   useEffect(() => {
@@ -195,9 +221,19 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
 
     // Send heartbeat every 30 seconds to keep viewer count accurate
     const heartbeatInterval = setInterval(() => {
-      if (isStreamActive && hasIncrementedRef.current) {
+      if (isStreamActive && hasIncrementedCount) {
         console.log("Sending heartbeat for stream:", streamId)
         socket.emit("heartbeat", { streamIds: [streamId] })
+        
+        // Also send the new viewer_heartbeat event
+        const viewerId = apiService.getViewerId()
+        if (viewerId) {
+          socket.emit("viewer_heartbeat", {
+            streamId,
+            viewerId,
+            timestamp: Date.now()
+          })
+        }
       }
     }, 30000)
 
@@ -205,7 +241,7 @@ const SpectateButton = ({ streamId = "stream-1" }) => {
       socket.off("viewer_count", handleViewerCount)
       clearInterval(heartbeatInterval)
     }
-  }, [socket, isConnected, streamId, isStreamActive])
+  }, [socket, isConnected, streamId, isStreamActive, hasIncrementedCount])
 
   // Format viewer count with commas
   const formattedViewerCount = viewerCount.toLocaleString()

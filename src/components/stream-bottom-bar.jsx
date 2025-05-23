@@ -1,4 +1,5 @@
 "use client"
+import CountryFlagBanner from "@/components/countryflag/CountryFlagBanner"
 
 import { useState, useEffect, useRef } from "react"
 import { Check } from "lucide-react"
@@ -2538,7 +2539,7 @@ export default function StreamBottomBar() {
             {/* Conditional rendering based on login state */}
             {!isLoggedIn ? (
               <>
-                <div
+                {/* <div
                   style={{
                     fontSize: "11px",
                     color: "white",
@@ -2547,7 +2548,8 @@ export default function StreamBottomBar() {
                   }}
                 >
                   Join +2 million players from <span style={{ marginLeft: "4px" }}>🇮🇳</span>
-                </div>
+                </div> */}
+                <CountryFlagBanner />
 
                 <button
                   onClick={handleSignupClick}
@@ -2729,7 +2731,18 @@ export default function StreamBottomBar() {
             >
               <AuthHeaderButtons
                 initialView={initialAuthView}
-                onAuthStateChange={handleAuthStateChange}
+                onAuthStateChange={(loggedIn, userData) => {
+                  // Only close the modal if login was successful
+                  if (loggedIn) {
+                    setIsLoggedIn(loggedIn)
+                    if (userData) {
+                      updateWalletBalanceUI(userData.walletBalance)
+                      // Store user data in localStorage for persistence
+                      localStorage.setItem("userData", JSON.stringify(userData))
+                    }
+                    setShowAuthModal(false)
+                  }
+                }}
                 isModal={true}
                 onClose={() => setShowAuthModal(false)}
               />
