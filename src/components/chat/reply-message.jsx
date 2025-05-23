@@ -8,8 +8,11 @@ const ReplyMessage = ({ username, onSend, onCancel, message, setMessage, streamI
     if (!message.trim() || !socket) return
 
     try {
+      // CHANGE: Store message content in a variable for reuse
+      const messageContent = message.trim()
+      
       console.log("Sending reply via socket:", {
-        content: message,
+        content: messageContent,
         streamId,
         replyTo: {
           messageId: replyTo.id,
@@ -20,7 +23,7 @@ const ReplyMessage = ({ username, onSend, onCancel, message, setMessage, streamI
 
       // Send message via socket
       socket.emit("send_message", {
-        content: message,
+        content: messageContent,
         streamId,
         replyTo: {
           messageId: replyTo.id,
@@ -119,5 +122,3 @@ const ReplyMessage = ({ username, onSend, onCancel, message, setMessage, streamI
 }
 
 export default ReplyMessage
-
-

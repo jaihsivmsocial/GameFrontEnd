@@ -70,6 +70,10 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userData, setUserData] = useState(null)
+  // Add a flag to track if we're waiting for auth
+  const [waitingForAuth, setWaitingForAuth] = useState(false)
+  // Store the message that was being sent when auth was required
+  const [pendingMessage, setPendingMessage] = useState("")
 
   // Reply related states
   const [replyTo, setReplyTo] = useState(null)
@@ -85,11 +89,25 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       const username = localStorage.getItem("username")
       const avatar = localStorage.getItem("avatar") || "/placeholder.svg?height=40&width=40"
       setUserData({ username, avatar })
+
+      // If we were waiting for auth and now we're logged in, send the pending message
+      if (waitingForAuth && pendingMessage) {
+        // Reset the waiting flag
+        setWaitingForAuth(false)
+
+        // Set the message from the pending message
+        setMessage(pendingMessage)
+
+        // Clear the pending message
+        setPendingMessage("")
+
+        // We don't auto-send here to give the user a chance to review
+      }
     } else {
       setIsLoggedIn(false)
       setUserData(null)
     }
-  }, [])
+  }, [waitingForAuth, pendingMessage])
 
   // Initialize socket connection
   useEffect(() => {
@@ -105,7 +123,8 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       transports: ["websocket"],
       auth: {
         anonymousId,
-        customUsername: `User${Math.floor(Math.random() * 10000)}`,
+        // Use the actual username as customUsername if available
+        customUsername: isLoggedIn && userData ? userData.username : `User${Math.floor(Math.random() * 10000)}`,
         realUsername: isLoggedIn && userData ? userData.username : null,
         token: localStorage.getItem("authToken") || null,
       },
@@ -131,7 +150,24 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       if (newMessage.sender && newMessage.sender.profilePicture) {
         newMessage.sender.profilePicture = getValidImageUrl(newMessage.sender.profilePicture)
       }
-      setMessages((prev) => [...prev, newMessage])
+
+      // Check if this is a duplicate of a pending message we already added
+      if (newMessage.id.startsWith("msg-")) {
+        // Remove any temporary messages with the same content and sender
+        setMessages((prev) => {
+          const filtered = prev.filter(
+            (msg) =>
+              !(
+                msg.isPending &&
+                msg.content === newMessage.content &&
+                msg.sender.username === newMessage.sender.username
+              ),
+          )
+          return [...filtered, newMessage]
+        })
+      } else {
+        setMessages((prev) => [...prev, newMessage])
+      }
     })
 
     newSocket.on("recent_messages", (recentMessages) => {
@@ -208,7 +244,30 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     console.log("Auth state changed:", loggedIn, user)
     setIsLoggedIn(loggedIn)
     setUserData(user)
-    setShowAuthModal(false)
+
+    // Only close the auth modal if login was successful
+    if (loggedIn) {
+      setShowAuthModal(false)
+
+      // If we were waiting for auth, set the flag to trigger the useEffect
+      if (waitingForAuth) {
+        // Keep the modal closed, we'll handle the message in the useEffect
+        setWaitingForAuth(true)
+      }
+    }
+
+    // Update socket auth when login status changes
+    if (socket && loggedIn) {
+      socket.auth = {
+        ...socket.auth,
+        customUsername: loggedIn && user ? user.username : `User${Math.floor(Math.random() * 10000)}`,
+        realUsername: loggedIn && user ? user.username : null,
+        token: localStorage.getItem("authToken") || null,
+      }
+
+      // Reconnect to apply the new auth
+      socket.disconnect().connect()
+    }
   }
 
   // Send message function - now checks for authentication and handles rate limiting
@@ -222,6 +281,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     const token = localStorage.getItem("authToken")
     if (!token) {
       // Show auth modal if not logged in
+      setWaitingForAuth(true)
       setShowAuthModal(true)
       return
     }
@@ -255,6 +315,12 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     // Check if user is logged in
     const token = localStorage.getItem("authToken")
     if (!token) {
+      // Store the current message before showing auth modal
+      setPendingMessage(message)
+
+      // Set waiting flag to true
+      setWaitingForAuth(true)
+
       // Show auth modal if not logged in
       setShowAuthModal(true)
       return
@@ -267,15 +333,37 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       return
     }
 
+    // Store message content in a variable for reuse
+    const messageContent = message.trim()
+
+    // Create a temporary message object for immediate display
+    const tempMessage = {
+      id: `temp-${Date.now()}`,
+      content: messageContent,
+      streamId,
+      timestamp: Date.now(),
+      sender: {
+        id: anonymousId,
+        username: userData?.username || "You",
+        profilePicture: userData?.avatar || "/placeholder.svg?height=40&width=40",
+        isAnonymous: false,
+      },
+      replyTo: null,
+      isPending: true, // Mark as pending to potentially style differently
+    }
+
+    // Add to messages immediately for instant feedback
+    setMessages((prev) => [...prev, tempMessage])
+
     console.log("Sending message via socket:", {
-      content: message,
+      content: messageContent,
       streamId,
       replyTo: null,
     })
 
     // Send message via socket
     socket.emit("send_message", {
-      content: message,
+      content: messageContent,
       streamId,
       replyTo: null,
     })
@@ -289,6 +377,8 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       // Update socket auth when login status changes
       socket.auth = {
         ...socket.auth,
+        // Use the actual username as customUsername if available
+        customUsername: isLoggedIn && userData ? userData.username : `User${Math.floor(Math.random() * 10000)}`,
         realUsername: isLoggedIn && userData ? userData.username : null,
         token: localStorage.getItem("authToken") || null,
       }
@@ -342,7 +432,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       <div
         className={styles.chatSection}
         style={{
-       background: "linear-gradient(90deg, #0b1526 0%, #0a1a2e 100%)",
+          background: "linear-gradient(90deg, #0b1526 0%, #0a1a2e 100%)",
           backdropFilter: "blur(10px)",
           overflow: "hidden",
           display: "flex",
@@ -350,10 +440,9 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
           height: "100%",
           position: "relative",
           paddingBottom: "30px",
-          marginLeft:"12px",
-          marginRight:"12px", 
-          paddingTop:"25px"
-          
+          marginLeft: "12px",
+          marginRight: "12px",
+          paddingTop: "25px",
         }}
       >
         <div
@@ -374,8 +463,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                 padding: "10px",
                 fontSize: "12px",
               }}
-            >
-            </div>
+            ></div>
           ) : (
             <div style={{ width: "100%" }}>
               {messages.map((msg, index) => (
@@ -388,8 +476,9 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                     backgroundColor: "rgba(30, 30, 40, 0.4)",
                     borderRadius: "8px",
                     margin: "6px 10px",
-                      border: "1px solid white",
-                    
+                    border: "1px solid white",
+                    // Add subtle styling for pending messages
+                    opacity: msg.isPending ? 0.7 : 1,
                   }}
                 >
                   <div
@@ -501,7 +590,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
         </div>
 
         {/* Show reply UI when replying to a message */}
-        {/* {showReplyUI && replyTo && (
+        {showReplyUI && replyTo && (
           <ReplyMessage
             username={replyTo.sender.username}
             onSend={handleAfterReplySent}
@@ -512,7 +601,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
             replyTo={replyTo}
             socket={socket}
           />
-        )} */}
+        )}
 
         {!showReplyUI && (
           <form
@@ -523,7 +612,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
               padding: "10px 15px",
               backgroundColor: "transparent",
               position: "absolute",
-              bottom: "49px", 
+              bottom: "49px",
               left: 0,
               right: 0,
               width: "100%",
@@ -559,36 +648,35 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                   outline: "none",
                 }}
               />
-                 <button
-              type="submit"
-              disabled={!connected || !message.trim()}
-              style={{
-                backgroundColor: "#0ea5e9", 
-                border: "none",
-                borderRadius: "50%",
-                cursor: "pointer",
-                padding: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "40px",
-                width: "40px",
-                transition: "transform 0.2s",
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path
-                  d="M22 2L15 22L11 13L2 9L22 2Z"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+              <button
+                type="submit"
+                disabled={!connected || !message.trim()}
+                style={{
+                  backgroundColor: "#0ea5e9",
+                  border: "none",
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "40px",
+                  width: "40px",
+                  transition: "transform 0.2s",
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path
+                    d="M22 2L15 22L11 13L2 9L22 2Z"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             </div>
-         
           </form>
         )}
 
@@ -654,7 +742,12 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
               initialView="signup"
               onAuthStateChange={handleAuthStateChange}
               isModal={true}
-              onClose={() => setShowAuthModal(false)}
+              onClose={() => {
+                // Reset waiting state and clear pending message when user manually closes the modal
+                setWaitingForAuth(false)
+                setPendingMessage("")
+                setShowAuthModal(false)
+              }}
             />
           </div>
         )}
@@ -707,103 +800,18 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       </div>
 
       {/* Show reply UI when replying to a message */}
-      {!showReplyUI && isMobile && (
-  // <form
-  //   onSubmit={handleSendMessage}
-  //   style={{
-  //     display: "flex",
-  //     alignItems: "center",
-  //     padding: "10px 15px",
-  //     backgroundColor: "transparent",
-  //     position: "absolute",
-  //     bottom: "30px",
-  //     left: 0,
-  //     right: 0,
-  //     width: "100%",
-  //     zIndex: 5,
-  //   }}
-  // >
-  //   <div
-  //     style={{
-  //       flex: 1,
-  //       backgroundColor: "white",
-  //       borderRadius: "25px",
-  //       display: "flex",
-  //       alignItems: "center",
-  //       height: "45px",
-  //       overflow: "hidden",
-  //     }}
-  //   >
-  //     <input
-  //       type="text"
-  //       placeholder="Type Here..."
-  //       value={message}
-  //       onChange={(e) => setMessage(e.target.value)}
-  //       disabled={!connected}
-  //       style={{
-  //         flex: 1,
-  //         backgroundColor: "transparent",
-  //         color: "#999",
-  //         border: "none",
-  //         padding: "8px 15px",
-  //         fontSize: "16px",
-  //         height: "100%",
-  //         outline: "none",
-  //       }}
-  //     />
-  //     <div style={{ marginRight: "10px", cursor: "pointer" }}>
-  //       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  //         <path
-  //           d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-  //           stroke="#CCCCCC"
-  //           strokeWidth="2"
-  //           strokeLinecap="round"
-  //           strokeLinejoin="round"
-  //         />
-  //         <path
-  //           d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14"
-  //           stroke="#CCCCCC"
-  //           strokeWidth="2"
-  //           strokeLinecap="round"
-  //           strokeLinejoin="round"
-  //         />
-  //         <path d="M9 9H9.01" stroke="#CCCCCC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  //         <path d="M15 9H15.01" stroke="#CCCCCC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  //       </svg>
-  //     </div>
-  //     <button
-  //       type="submit"
-  //       disabled={!connected || !message.trim()}
-  //       style={{
-  //         backgroundColor: "#00A3FF",
-  //         border: "none",
-  //         borderRadius: "4px",
-  //         cursor: "pointer",
-  //         padding: 0,
-  //         display: "flex",
-  //         alignItems: "center",
-  //         justifyContent: "center",
-  //         height: "40px",
-  //         width: "50px",
-  //         margin: "0 2px 0 0",
-  //         transition: "transform 0.2s",
-  //       }}
-  //     >
-  //       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  //         <path d="M5 12H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  //         <path
-  //           d="M12 5L19 12L12 19"
-  //           stroke="white"
-  //           strokeWidth="2"
-  //           strokeLinecap="round"
-  //           strokeLinejoin="round"
-  //         />
-  //       </svg>
-  //     </button>
-  //   </div>
-  // </form>
- <></>
-)}
+      {showReplyUI && replyTo && (
+        <ReplyMessage
+          username={replyTo.sender.username}
+          onSend={handleAfterReplySent}
+          onCancel={handleCancelReply}
+          message={message}
+          setMessage={setMessage}
+          streamId={streamId}
+          replyTo={replyTo}
+          socket={socket}
+        />
+      )}
 
       {!showReplyUI && (
         <form onSubmit={handleSendMessage} className={styles.chatInput}>
@@ -843,7 +851,12 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
             initialView="signup"
             onAuthStateChange={handleAuthStateChange}
             isModal={true}
-            onClose={() => setShowAuthModal(false)}
+            onClose={() => {
+              // Reset waiting state and clear pending message when user manually closes the modal
+              setWaitingForAuth(false)
+              setPendingMessage("")
+              setShowAuthModal(false)
+            }}
           />
         </div>
       )}
