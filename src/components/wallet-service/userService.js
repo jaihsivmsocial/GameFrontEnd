@@ -69,6 +69,8 @@ export const getUserData = async () => {
   }
 }
 
+
+
 // Update wallet balance - always returns 5000 after a brief delay
 export const updateWalletBalance = async (amount) => {
   try {
