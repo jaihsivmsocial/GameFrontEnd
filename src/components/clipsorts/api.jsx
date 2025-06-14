@@ -1,5 +1,4 @@
-import { BASEURL } from "@/utils/apiservice"
-
+import { BASEURL } from "../../utils/apiservice"
 
 // Check if we're in a browser environment
 const isBrowser = typeof window !== "undefined"
