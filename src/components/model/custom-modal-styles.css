@@ -1,0 +1,252 @@
+/* Reset and Base for Modal Styling */
+.game-modal .modal-dialog {
+  /* Ensure we have control over positioning and sizing */
+  max-width: 420px; /* Adjust as needed based on screenshot proportions */
+}
+
+.game-modal .modal-content {
+  background-color: #0a192f; /* Deep navy blue from screenshot */
+  color: #64ffda; /* Primary cyan/teal text color */
+  border: none; /* Remove default bootstrap border */
+  border-radius: 8px; /* Base rounding, will be mostly overridden by custom shape */
+  box-shadow: 0 0 25px rgba(0, 162, 255, 0.3); /* Outer glow */
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; /* Clean, modern font */
+  position: relative;
+  padding: 0; /* We'll control padding within sections */
+  overflow: visible; /* Allow pseudo-elements for border to extend */
+}
+
+/* Custom Modal Shape & Border using Pseudo-elements */
+/* This is a simplified approach to the complex border.
+   A true vector-like border would require SVG or multiple complex clip-paths. */
+.game-modal .modal-content::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border-radius: 10px; /* Slightly larger than content for outset effect */
+  border: 2px solid #00a2ff; /* Bright blue outer border line */
+  box-shadow: 0 0 10px #00a2ff, inset 0 0 5px rgba(0, 162, 255, 0.3);
+  z-index: -1;
+  pointer-events: none;
+  /* Attempting angular corners with gradients - this is tricky */
+  /* For a more accurate angular border, SVG or multiple ::before/::after layers would be better */
+}
+
+/* Corner Accent Simulation */
+/* This is a very simplified way to hint at the corner details.
+   The screenshot has distinct geometric shapes at corners. */
+.game-modal .modal-content::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  border-radius: 8px; /* Match content's rounding */
+  /* Using multiple box-shadows to simulate corner elements */
+  /* Top-left */
+  box-shadow:
+    -8px -8px 0 -3px #0a192f, /* Cutout color (modal bg) */
+    -8px -8px 0 0px #00a2ff, /* Accent color */
+    /* Top-right */
+    8px -8px 0 -3px #0a192f,
+    8px -8px 0 0px #00a2ff,
+    /* Bottom-left */
+    -8px 8px 0 -3px #0a192f,
+    -8px 8px 0 0px #00a2ff,
+    /* Bottom-right */
+    8px 8px 0 -3px #0a192f,
+    8px 8px 0 0px #00a2ff;
+  z-index: -2; /* Behind ::before */
+  pointer-events: none;
+}
+
+.game-modal .modal-header {
+  border-bottom: 1px solid rgba(0, 162, 255, 0.2); /* Subtle separator */
+  padding: 15px 20px;
+  position: relative;
+  display: flex;
+  justify-content: center; /* Center title if no close button or make space */
+  align-items: center;
+}
+
+.game-modal .modal-title-text {
+  /* New class for the title text itself */
+  color: #64ffda;
+  font-size: 1.1rem; /* Adjusted from screenshot */
+  font-weight: 600;
+  text-align: center;
+  flex-grow: 1;
+}
+
+.game-modal .modal-body {
+  padding: 25px 30px; /* More padding */
+  text-align: center;
+  position: relative;
+}
+
+.game-modal .modal-body h4 {
+  /* For main question/statement */
+  color: #64ffda;
+  font-weight: 600;
+  margin-bottom: 20px;
+  font-size: 1.2rem; /* Example: "Do you understand..." */
+  line-height: 1.4;
+}
+
+.game-modal .modal-body p {
+  /* For subtitles like in reward modal */
+  color: #a8b2d1; /* Lighter, softer cyan for subtitles */
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.game-modal .modal-body .form-control {
+  background-color: #ccd6f6; /* Light grayish-blue, almost white */
+  color: #0a192f; /* Dark text for input */
+  border: 1px solid rgba(0, 162, 255, 0.3);
+  border-radius: 4px;
+  padding: 10px 15px;
+  font-size: 0.95rem;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.game-modal .modal-body .form-control::placeholder {
+  color: #8892b0; /* Muted placeholder text */
+}
+
+.game-modal .modal-footer {
+  border-top: 1px solid rgba(0, 162, 255, 0.2); /* Subtle separator */
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 15px; /* Space between buttons */
+}
+
+.game-modal .btn-close-custom {
+  background: none;
+  border: none;
+  color: #64ffda; /* Cyan 'X' */
+  font-size: 1.6rem; /* Slightly smaller, cleaner X */
+  font-weight: 300; /* Lighter weight for 'X' */
+  opacity: 0.8;
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  padding: 5px;
+  line-height: 1;
+  z-index: 10; /* Ensure it's on top */
+}
+
+.game-modal .btn-close-custom:hover {
+  opacity: 1;
+  color: #fff;
+}
+
+/* BUTTONS - EXACT MATCH ATTEMPT */
+.btn-game {
+  padding: 10px 25px; /* Generous padding */
+  border-radius: 5px; /* Slightly rounded corners */
+  font-weight: 700; /* Bold text */
+  text-transform: uppercase;
+  font-size: 0.85rem; /* Slightly smaller font for uppercase */
+  letter-spacing: 0.5px;
+  border-style: solid;
+  border-width: 1px; /* All buttons have a 1px border */
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+  /* Base shadow for a subtle lift, consistent with screenshot's flat but defined look */
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+}
+
+.btn-game:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+}
+
+/* YES / SUBMIT Button */
+.btn-game-yes,
+.btn-game-submit {
+  background-color: #a5ff33; /* Bright Lime Green - sampled from screenshot */
+  color: #1d3a00; /* Very Dark Green/Black text - sampled */
+  border-color: #76b826; /* Darker Green Border - sampled */
+}
+
+/* NO Button */
+.btn-game-no {
+  background-color: #ff3b30; /* Bright Red - sampled */
+  color: #ffffff; /* White text */
+  border-color: #c72c23; /* Darker Red Border - sampled */
+}
+
+/* OKAY! Button */
+.btn-game-okay {
+  background-image: linear-gradient(to bottom, #00e0ff 0%, #007bff 100%); /* Cyan to Blue Gradient - sampled */
+  color: #ffffff; /* White text */
+  border-color: #005faf; /* Darker Blue Border - sampled */
+}
+
+/* Text highlight for "$10" */
+.text-highlight-green {
+  color: #a5ff33; /* Match YES/SUBMIT button color */
+  font-weight: 700; /* Bold */
+}
+
+/* Reward Modal Specifics */
+.reward-modal-body {
+  /* Already defined, ensure padding is good */
+  padding-bottom: 20px; /* Ensure space for button if footer is removed for this modal */
+}
+
+.reward-modal-body .background-dollar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10rem; /* Adjust size as needed */
+  color: rgba(100, 255, 218, 0.07); /* Very faint cyan, matching text color family */
+  font-weight: 900; /* Heavy font for dollar sign */
+  z-index: 0;
+  user-select: none;
+}
+
+/* Inner dashed border for Reward Modal */
+.reward-modal-content .modal-body::before {
+  /* Apply to body to be inside padding */
+  content: "";
+  position: absolute;
+  top: 10px; /* Inset from padding */
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  border: 2px dashed rgba(100, 255, 218, 0.3); /* Dashed cyan, slightly more visible */
+  border-radius: 4px; /* Inner border slightly rounded */
+  pointer-events: none;
+  z-index: 0; /* Behind content but above background dollar */
+}
+
+.reward-modal-title {
+  /* For "Here's $10" */
+  font-size: 2.5rem; /* Large */
+  color: #a5ff33; /* Lime green */
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+.reward-modal-subtitle {
+  /* For "But once you spend it..." */
+  font-size: 0.9rem;
+  color: #a8b2d1; /* Softer cyan */
+  margin-top: 0;
+  margin-bottom: 25px; /* Space before button */
+}
+
+/* Ensure no hover effects change the primary colors/borders if not desired */
+.btn-game-yes:hover,
+.btn-game-submit:hover,
+.btn-game-no:hover,
+.btn-game-okay:hover {
+  filter: brightness(110%); /* Slight brightness increase on hover for feedback */
+  /* Remove any background/border changes from previous attempts */
+}
