@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { BASEURL } from "../../utils/apiservice"
+import { BASEURL } from "@/utils/apiservice"
 
 
 async function getVideoData(id) {
