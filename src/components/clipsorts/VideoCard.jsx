@@ -17,6 +17,7 @@ export default function VideoCard({ video, isActive }) {
   const [showCopyToast, setShowCopyToast] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const videoRef = useRef(null)
 
   // Set isMounted to true when component mounts on client
@@ -260,59 +261,54 @@ export default function VideoCard({ video, isActive }) {
       }
 
       // Check if Web Share API is available and supported
-      if (navigator.share && navigator.canShare) {
+      if (navigator.share) {
         const shareData = {
-          title: video.title || "Check out this video",
-          text: video.description || `Video by @${video.user?.username || "user"}`,
+          title: `${video.title} - @${video.user?.username || "user"}`,
+          text: video.description || `Check out this amazing video by @${video.user?.username || "user"} on Clip App!`,
           url: shareableUrl,
         }
 
-        // Check if the data can be shared
-        if (navigator.canShare(shareData)) {
+        try {
           await navigator.share(shareData)
           return
+        } catch (shareError) {
+          // If user cancels or share fails, fall back to custom modal
+          if (shareError.name !== "AbortError") {
+            console.log("Native share failed, showing custom modal")
+          }
         }
       }
 
-      // Fallback to clipboard
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(shareableUrl)
-      } else {
-        // Manual copy fallback
-        const textArea = document.createElement("textarea")
-        textArea.value = shareableUrl
-        textArea.style.position = "fixed"
-        textArea.style.left = "-999999px"
-        textArea.style.top = "-999999px"
-        document.body.appendChild(textArea)
-        textArea.focus()
-        textArea.select()
-
-        try {
-          document.execCommand("copy")
-          textArea.remove()
-        } catch (err) {
-          textArea.remove()
-          throw new Error("Copy failed")
-        }
-      }
-
-      setShowCopyToast(true)
-      setTimeout(() => setShowCopyToast(false), 3000)
+      // If native share is not available or failed, show custom share modal
+      setShowShareModal(true)
     } catch (error) {
       console.error("Failed to share video:", error)
-
-      // If it's not a user cancellation, show fallback
-      if (error.name !== "AbortError") {
-        const shareableUrl = generateShareableUrl(video.id)
-
-        if (window.prompt) {
-          window.prompt("Share this link:", shareableUrl)
-        } else {
-          alert(`Share this link: ${shareableUrl}`)
-        }
-      }
+      setShowShareModal(true)
     }
+  }
+
+  const handlePlatformShare = async (platform) => {
+    const shareableUrl = generateShareableUrl(video.id)
+    const title = `${video.title} - @${video.user?.username || "user"}`
+    const text = video.description || `Check out this amazing video by @${video.user?.username || "user"} on Clip App!`
+
+    const shareUrls = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`,
+      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareableUrl)}&text=${encodeURIComponent(title)}`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(`${title} ${shareableUrl}`)}`,
+      telegram: `https://t.me/share/url?url=${encodeURIComponent(shareableUrl)}&text=${encodeURIComponent(title)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}`,
+      reddit: `https://reddit.com/submit?url=${encodeURIComponent(shareableUrl)}&title=${encodeURIComponent(title)}`,
+      copy: shareableUrl,
+    }
+
+    if (platform === "copy") {
+      await handleCopyLink()
+    } else {
+      window.open(shareUrls[platform], "_blank", "width=600,height=400")
+    }
+
+    setShowShareModal(false)
   }
 
   const handleVideoLoad = () => {
@@ -468,6 +464,130 @@ export default function VideoCard({ video, isActive }) {
           </div>
         </div>
       )}
+
+      {/* Share Modal */}
+      <Modal
+        show={showShareModal}
+        onHide={() => setShowShareModal(false)}
+        centered
+        contentClassName="bg-dark text-white"
+      >
+        <Modal.Header closeButton closeVariant="white">
+          <Modal.Title>Share Video</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="row g-3">
+            {/* Facebook */}
+            <div className="col-4 text-center">
+              <div
+                className="d-flex flex-column align-items-center"
+                style={{ cursor: "pointer" }}
+                onClick={() => handlePlatformShare("facebook")}
+              >
+                <div
+                  className="rounded-circle d-flex justify-content-center align-items-center mb-2"
+                  style={{ width: "50px", height: "50px", backgroundColor: "#1877F2" }}
+                >
+                  <i className="bi bi-facebook text-white" style={{ fontSize: "24px" }}></i>
+                </div>
+                <small>Facebook</small>
+              </div>
+            </div>
+
+            {/* Twitter */}
+            <div className="col-4 text-center">
+              <div
+                className="d-flex flex-column align-items-center"
+                style={{ cursor: "pointer" }}
+                onClick={() => handlePlatformShare("twitter")}
+              >
+                <div
+                  className="rounded-circle d-flex justify-content-center align-items-center mb-2"
+                  style={{ width: "50px", height: "50px", backgroundColor: "#1DA1F2" }}
+                >
+                  <i className="bi bi-twitter text-white" style={{ fontSize: "24px" }}></i>
+                </div>
+                <small>Twitter</small>
+              </div>
+            </div>
+
+            {/* WhatsApp */}
+            <div className="col-4 text-center">
+              <div
+                className="d-flex flex-column align-items-center"
+                style={{ cursor: "pointer" }}
+                onClick={() => handlePlatformShare("whatsapp")}
+              >
+                <div
+                  className="rounded-circle d-flex justify-content-center align-items-center mb-2"
+                  style={{ width: "50px", height: "50px", backgroundColor: "#25D366" }}
+                >
+                  <i className="bi bi-whatsapp text-white" style={{ fontSize: "24px" }}></i>
+                </div>
+                <small>WhatsApp</small>
+              </div>
+            </div>
+
+            {/* Telegram */}
+            <div className="col-4 text-center">
+              <div
+                className="d-flex flex-column align-items-center"
+                style={{ cursor: "pointer" }}
+                onClick={() => handlePlatformShare("telegram")}
+              >
+                <div
+                  className="rounded-circle d-flex justify-content-center align-items-center mb-2"
+                  style={{ width: "50px", height: "50px", backgroundColor: "#0088CC" }}
+                >
+                  <i className="bi bi-telegram text-white" style={{ fontSize: "24px" }}></i>
+                </div>
+                <small>Telegram</small>
+              </div>
+            </div>
+
+            {/* LinkedIn */}
+            <div className="col-4 text-center">
+              <div
+                className="d-flex flex-column align-items-center"
+                style={{ cursor: "pointer" }}
+                onClick={() => handlePlatformShare("linkedin")}
+              >
+                <div
+                  className="rounded-circle d-flex justify-content-center align-items-center mb-2"
+                  style={{ width: "50px", height: "50px", backgroundColor: "#0A66C2" }}
+                >
+                  <i className="bi bi-linkedin text-white" style={{ fontSize: "24px" }}></i>
+                </div>
+                <small>LinkedIn</small>
+              </div>
+            </div>
+
+            {/* Copy Link */}
+            <div className="col-4 text-center">
+              <div
+                className="d-flex flex-column align-items-center"
+                style={{ cursor: "pointer" }}
+                onClick={() => handlePlatformShare("copy")}
+              >
+                <div
+                  className="rounded-circle d-flex justify-content-center align-items-center mb-2"
+                  style={{ width: "50px", height: "50px", backgroundColor: "#6c757d" }}
+                >
+                  <i className="bi bi-link-45deg text-white" style={{ fontSize: "24px" }}></i>
+                </div>
+                <small>Copy Link</small>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-secondary rounded">
+            <small className="text-muted">
+              <i className="bi bi-info-circle me-2"></i>
+              Links shared will display rich previews with video thumbnail, title, and description on all platforms.
+            </small>
+          </div>
+        </Modal.Body>
+      </Modal>
 
       {/* Comments Modal */}
       <Modal show={showComments} onHide={() => setShowComments(false)} centered contentClassName="bg-dark text-white">
