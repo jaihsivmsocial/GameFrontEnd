@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react"
 import { likeVideo, addComment, shareVideo, getDownloadUrl, generateShareableUrl } from "@/components/clipsorts/api"
 import { Modal, Form, Button } from "react-bootstrap"
-import { BASEURL } from "@/utils/apiservice"
 
 export default function VideoCard({ video, isActive }) {
   const [liked, setLiked] = useState(video.isLiked || false)
@@ -20,12 +19,10 @@ export default function VideoCard({ video, isActive }) {
   const [showShareModal, setShowShareModal] = useState(false)
   const videoRef = useRef(null)
 
-  // Set isMounted to true when component mounts on client
   useEffect(() => {
     setIsMounted(true)
   }, [])
 
-  // Check if user is authenticated by looking for token in localStorage
   const isAuthenticated = isMounted && !!localStorage.getItem("authToken")
 
   useEffect(() => {
@@ -86,7 +83,6 @@ export default function VideoCard({ video, isActive }) {
       await likeVideo(video.id)
     } catch (error) {
       console.error("Failed to like video:", error)
-      // Revert UI state on error
       setLiked(!liked)
       setLikesCount((prev) => (liked ? prev + 1 : prev - 1))
     }
@@ -123,11 +119,9 @@ export default function VideoCard({ video, isActive }) {
     try {
       const shareableUrl = generateShareableUrl(video.id)
 
-      // Check if clipboard API is available (requires HTTPS in production)
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(shareableUrl)
       } else {
-        // Fallback for non-HTTPS or older browsers
         const textArea = document.createElement("textarea")
         textArea.value = shareableUrl
         textArea.style.position = "fixed"
@@ -150,28 +144,12 @@ export default function VideoCard({ video, isActive }) {
       setTimeout(() => setShowCopyToast(false), 4000)
     } catch (err) {
       console.error("Failed to copy link:", err)
-
-      // Show a more user-friendly error with the URL
       const shareableUrl = generateShareableUrl(video.id)
-
-      // Try to show the URL in a prompt as fallback
       if (window.prompt) {
         window.prompt("Copy this link:", shareableUrl)
       } else {
         alert(`Copy this link: ${shareableUrl}`)
       }
-    }
-  }
-
-  // Helper function to check if a URL is accessible
-  const isUrlAccessible = async (url) => {
-    if (!isMounted) return false
-
-    try {
-      const response = await fetch(url, { method: "HEAD" })
-      return response.ok
-    } catch (error) {
-      return false
     }
   }
 
@@ -181,7 +159,6 @@ export default function VideoCard({ video, isActive }) {
     try {
       setIsDownloading(true)
 
-      // First try to get the download URL from the API
       let downloadUrl
       try {
         const downloadData = await getDownloadUrl(video.id)
@@ -191,54 +168,27 @@ export default function VideoCard({ video, isActive }) {
         downloadUrl = video.url
       }
 
-      // Check if the URL is accessible
-      const isAccessible = await isUrlAccessible(downloadUrl)
-      if (!isAccessible) {
-        console.warn("Download URL is not accessible, falling back to direct video URL")
-        downloadUrl = video.url
-      }
-
-      // Generate a filename
       const filename = `${video.title || "video"}.mp4`
-
-      // Create a blob from the video URL
       const response = await fetch(downloadUrl)
       if (!response.ok) {
         throw new Error(`Failed to fetch video: ${response.status}`)
       }
 
       const blob = await response.blob()
-
-      // Create a URL for the blob
       const blobUrl = URL.createObjectURL(blob)
 
-      // Create a download link
       const downloadLink = document.createElement("a")
       downloadLink.href = blobUrl
       downloadLink.download = filename
       downloadLink.style.display = "none"
 
-      // Add the link to the DOM and click it
       document.body.appendChild(downloadLink)
       downloadLink.click()
 
-      // Clean up
       setTimeout(() => {
         document.body.removeChild(downloadLink)
         URL.revokeObjectURL(blobUrl)
       }, 100)
-
-      // Log the download (optional)
-      try {
-        await fetch(`${BASEURL}/api/videos/${video.id}/download`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
-      } catch (logError) {
-        console.error("Failed to log download:", logError)
-      }
     } catch (error) {
       console.error("Failed to download video:", error)
       alert("Failed to download video. Please try again.")
@@ -253,14 +203,13 @@ export default function VideoCard({ video, isActive }) {
     try {
       const shareableUrl = generateShareableUrl(video.id)
 
-      // Call API to increment share count (don't fail if this fails)
       try {
         await shareVideo(video.id)
       } catch (apiError) {
         console.warn("Failed to increment share count:", apiError)
       }
 
-      // Check if Web Share API is available and supported
+      // Try native share first
       if (navigator.share) {
         const shareData = {
           title: `${video.title} - @${video.user?.username || "user"}`,
@@ -272,14 +221,13 @@ export default function VideoCard({ video, isActive }) {
           await navigator.share(shareData)
           return
         } catch (shareError) {
-          // If user cancels or share fails, fall back to custom modal
           if (shareError.name !== "AbortError") {
             console.log("Native share failed, showing custom modal")
           }
         }
       }
 
-      // If native share is not available or failed, show custom share modal
+      // Fallback to custom share modal
       setShowShareModal(true)
     } catch (error) {
       console.error("Failed to share video:", error)
@@ -298,7 +246,6 @@ export default function VideoCard({ video, isActive }) {
       whatsapp: `https://wa.me/?text=${encodeURIComponent(`${title} ${shareableUrl}`)}`,
       telegram: `https://t.me/share/url?url=${encodeURIComponent(shareableUrl)}&text=${encodeURIComponent(title)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}`,
-      reddit: `https://reddit.com/submit?url=${encodeURIComponent(shareableUrl)}&title=${encodeURIComponent(title)}`,
       copy: shareableUrl,
     }
 
@@ -320,7 +267,6 @@ export default function VideoCard({ video, isActive }) {
     setIsVideoLoaded(false)
   }
 
-  // Show a loading state until the component is mounted on the client
   if (!isMounted) {
     return (
       <div className="position-relative h-100 d-flex justify-content-center align-items-center bg-dark">
@@ -333,7 +279,6 @@ export default function VideoCard({ video, isActive }) {
 
   return (
     <div className="video-card-container position-relative h-100">
-      {/* Loading spinner (shows when video is loading) */}
       {!isVideoLoaded && (
         <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark">
           <div className="spinner-border text-light" role="status">
@@ -342,7 +287,6 @@ export default function VideoCard({ video, isActive }) {
         </div>
       )}
 
-      {/* Video */}
       <video
         ref={videoRef}
         src={video.url}
@@ -356,7 +300,6 @@ export default function VideoCard({ video, isActive }) {
         onError={handleVideoError}
       />
 
-      {/* Play button overlay (shows when paused) */}
       {!isPlaying && isVideoLoaded && (
         <div
           className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
@@ -372,12 +315,10 @@ export default function VideoCard({ video, isActive }) {
         </div>
       )}
 
-      {/* Right side action buttons */}
       <div
         className="position-absolute end-0 bottom-0 p-3 d-flex flex-column align-items-center gap-4"
         style={{ bottom: "120px" }}
       >
-        {/* Copy Link Button */}
         <div className="d-flex flex-column align-items-center" style={{ cursor: "pointer" }} onClick={handleCopyLink}>
           <div
             className="rounded-circle d-flex justify-content-center align-items-center"
@@ -390,7 +331,6 @@ export default function VideoCard({ video, isActive }) {
           </span>
         </div>
 
-        {/* Save to Device Button */}
         <div
           className="d-flex flex-column align-items-center"
           style={{ cursor: isDownloading ? "default" : "pointer" }}
@@ -413,7 +353,6 @@ export default function VideoCard({ video, isActive }) {
           </span>
         </div>
 
-        {/* Share Button */}
         <div className="d-flex flex-column align-items-center" style={{ cursor: "pointer" }} onClick={handleShare}>
           <div
             className="rounded-circle d-flex justify-content-center align-items-center"
@@ -426,13 +365,11 @@ export default function VideoCard({ video, isActive }) {
           </span>
         </div>
 
-        {/* More Options Button */}
         <div className="d-flex justify-content-center align-items-center" style={{ width: "44px", height: "44px" }}>
           <i className="bi bi-three-dots text-white" style={{ fontSize: "24px" }}></i>
         </div>
       </div>
 
-      {/* Bottom user info */}
       <div className="position-absolute start-0 bottom-0 p-3 d-flex align-items-center" style={{ maxWidth: "70%" }}>
         <img
           src={video.user?.avatar || "/placeholder.svg?height=40&width=40&query=user"}
@@ -446,7 +383,6 @@ export default function VideoCard({ video, isActive }) {
         </div>
       </div>
 
-      {/* Enhanced Copy Link Toast Notification */}
       {showCopyToast && (
         <div
           className="position-absolute top-50 start-50 translate-middle p-3 bg-dark text-white rounded-3 shadow"
@@ -457,15 +393,14 @@ export default function VideoCard({ video, isActive }) {
             <div>
               <div className="fw-bold mb-1">Link copied!</div>
               <div className="small text-muted">
-                Share this link anywhere for rich previews with video thumbnail, title, and creator info. Perfect for
-                social media, messaging apps, and more!
+                Share this link anywhere for rich previews with video thumbnail, title, and creator info!
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Share Modal */}
+      {/* Simple Share Modal */}
       <Modal
         show={showShareModal}
         onHide={() => setShowShareModal(false)}
@@ -477,7 +412,6 @@ export default function VideoCard({ video, isActive }) {
         </Modal.Header>
         <Modal.Body>
           <div className="row g-3">
-            {/* Facebook */}
             <div className="col-4 text-center">
               <div
                 className="d-flex flex-column align-items-center"
@@ -494,7 +428,6 @@ export default function VideoCard({ video, isActive }) {
               </div>
             </div>
 
-            {/* Twitter */}
             <div className="col-4 text-center">
               <div
                 className="d-flex flex-column align-items-center"
@@ -511,7 +444,6 @@ export default function VideoCard({ video, isActive }) {
               </div>
             </div>
 
-            {/* WhatsApp */}
             <div className="col-4 text-center">
               <div
                 className="d-flex flex-column align-items-center"
@@ -528,7 +460,6 @@ export default function VideoCard({ video, isActive }) {
               </div>
             </div>
 
-            {/* Telegram */}
             <div className="col-4 text-center">
               <div
                 className="d-flex flex-column align-items-center"
@@ -545,7 +476,6 @@ export default function VideoCard({ video, isActive }) {
               </div>
             </div>
 
-            {/* LinkedIn */}
             <div className="col-4 text-center">
               <div
                 className="d-flex flex-column align-items-center"
@@ -562,7 +492,6 @@ export default function VideoCard({ video, isActive }) {
               </div>
             </div>
 
-            {/* Copy Link */}
             <div className="col-4 text-center">
               <div
                 className="d-flex flex-column align-items-center"
@@ -578,13 +507,6 @@ export default function VideoCard({ video, isActive }) {
                 <small>Copy Link</small>
               </div>
             </div>
-          </div>
-
-          <div className="mt-4 p-3 bg-secondary rounded">
-            <small className="text-muted">
-              <i className="bi bi-info-circle me-2"></i>
-              Links shared will display rich previews with video thumbnail, title, and description on all platforms.
-            </small>
           </div>
         </Modal.Body>
       </Modal>

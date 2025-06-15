@@ -1,4 +1,4 @@
-import { BASEURL } from "@/utils/apiservice"
+import { BASEURL } from "../../utils/apiservice"
 
 // API functions to interact with the backend
 
@@ -72,6 +72,12 @@ export async function getPresignedUrl(filename, contentType, fileSize) {
   try {
     const token = localStorage.getItem("authToken")
 
+    console.log("=== FRONTEND REQUEST ===")
+    console.log("Filename:", filename)
+    console.log("Content Type:", contentType)
+    console.log("File Size:", fileSize)
+    console.log("Auth Token:", token ? "Present" : "Missing")
+
     const response = await fetch(`${BASEURL}/api/videos/upload-url`, {
       method: "POST",
       headers: {
@@ -86,12 +92,33 @@ export async function getPresignedUrl(filename, contentType, fileSize) {
       }),
     })
 
+    console.log("=== SERVER RESPONSE ===")
+    console.log("Status:", response.status)
+    console.log("Status Text:", response.statusText)
+
+    // Get the response text to see the actual error
+    const responseText = await response.text()
+    console.log("Response Body:", responseText)
+
     if (!response.ok) {
-      throw new Error(`Failed to get upload URL: ${response.status}`)
+      // Try to parse as JSON, fallback to text
+      let errorMessage = `Failed to get upload URL: ${response.status}`
+      try {
+        const errorData = JSON.parse(responseText)
+        errorMessage = errorData.message || errorData.error || errorMessage
+        console.log("Parsed Error:", errorData)
+      } catch (e) {
+        console.log("Raw Error Response:", responseText)
+        errorMessage = responseText || errorMessage
+      }
+      throw new Error(errorMessage)
     }
 
-    return await response.json()
+    // Parse the successful response
+    const data = JSON.parse(responseText)
+    return data
   } catch (error) {
+    console.error("=== FRONTEND ERROR ===")
     console.error("Error getting presigned URL:", error)
     throw error
   }
@@ -541,54 +568,25 @@ export async function deleteVideo(id) {
   }
 }
 
+// FIXED: Generate a shareable URL for a video with rich preview support
 export function generateShareableUrl(id) {
-  // Use the current domain for the share URL
-  if (!isBrowser) {
-    return `/video/${id}`
-  }
-
-  // Get the site URL from environment or current location
+  // Get the site URL from environment variables or current location
   let siteUrl = process.env.NEXT_PUBLIC_SITE_URL
 
-  // If no environment variable, use current origin
-  if (!siteUrl && typeof window !== "undefined") {
+  // If in browser and no environment variable, use current origin
+  if (!siteUrl && isBrowser) {
     siteUrl = window.location.origin
   }
 
-  // Fallback for production - use your actual domain
+  // Fallback to your production domain
   if (!siteUrl) {
-    siteUrl = "https://test.tribez.gg" // Your actual production domain
+    siteUrl = "https://test.tribez.gg"
   }
 
-  return `${siteUrl}/video/${id}`
-}
-
-// Get rich metadata for sharing
-export async function getVideoSharingData(id) {
-  try {
-    const response = await fetch(`${BASEURL}/api/videos/${id}/metadata`)
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch sharing data: ${response.status}`)
-    }
-
-    const data = await response.json()
-
-    if (!data.success || !data.metadata) {
-      throw new Error("Invalid sharing data received")
-    }
-
-    return {
-      url: generateShareableUrl(id),
-      title: data.metadata.title,
-      description: data.metadata.description,
-      image: data.metadata.imageUrl,
-      video: data.metadata.videoUrl,
-    }
-  } catch (error) {
-    console.error(`Error fetching sharing data for video ${id}:`, error)
-    throw error
-  }
+  // Always return the full URL for proper sharing
+  const shareUrl = `${siteUrl}/video/${id}`
+  console.log("Generated share URL:", shareUrl)
+  return shareUrl
 }
 
 export { fetchVideos as getVideos }
