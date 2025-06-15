@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react"
 import { Modal, Form, Button } from "react-bootstrap"
-import { uploadVideo } from "@/components/clipsorts/api"
+import { uploadVideoDirectly } from "@/components/clipsorts/api"
 import { useAuth } from "@/components/clipsorts/context/AuthContext"
 
 export default function UploadModal({ show, onHide, onVideoUploaded }) {
@@ -62,33 +62,17 @@ export default function UploadModal({ show, onHide, onVideoUploaded }) {
     try {
       setUploading(true)
       setProgress(0)
+      setError("") // Clear any previous errors
 
-      const formData = new FormData()
-      formData.append("video", file)
-      formData.append("title", title)
-      formData.append("description", description)
+      console.log("Starting upload process...")
 
-      // Add detailed logging
-      console.log("Starting video upload...")
-      console.log("Form data:", {
-        videoName: file.name,
-        videoSize: file.size,
-        videoType: file.type,
-        title,
-        description: description || "(empty)",
-      })
-
-      const response = await uploadVideo(formData, (progressEvent) => {
+      // Use direct S3 upload instead of backend upload
+      const response = await uploadVideoDirectly(file, title, description, (progressEvent) => {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
         setProgress(percentCompleted)
-        console.log(`Upload progress: ${percentCompleted}%`)
       })
 
-      console.log("Upload completed successfully, response:", response)
-
-      // Make sure we have a valid video object before calling onVideoUploaded
       if (response && response.success && response.video) {
-        // Process the video data to match our expected format
         const processedVideo = {
           id: response.video.id || response.video._id,
           url: response.video.videoUrl || response.video.url,
@@ -103,19 +87,36 @@ export default function UploadModal({ show, onHide, onVideoUploaded }) {
           createdAt: response.video.createdAt || new Date().toISOString(),
         }
 
-        console.log("Processed video for UI:", processedVideo)
         onVideoUploaded(processedVideo)
-      } else {
-        console.error("Invalid video data received from server:", response)
-        setError("Upload succeeded but received invalid data. Please refresh the page.")
+        resetForm()
+        onHide() // Close modal on successful upload
       }
-
-      resetForm()
     } catch (error) {
-      console.error("Upload failed:", error)
-      setError(error.message || "Upload failed. Please try again.")
+      console.error("Upload error:", error)
+
+      // Provide more specific error messages based on error type
+      if (error.message.includes("CORS") || error.message.includes("Access to XMLHttpRequest")) {
+        setError(
+          "Upload failed due to browser security restrictions. Please make sure S3 CORS is configured correctly.",
+        )
+      } else if (error.message.includes("Network error") || error.message.includes("net::ERR_FAILED")) {
+        setError("Network error. Please check your internet connection and try again.")
+      } else if (error.message.includes("timeout")) {
+        setError("Upload timeout. Please try again with a smaller file or better internet connection.")
+      } else if (error.message.includes("400")) {
+        setError("Invalid file or upload parameters. Please try a different video file.")
+      } else if (error.message.includes("403")) {
+        setError("Upload not authorized. Please log in again.")
+      } else if (error.message.includes("Failed to get upload URL")) {
+        setError("Failed to get upload permission. Please check your authentication and try again.")
+      } else if (error.message.includes("Failed to save video")) {
+        setError("Video uploaded but failed to save details. Please contact support.")
+      } else {
+        setError(error.message || "Upload failed. Please try again.")
+      }
     } finally {
       setUploading(false)
+      setProgress(0)
     }
   }
 
@@ -132,8 +133,44 @@ export default function UploadModal({ show, onHide, onVideoUploaded }) {
   }
 
   const handleClose = () => {
-    resetForm()
-    onHide()
+    if (!uploading) {
+      resetForm()
+      onHide()
+    }
+  }
+
+  // Handle drag and drop
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDragEnter = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const files = e.dataTransfer.files
+    if (files && files[0]) {
+      const droppedFile = files[0]
+
+      // Simulate file input change
+      const fakeEvent = {
+        target: {
+          files: [droppedFile],
+        },
+      }
+      handleFileChange(fakeEvent)
+    }
   }
 
   return (
@@ -158,22 +195,46 @@ export default function UploadModal({ show, onHide, onVideoUploaded }) {
           </div>
         ) : (
           <Form onSubmit={handleSubmit}>
-            {error && <div className="alert alert-danger">{error}</div>}
+            {error && (
+              <div className="alert alert-danger d-flex align-items-center" role="alert">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>{error}</div>
+              </div>
+            )}
 
             <div className="upload-area mb-4">
               {!file ? (
                 <div
                   className="d-flex flex-column align-items-center justify-content-center p-5 border border-dashed rounded"
-                  style={{ borderColor: "#0073d5", minHeight: "200px", cursor: "pointer" }}
+                  style={{
+                    borderColor: "#0073d5",
+                    minHeight: "200px",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
                   onClick={() => fileInputRef.current?.click()}
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                 >
                   <i className="bi bi-cloud-arrow-up fs-1 text-primary mb-3"></i>
-                  <p className="mb-1">Click to select or drag and drop your video</p>
+                  <p className="mb-1 fw-bold">Click to select or drag and drop your video</p>
                   <p className="text-muted small">MP4, MOV, AVI, MKV, WEBM (Max 100MB)</p>
+                  <p className="text-muted small">
+                    <i className="bi bi-info-circle me-1"></i>
+                    Files upload directly to secure cloud storage
+                  </p>
                 </div>
               ) : (
                 <div className="position-relative">
-                  <video src={preview} controls className="w-100 rounded" style={{ maxHeight: "300px" }} />
+                  <video
+                    src={preview}
+                    controls
+                    className="w-100 rounded"
+                    style={{ maxHeight: "300px" }}
+                    onError={() => setError("Unable to preview video. File may be corrupted.")}
+                  />
                   <Button
                     variant="danger"
                     size="sm"
@@ -181,11 +242,17 @@ export default function UploadModal({ show, onHide, onVideoUploaded }) {
                     onClick={() => {
                       setFile(null)
                       setPreview(null)
+                      setError("")
                       if (fileInputRef.current) fileInputRef.current.value = ""
                     }}
+                    disabled={uploading}
                   >
                     <i className="bi bi-x-lg"></i>
                   </Button>
+                  <div className="mt-2 small text-muted">
+                    <i className="bi bi-file-earmark-play me-1"></i>
+                    {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                  </div>
                 </div>
               )}
               <Form.Control
@@ -194,11 +261,14 @@ export default function UploadModal({ show, onHide, onVideoUploaded }) {
                 className="d-none"
                 ref={fileInputRef}
                 onChange={handleFileChange}
+                disabled={uploading}
               />
             </div>
 
             <Form.Group className="mb-3">
-              <Form.Label>Title</Form.Label>
+              <Form.Label>
+                Title <span className="text-danger">*</span>
+              </Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Enter a title for your clip"
@@ -206,7 +276,9 @@ export default function UploadModal({ show, onHide, onVideoUploaded }) {
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={uploading}
                 maxLength={100}
+                required
               />
+              <Form.Text className="text-muted">{title.length}/100 characters</Form.Text>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -220,12 +292,19 @@ export default function UploadModal({ show, onHide, onVideoUploaded }) {
                 disabled={uploading}
                 maxLength={500}
               />
+              <Form.Text className="text-muted">{description.length}/500 characters</Form.Text>
             </Form.Group>
 
             {uploading && (
               <div className="mb-3">
-                <p className="mb-1">Uploading: {progress}%</p>
-                <div className="progress" style={{ height: "10px" }}>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="fw-bold">Uploading: {progress}%</span>
+                  <small className="text-muted">
+                    <i className="bi bi-cloud-upload me-1"></i>
+                    Uploading directly to secure storage
+                  </small>
+                </div>
+                <div className="progress" style={{ height: "12px" }}>
                   <div
                     className="progress-bar progress-bar-striped progress-bar-animated"
                     role="progressbar"
@@ -238,12 +317,15 @@ export default function UploadModal({ show, onHide, onVideoUploaded }) {
                     aria-valuemax="100"
                   ></div>
                 </div>
+                <div className="text-center mt-2">
+                  <small className="text-muted">Please don't close this window while uploading...</small>
+                </div>
               </div>
             )}
 
             <div className="d-flex justify-content-end gap-2">
               <Button variant="secondary" onClick={handleClose} disabled={uploading}>
-                Cancel
+                {uploading ? "Uploading..." : "Cancel"}
               </Button>
               <Button
                 type="submit"
@@ -255,11 +337,17 @@ export default function UploadModal({ show, onHide, onVideoUploaded }) {
                 }}
               >
                 {uploading ? (
-                  <div className="spinner-border spinner-border-sm" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
+                  <>
+                    <div className="spinner-border spinner-border-sm me-2" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    Uploading...
+                  </>
                 ) : (
-                  "Upload"
+                  <>
+                    <i className="bi bi-cloud-upload me-2"></i>
+                    Upload
+                  </>
                 )}
               </Button>
             </div>

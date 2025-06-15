@@ -1,5 +1,7 @@
 import { BASEURL } from "../../utils/apiservice"
 
+// API functions to interact with the backend
+
 // Check if we're in a browser environment
 const isBrowser = typeof window !== "undefined"
 
@@ -61,7 +63,173 @@ export async function fetchVideos(page = 1, limit = 10) {
   }
 }
 
-// Upload a new video
+// NEW: Get presigned URL for direct S3 upload
+export async function getPresignedUrl(filename, contentType, fileSize) {
+  if (!isBrowser) {
+    throw new Error("Upload can only be performed in browser environment")
+  }
+
+  try {
+    const token = localStorage.getItem("authToken")
+
+    const response = await fetch(`${BASEURL}/api/videos/upload-url`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: JSON.stringify({
+        filename,
+        contentType,
+        fileSize,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to get upload URL: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error getting presigned URL:", error)
+    throw error
+  }
+}
+
+// NEW: Upload directly to S3 using presigned POST
+export async function uploadToS3(file, presignedData, onProgress) {
+  try {
+    const xhr = new XMLHttpRequest()
+
+    const uploadPromise = new Promise((resolve, reject) => {
+      xhr.timeout = 300000 // 5 minutes
+
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable && onProgress) {
+          onProgress(event)
+        }
+      })
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve({ success: true })
+        } else {
+          console.error("S3 Response:", xhr.responseText)
+          console.error("S3 Status:", xhr.status)
+          console.error("S3 Headers:", xhr.getAllResponseHeaders())
+          reject(new Error(`S3 upload failed with status: ${xhr.status}. ${xhr.responseText}`))
+        }
+      })
+
+      xhr.addEventListener("error", (event) => {
+        console.error("XHR Error Event:", event)
+        console.error("XHR Status:", xhr.status)
+        console.error("XHR Response:", xhr.responseText)
+        reject(new Error("Network error during S3 upload. Please check your internet connection and try again."))
+      })
+
+      xhr.addEventListener("timeout", () => {
+        reject(new Error("S3 upload timeout. Please try again with a smaller file."))
+      })
+    })
+
+    // Create FormData for presigned POST
+    const formData = new FormData()
+
+    // Add all the fields from presigned POST first (ORDER MATTERS!)
+    if (presignedData.fields) {
+      Object.entries(presignedData.fields).forEach(([key, value]) => {
+        formData.append(key, value)
+      })
+    }
+
+    // Add the file last (this is critical for S3)
+    formData.append("file", file)
+
+    // Log for debugging
+    console.log("Uploading to S3 URL:", presignedData.url || presignedData.uploadUrl)
+    console.log("Presigned fields:", presignedData.fields)
+    console.log("File type:", file.type)
+    console.log("File size:", file.size)
+
+    // Use POST method with the presigned URL
+    xhr.open("POST", presignedData.url || presignedData.uploadUrl)
+
+    // Don't set any headers manually - let the browser handle CORS and Content-Type
+    // The browser will automatically set Content-Type with proper boundary for multipart/form-data
+
+    xhr.send(formData)
+
+    return uploadPromise
+  } catch (error) {
+    console.error("Error uploading to S3:", error)
+    throw error
+  }
+}
+
+// NEW: Save video metadata after S3 upload
+export async function saveVideoAfterUpload(videoData) {
+  if (!isBrowser) {
+    throw new Error("Save operation can only be performed in browser environment")
+  }
+
+  try {
+    const token = localStorage.getItem("authToken")
+
+    const response = await fetch(`${BASEURL}/api/videos/save`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: JSON.stringify(videoData),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to save video: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error saving video:", error)
+    throw error
+  }
+}
+
+// NEW: Complete upload process (replaces uploadVideo)
+export async function uploadVideoDirectly(file, title, description, onProgress) {
+  try {
+    console.log("Starting direct S3 upload process...")
+
+    // Step 1: Get presigned URL
+    const presignedData = await getPresignedUrl(file.name, file.type, file.size)
+    console.log("Got presigned URL:", presignedData)
+
+    // Step 2: Upload directly to S3 using presigned POST data
+    await uploadToS3(file, presignedData, onProgress)
+    console.log("S3 upload completed")
+
+    // Step 3: Save video metadata to database
+    const videoData = {
+      title,
+      description,
+      s3Key: presignedData.key,
+      fileSize: file.size,
+    }
+
+    const result = await saveVideoAfterUpload(videoData)
+    console.log("Video metadata saved:", result)
+
+    return result
+  } catch (error) {
+    console.error("Direct upload failed:", error)
+    throw error
+  }
+}
+
+// Upload a new video (EXISTING - Keep for backward compatibility)
 export async function uploadVideo(formData, onProgress) {
   if (!isBrowser) {
     throw new Error("Upload can only be performed in browser environment")
