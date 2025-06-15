@@ -541,16 +541,54 @@ export async function deleteVideo(id) {
   }
 }
 
-// Generate a shareable URL for a video with rich preview support
 export function generateShareableUrl(id) {
   // Use the current domain for the share URL
   if (!isBrowser) {
     return `/video/${id}`
   }
 
-  // Get the current origin
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+  // Get the site URL from environment or current location
+  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+
+  // If no environment variable, use current origin
+  if (!siteUrl && typeof window !== "undefined") {
+    siteUrl = window.location.origin
+  }
+
+  // Fallback for production - use your actual domain
+  if (!siteUrl) {
+    siteUrl = "https://test.tribez.gg" // Your actual production domain
+  }
+
   return `${siteUrl}/video/${id}`
+}
+
+// Get rich metadata for sharing
+export async function getVideoSharingData(id) {
+  try {
+    const response = await fetch(`${BASEURL}/api/videos/${id}/metadata`)
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch sharing data: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (!data.success || !data.metadata) {
+      throw new Error("Invalid sharing data received")
+    }
+
+    return {
+      url: generateShareableUrl(id),
+      title: data.metadata.title,
+      description: data.metadata.description,
+      image: data.metadata.imageUrl,
+      video: data.metadata.videoUrl,
+    }
+  } catch (error) {
+    console.error(`Error fetching sharing data for video ${id}:`, error)
+    throw error
+  }
 }
 
 export { fetchVideos as getVideos }
