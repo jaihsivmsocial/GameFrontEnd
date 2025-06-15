@@ -1,4 +1,4 @@
-import { BASEURL } from "../../utils/apiservice"
+import { BASEURL } from "@/utils/apiservice"
 
 // API functions to interact with the backend
 
