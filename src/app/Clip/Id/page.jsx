@@ -1,5 +1,5 @@
 import VideoPageClient from "./VideoPageClient"
-import { BASEURL } from "../../utils/apiservice"
+import { BASEURL } from "@/utils/apiservice"
 
 
 // Server-side function to fetch video data

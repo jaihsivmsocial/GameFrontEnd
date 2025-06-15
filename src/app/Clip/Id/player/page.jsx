@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { BASEURL } from "../../utils/apiservice"
+import { BASEURL } from "@/utils/apiservice"
 
 
 async function getVideoData(id) {
