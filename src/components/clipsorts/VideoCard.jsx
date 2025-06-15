@@ -120,17 +120,45 @@ export default function VideoCard({ video, isActive }) {
     if (!isMounted) return
 
     try {
-      // Generate a shareable URL for this video
       const shareableUrl = generateShareableUrl(video.id)
 
-      await navigator.clipboard.writeText(shareableUrl)
+      // Check if clipboard API is available (requires HTTPS in production)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareableUrl)
+      } else {
+        // Fallback for non-HTTPS or older browsers
+        const textArea = document.createElement("textarea")
+        textArea.value = shareableUrl
+        textArea.style.position = "fixed"
+        textArea.style.left = "-999999px"
+        textArea.style.top = "-999999px"
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
 
-      // Show enhanced toast notification with rich preview info
+        try {
+          document.execCommand("copy")
+          textArea.remove()
+        } catch (err) {
+          textArea.remove()
+          throw new Error("Copy failed")
+        }
+      }
+
       setShowCopyToast(true)
       setTimeout(() => setShowCopyToast(false), 4000)
     } catch (err) {
       console.error("Failed to copy link:", err)
-      alert("Failed to copy link. Please try again.")
+
+      // Show a more user-friendly error with the URL
+      const shareableUrl = generateShareableUrl(video.id)
+
+      // Try to show the URL in a prompt as fallback
+      if (window.prompt) {
+        window.prompt("Copy this link:", shareableUrl)
+      } else {
+        alert(`Copy this link: ${shareableUrl}`)
+      }
     }
   }
 
@@ -222,30 +250,67 @@ export default function VideoCard({ video, isActive }) {
     if (!isMounted) return
 
     try {
-      // Generate a shareable URL for this video
       const shareableUrl = generateShareableUrl(video.id)
 
-      // Call API to increment share count
-      await shareVideo(video.id)
+      // Call API to increment share count (don't fail if this fails)
+      try {
+        await shareVideo(video.id)
+      } catch (apiError) {
+        console.warn("Failed to increment share count:", apiError)
+      }
 
-      // Use Web Share API if available
-      if (navigator.share) {
-        await navigator.share({
+      // Check if Web Share API is available and supported
+      if (navigator.share && navigator.canShare) {
+        const shareData = {
           title: video.title || "Check out this video",
           text: video.description || `Video by @${video.user?.username || "user"}`,
           url: shareableUrl,
-        })
-      } else {
-        // Fallback to clipboard with rich preview info
-        await navigator.clipboard.writeText(shareableUrl)
-        setShowCopyToast(true)
-        setTimeout(() => setShowCopyToast(false), 3000)
+        }
+
+        // Check if the data can be shared
+        if (navigator.canShare(shareData)) {
+          await navigator.share(shareData)
+          return
+        }
       }
+
+      // Fallback to clipboard
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareableUrl)
+      } else {
+        // Manual copy fallback
+        const textArea = document.createElement("textarea")
+        textArea.value = shareableUrl
+        textArea.style.position = "fixed"
+        textArea.style.left = "-999999px"
+        textArea.style.top = "-999999px"
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+
+        try {
+          document.execCommand("copy")
+          textArea.remove()
+        } catch (err) {
+          textArea.remove()
+          throw new Error("Copy failed")
+        }
+      }
+
+      setShowCopyToast(true)
+      setTimeout(() => setShowCopyToast(false), 3000)
     } catch (error) {
       console.error("Failed to share video:", error)
-      // If it's not a user cancellation, show an error
+
+      // If it's not a user cancellation, show fallback
       if (error.name !== "AbortError") {
-        alert("Failed to share video. Please try again.")
+        const shareableUrl = generateShareableUrl(video.id)
+
+        if (window.prompt) {
+          window.prompt("Share this link:", shareableUrl)
+        } else {
+          alert(`Share this link: ${shareableUrl}`)
+        }
       }
     }
   }
