@@ -1,9 +1,9 @@
-"use client"
 
+
+"use client"
+import { BASEURL } from "@/utils/apiservice"
 import { createContext, useState, useContext, useEffect, useRef } from "react"
 
-// Base URL for API requests
-const BASEURL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000"
 
 // At the top of the file, add this check to safely access browser APIs
 const isBrowser = typeof window !== "undefined"
