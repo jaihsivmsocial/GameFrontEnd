@@ -236,8 +236,8 @@ export default function VideoCard({ video, isActive }) {
           url: shareableUrl,
         })
       } else {
-        // Fallback to clipboard
-        navigator.clipboard.writeText(shareableUrl)
+        // Fallback to clipboard with rich preview info
+        await navigator.clipboard.writeText(shareableUrl)
         setShowCopyToast(true)
         setTimeout(() => setShowCopyToast(false), 3000)
       }
@@ -389,14 +389,15 @@ export default function VideoCard({ video, isActive }) {
       {showCopyToast && (
         <div
           className="position-absolute top-50 start-50 translate-middle p-3 bg-dark text-white rounded-3 shadow"
-          style={{ zIndex: 1050, maxWidth: "300px" }}
+          style={{ zIndex: 1050, maxWidth: "320px" }}
         >
           <div className="d-flex align-items-start">
             <i className="bi bi-check-circle-fill text-success me-2 mt-1"></i>
             <div>
               <div className="fw-bold mb-1">Link copied!</div>
               <div className="small text-muted">
-                Share anywhere for rich previews with video thumbnail, title, and creator info - just like YouTube!
+                Share this link anywhere for rich previews with video thumbnail, title, and creator info. Perfect for
+                social media, messaging apps, and more!
               </div>
             </div>
           </div>
