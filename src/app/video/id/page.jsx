@@ -5,15 +5,18 @@ import VideoPageClient from "./VideoPageClient"
 // Server-side function to fetch video data
 async function getVideoData(id) {
   try {
+    console.log(`Fetching video data for ID: ${id}`)
     const response = await fetch(`${BASEURL}/api/videos/${id}`, {
-      cache: "no-store", // Ensure fresh data for sharing
+      cache: "no-store",
     })
 
     if (!response.ok) {
+      console.log(`Video fetch failed with status: ${response.status}`)
       return null
     }
 
     const data = await response.json()
+    console.log("Video data received:", data)
     return data.success ? data.video : null
   } catch (error) {
     console.error("Error fetching video:", error)
@@ -21,7 +24,7 @@ async function getVideoData(id) {
   }
 }
 
-// Generate rich metadata for social sharing across all platforms
+// Generate rich metadata for social sharing
 export async function generateMetadata({ params }) {
   try {
     const video = await getVideoData(params.id)
@@ -33,54 +36,47 @@ export async function generateMetadata({ params }) {
       }
     }
 
-    // Use your actual production domain
+    // Use environment variable or fallback to your domain
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://test.tribez.gg"
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || BASEURL
     const videoUrl = `${siteUrl}/video/${params.id}`
-    const playerUrl = `${siteUrl}/video/${params.id}/player`
-    const thumbnailUrl = video.thumbnailUrl || `${baseUrl}/api/videos/${params.id}/thumbnail`
 
-    const title = `${video.title} - @${video.username} | Clip App`
+    // Create a proper thumbnail URL
+    const thumbnailUrl =
+      video.thumbnailUrl ||
+      `${siteUrl}/placeholder.svg?height=630&width=1200&query=${encodeURIComponent(video.title + " by " + video.username)}`
+
+    const title = video.title
     const description = video.description || `Watch this amazing video by @${video.username} on Clip App`
 
-    return {
+    console.log("Generated metadata:", {
       title,
       description,
+      videoUrl,
+      thumbnailUrl,
+    })
 
-      // Basic meta tags
-      keywords: `video, ${video.username}, clip, short video, ${video.tags?.join(", ") || ""}`,
-      authors: [{ name: video.username }],
-      creator: video.username,
-      publisher: "Clip App",
+    return {
+      title: `${title} - @${video.username}`,
+      description,
 
-      // Open Graph tags (Facebook, LinkedIn, WhatsApp, etc.)
+      // Open Graph for Facebook, WhatsApp, Discord, LinkedIn
       openGraph: {
-        title: video.title,
-        description,
+        title: title,
+        description: description,
         url: videoUrl,
         siteName: "Clip App",
         type: "video.other",
-        locale: "en_US",
         images: [
           {
             url: thumbnailUrl,
             width: 1200,
             height: 630,
-            alt: video.title,
-            type: "image/jpeg",
-          },
-          {
-            url: thumbnailUrl,
-            width: 800,
-            height: 600,
-            alt: video.title,
-            type: "image/jpeg",
+            alt: title,
           },
         ],
         videos: [
           {
             url: video.videoUrl,
-            secureUrl: video.videoUrl,
             type: "video/mp4",
             width: 720,
             height: 1280,
@@ -88,89 +84,44 @@ export async function generateMetadata({ params }) {
         ],
       },
 
-      // Twitter Card tags
+      // Twitter Card
       twitter: {
-        card: "player",
+        card: "summary_large_image",
         site: "@ClipApp",
         creator: `@${video.username}`,
-        title: video.title,
-        description,
-        images: {
-          url: thumbnailUrl,
-          alt: video.title,
-        },
-        players: {
-          playerUrl,
-          streamUrl: video.videoUrl,
-          width: 720,
-          height: 1280,
-        },
+        title: title,
+        description: description,
+        images: [thumbnailUrl],
       },
 
       // Additional meta tags for better compatibility
       other: {
-        // Video specific
-        "video:duration": video.duration || "30",
-        "video:release_date": video.createdAt,
-        "video:tag": video.tags?.join(", ") || "",
+        // Essential Open Graph tags
+        "og:title": title,
+        "og:description": description,
+        "og:image": thumbnailUrl,
+        "og:image:width": "1200",
+        "og:image:height": "630",
+        "og:url": videoUrl,
+        "og:site_name": "Clip App",
+        "og:type": "video.other",
+        "og:video": video.videoUrl,
+        "og:video:type": "video/mp4",
+        "og:video:width": "720",
+        "og:video:height": "1280",
 
-        // Article/Content specific
-        "article:author": video.username,
-        "article:published_time": video.createdAt,
-        "article:section": "Videos",
+        // Twitter tags
+        "twitter:card": "summary_large_image",
+        "twitter:title": title,
+        "twitter:description": description,
+        "twitter:image": thumbnailUrl,
 
-        // Schema.org structured data
-        "application/ld+json": JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "VideoObject",
-          name: video.title,
-          description: description,
-          thumbnailUrl: thumbnailUrl,
-          uploadDate: video.createdAt,
-          duration: `PT${video.duration || 30}S`,
-          contentUrl: video.videoUrl,
-          embedUrl: playerUrl,
-          author: {
-            "@type": "Person",
-            name: video.username,
-          },
-          publisher: {
-            "@type": "Organization",
-            name: "Clip App",
-            url: siteUrl,
-          },
-          interactionStatistic: [
-            {
-              "@type": "InteractionCounter",
-              interactionType: "https://schema.org/WatchAction",
-              userInteractionCount: video.views || 0,
-            },
-            {
-              "@type": "InteractionCounter",
-              interactionType: "https://schema.org/LikeAction",
-              userInteractionCount: video.likes?.length || 0,
-            },
-          ],
-        }),
-
-        // Discord specific
+        // Discord
         "theme-color": "#0073d5",
 
-        // Additional social platforms
-        "pinterest:media": thumbnailUrl,
-        "pinterest:description": description,
-
-        // SEO enhancements
-        robots: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
-        googlebot: "index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1",
-
-        // Mobile specific
-        "mobile-web-app-capable": "yes",
-        "apple-mobile-web-app-capable": "yes",
-        "apple-mobile-web-app-status-bar-style": "black-translucent",
-
-        // Canonical URL
-        canonical: videoUrl,
+        // Basic meta tags
+        description: description,
+        keywords: `video, ${video.username}, clip, short video`,
       },
     }
   } catch (error) {
@@ -182,13 +133,16 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// Main video page component
 export default async function VideoPage({ params }) {
+  console.log(`Video page loading for ID: ${params.id}`)
+
   const video = await getVideoData(params.id)
 
   if (!video) {
+    console.log("Video not found, showing 404")
     notFound()
   }
 
+  console.log("Rendering video page for:", video.title)
   return <VideoPageClient video={video} videoId={params.id} />
 }
