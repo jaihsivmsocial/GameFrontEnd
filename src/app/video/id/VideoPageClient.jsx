@@ -8,6 +8,7 @@ import { BASEURL } from "@/utils/apiservice"
 export default function VideoPageClient({ video, videoId }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   // Track video view
   useEffect(() => {
@@ -21,12 +22,29 @@ export default function VideoPageClient({ video, videoId }) {
       }
     }
 
-    trackView()
+    if (videoId) {
+      trackView()
+    }
   }, [videoId])
 
   const handleBackToFeed = () => {
     setIsLoading(true)
     router.push("/clip")
+  }
+
+  // Handle case where video data is missing
+  if (!video) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Video Not Found</h1>
+          <p className="text-gray-400 mb-4">The video you're looking for doesn't exist.</p>
+          <button onClick={handleBackToFeed} className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white">
+            Back to Feed
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -105,8 +123,6 @@ export default function VideoPageClient({ video, videoId }) {
           </div>
         </div>
       </div>
-
-      {/* SEO and sharing meta tags are handled by the parent page component */}
     </div>
   )
 }
