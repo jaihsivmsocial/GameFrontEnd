@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import { BASEURL } from "@/utils/apiservice"
-import VideoPageClient from "@/Clip/video/id/VideoPageClient"
+import VideoPageClient from "./VideoPageClient"
 
 // Server-side function to fetch video data
 async function getVideoData(id) {
