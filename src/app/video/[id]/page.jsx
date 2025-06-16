@@ -1,5 +1,6 @@
-import VideoPageClient from "./VideoPageClient"
+import { notFound } from "next/navigation"
 import { getVideo } from "@/components/clipsorts/api" // Import getVideo to fetch dynamic data
+import VideoPageClient from "./VideoPageClient"
 
 // Generate metadata dynamically based on video data
 export async function generateMetadata({ params }) {
@@ -94,10 +95,38 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// This page component will now be rendered within its own isolated layout.
+// This page component is now a Server Component
 export default async function VideoPage({ params }) {
   console.log(`🎬 VIDEO PAGE LOADING: ${params.id}`)
-  // The VideoPageClient will handle fetching the actual video data
-  // and displaying it in the reels format.
-  return <VideoPageClient params={params} />
+
+  let video = null
+  let error = null
+
+  try {
+    video = await getVideo(params.id)
+    if (!video) {
+      notFound() // If video is not found, Next.js will render a 404 page
+    }
+  } catch (err) {
+    console.error("Failed to load video server-side:", err)
+    error = "Failed to load video. Please try again later."
+    // Fallback to a generic video object if API fails, to render the client component
+    video = {
+      id: params.id,
+      title: "Video Not Available",
+      description: "This video could not be loaded.",
+      username: "Clip App User",
+      videoUrl: "/placeholder-video.mp4", // A generic placeholder video if you have one
+      thumbnailUrl: "/placeholder.svg?height=630&width=1200",
+      userAvatar: "/placeholder.svg?height=40&width=40",
+      likes: [],
+      comments: [],
+      shares: 0,
+      views: 0,
+      createdAt: new Date().toISOString(),
+    }
+  }
+
+  // Pass the fetched video data (or fallback) directly to the client component
+  return <VideoPageClient video={video} error={error} />
 }

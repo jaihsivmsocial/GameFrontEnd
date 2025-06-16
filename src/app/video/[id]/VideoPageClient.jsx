@@ -1,65 +1,26 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { getVideo } from "@/components/clipsorts/api"
+import { useEffect, useRef, useState } from "react"
 
-export default function VideoPageClient({ params }) {
-  const [video, setVideo] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+// VideoPageClient now receives video data as a prop
+export default function VideoPageClient({ video, error }) {
   const [isPlaying, setIsPlaying] = useState(false) // Track play state
   const videoRef = useRef(null)
 
   useEffect(() => {
-    const fetchVideo = async () => {
-      try {
-        console.log(`Fetching video client-side for ID: ${params.id}`)
-        setLoading(true)
-        setError(null)
-
-        const videoData = await getVideo(params.id)
-        console.log("Video data received:", videoData)
-
-        setVideo(videoData)
-        // Attempt to autoplay when video data is loaded
-        if (videoRef.current) {
-          videoRef.current
-            .play()
-            .then(() => {
-              setIsPlaying(true)
-            })
-            .catch((err) => {
-              console.warn("Autoplay failed (likely due to browser policy, user interaction needed):", err)
-              setIsPlaying(false)
-            })
-        }
-      } catch (err) {
-        console.error("Failed to load video:", err)
-        setError("Failed to load video. Please try again later.")
-        // Fallback to a generic video object if API fails
-        setVideo({
-          id: params.id,
-          title: "Video Not Available",
-          description: "This video could not be loaded.",
-          username: "Clip App User",
-          videoUrl: "/placeholder-video.mp4", // A generic placeholder video if you have one
-          thumbnailUrl: "/placeholder.svg?height=630&width=1200",
-          userAvatar: "/placeholder.svg?height=40&width=40",
-          likes: [],
-          comments: [],
-          shares: 0,
-          views: 0,
-          createdAt: new Date().toISOString(),
+    // Attempt to autoplay when video element is available and video data is loaded
+    if (videoRef.current && video && video.videoUrl) {
+      videoRef.current
+        .play()
+        .then(() => {
+          setIsPlaying(true)
         })
-      } finally {
-        setLoading(false)
-      }
+        .catch((err) => {
+          console.warn("Autoplay failed (likely due to browser policy, user interaction needed):", err)
+          setIsPlaying(false)
+        })
     }
-
-    if (params.id) {
-      fetchVideo()
-    }
-  }, [params.id])
+  }, [video]) // Re-run effect when video prop changes
 
   const togglePlayPause = () => {
     if (videoRef.current) {
@@ -76,7 +37,7 @@ export default function VideoPageClient({ params }) {
   }
 
   const handleShare = () => {
-    const shareUrl = `https://test.tribez.gg/video/${params.id}`
+    const shareUrl = `https://test.tribez.gg/video/${video.id}`
     if (navigator.share) {
       navigator
         .share({
@@ -84,22 +45,18 @@ export default function VideoPageClient({ params }) {
           text: `Check out this video by @${video?.username || "user"}`,
           url: shareUrl,
         })
-        .catch((error) => console.error("Error sharing:", error))
+        .catch((shareError) => {
+          if (shareError.name !== "AbortError") {
+            console.error("Error sharing:", shareError)
+            // Fallback to clipboard if native share fails for other reasons
+            navigator.clipboard.writeText(shareUrl)
+            alert("Link copied! Share it anywhere for rich previews! 🚀")
+          }
+        })
     } else {
       navigator.clipboard.writeText(shareUrl)
       alert("Link copied! Share it anywhere for rich previews! 🚀")
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="w-screen h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Loading video...</p>
-        </div>
-      </div>
-    )
   }
 
   if (error || !video) {
