@@ -8,16 +8,16 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // Configure headers for rich sharing across all platforms
+  // Configure headers for rich sharing
   async headers() {
     return [
       {
         // Apply to all video pages for rich sharing
-        source: "/video/:path*",
+        source: "/video/:id*",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
+            value: "public, max-age=3600, s-maxage=86400",
           },
           {
             key: "X-Frame-Options",
@@ -27,51 +27,17 @@ const nextConfig = {
             key: "X-Content-Type-Options",
             value: "nosniff",
           },
-          // Allow embedding for all major platforms
-          {
-            key: "Content-Security-Policy",
-            value:
-              "frame-ancestors 'self' https://*.facebook.com https://*.twitter.com https://*.discord.com https://*.whatsapp.com https://*.slack.com https://*.linkedin.com https://*.telegram.org https://*.reddit.com;",
-          },
         ],
       },
+    ]
+  },
+
+  // Add rewrites to ensure video routes work properly
+  async rewrites() {
+    return [
       {
-        // Player pages - allow all embedding for rich previews
-        source: "/video/:id/player",
-        headers: [
-          {
-            key: "X-Frame-Options",
-            value: "ALLOWALL",
-          },
-          {
-            key: "Cache-Control",
-            value: "public, max-age=3600",
-          },
-        ],
-      },
-      {
-        // API routes for metadata
-        source: "/api/videos/:id/metadata",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=300, s-maxage=3600",
-          },
-        ],
-      },
-      {
-        // oEmbed endpoint
-        source: "/api/oembed",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=3600",
-          },
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "*",
-          },
-        ],
+        source: "/video/:id",
+        destination: "/video/:id",
       },
     ]
   },
@@ -93,17 +59,6 @@ const nextConfig = {
       },
     ],
     unoptimized: true,
-  },
-
-  // Redirects for better SEO
-  async redirects() {
-    return [
-      {
-        source: "/clip/:id",
-        destination: "/video/:id",
-        permanent: true,
-      },
-    ]
   },
 }
 
