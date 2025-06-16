@@ -1,140 +1,140 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import VideoCard from "@/components/clipsorts/VideoCard"
 import { getVideo } from "@/components/clipsorts/api"
 
-export default function VideoPageClient({ videoId }) {
-  const router = useRouter()
+export default function VideoPageClient({ params }) {
   const [video, setVideo] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  // Fetch video data on client side
   useEffect(() => {
     const fetchVideo = async () => {
       try {
-        console.log(`Fetching video client-side for ID: ${videoId}`)
-        setIsLoading(true)
-        setError(null)
-
-        const videoData = await getVideo(videoId)
-        console.log("Video data received:", videoData)
-
+        const videoData = await getVideo(params.id)
         setVideo(videoData)
-      } catch (err) {
-        console.error("Failed to fetch video:", err)
-        setError("Failed to load video")
+      } catch (error) {
+        console.error("Failed to load video:", error)
+        // Set fallback video data
+        setVideo({
+          id: params.id,
+          title: "Amazing Video",
+          description: "Watch this amazing video on Clip App!",
+          username: "user",
+          videoUrl: "/placeholder-video.mp4",
+          userAvatar: "/placeholder.svg?height=40&width=40",
+          likes: [],
+          comments: [],
+          shares: 0,
+          views: 0,
+          createdAt: new Date().toISOString(),
+        })
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
     }
 
-    if (videoId) {
-      fetchVideo()
-    }
-  }, [videoId])
+    fetchVideo()
+  }, [params.id])
 
-  const handleBackToFeed = () => {
-    router.push("/clip")
-  }
-
-  const handleShare = () => {
-    const shareUrl = `https://test.tribez.gg/video/${videoId}`
-    if (navigator.share) {
-      navigator.share({
-        title: video?.title || "Amazing Video",
-        text: `Check out this video by @${video?.user?.username || video?.username || "user"}`,
-        url: shareUrl,
-      })
-    } else {
-      navigator.clipboard.writeText(shareUrl)
-      alert("Link copied to clipboard!")
-    }
-  }
-
-  // Loading state
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-center">
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading video...</p>
+          <p>Loading video...</p>
         </div>
       </div>
     )
   }
 
-  // Error state
-  if (error || !video) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Video Not Found</h1>
-          <p className="text-gray-400 mb-4">{error || "The video you're looking for doesn't exist."}</p>
-          <button
-            onClick={handleBackToFeed}
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded text-white transition-colors"
-          >
-            Back to Feed
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // Video loaded successfully
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header with back button */}
-      <div className="flex justify-between items-center p-4 border-b border-gray-800 sticky top-0 bg-black z-10">
-        <div className="flex items-center">
-          <button onClick={handleBackToFeed} className="text-white mr-4 hover:text-gray-300">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-xl font-bold">CLIP</h1>
-        </div>
-
-        {/* Share button */}
-        <button onClick={handleShare} className="text-white hover:text-gray-300">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+    <div className="min-h-screen bg-black">
+      {/* Mobile reels container */}
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="relative w-full max-w-sm mx-auto">
+          {/* Video container - 9:16 aspect ratio */}
+          <div className="relative aspect-[9/16] w-full bg-black overflow-hidden rounded-lg">
+            {/* Video */}
+            <video
+              src={video.videoUrl || video.url}
+              className="w-full h-full object-cover"
+              controls
+              autoPlay
+              loop
+              playsInline
+              poster={video.thumbnailUrl}
             />
-          </svg>
-        </button>
-      </div>
 
-      {/* Video Container */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-md">
-          <div className="relative bg-black" style={{ height: "calc(100vh - 80px)" }}>
-            <VideoCard
-              video={{
-                id: video._id || video.id,
-                url: video.videoUrl || video.url,
-                title: video.title,
-                description: video.description,
-                user: {
-                  username: video.username || video.user?.username,
-                  avatar: video.userAvatar || video.user?.avatar || "/placeholder.svg?height=40&width=40",
-                },
-                likesCount: video.likes?.length || 0,
-                comments: video.comments || [],
-                isLiked: false,
-                shares: video.shares || 0,
-                views: video.views || 0,
-                downloads: video.downloads || 0,
-                createdAt: video.createdAt,
-              }}
-              isActive={true}
-            />
+            {/* Overlay */}
+            <div className="absolute inset-0">
+              {/* Top gradient */}
+              <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/50 to-transparent" />
+
+              {/* Bottom gradient */}
+              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
+
+              {/* Back button */}
+              <button
+                className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/30 flex items-center justify-center text-white"
+                onClick={() => (window.location.href = "/clip")}
+              >
+                ←
+              </button>
+
+              {/* Share button */}
+              <button
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/30 flex items-center justify-center text-white"
+                onClick={() => {
+                  const shareUrl = `https://test.tribez.gg/video/${params.id}`
+                  navigator.clipboard.writeText(shareUrl)
+                  alert("Link copied! 🔗")
+                }}
+              >
+                📤
+              </button>
+
+              {/* User info */}
+              <div className="absolute bottom-4 left-4 right-16">
+                <div className="flex items-center mb-2">
+                  <img
+                    src={video.userAvatar || "/placeholder.svg?height=40&width=40"}
+                    alt={video.username}
+                    className="w-10 h-10 rounded-full border-2 border-white mr-3"
+                  />
+                  <div>
+                    <div className="text-white font-semibold">@{video.username}</div>
+                    <div className="text-white/80 text-xs">{video.views || 0} views</div>
+                  </div>
+                </div>
+                <div className="text-white font-medium">{video.title}</div>
+                {video.description && <div className="text-white/90 text-sm mt-1">{video.description}</div>}
+              </div>
+
+              {/* Action buttons */}
+              <div className="absolute bottom-4 right-4 flex flex-col space-y-4">
+                <button className="flex flex-col items-center text-white">
+                  <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center">❤️</div>
+                  <span className="text-xs mt-1">{video.likes?.length || 0}</span>
+                </button>
+
+                <button className="flex flex-col items-center text-white">
+                  <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center">💬</div>
+                  <span className="text-xs mt-1">{video.comments?.length || 0}</span>
+                </button>
+
+                <button
+                  className="flex flex-col items-center text-white"
+                  onClick={() => {
+                    const shareUrl = `https://test.tribez.gg/video/${params.id}`
+                    navigator.clipboard.writeText(shareUrl)
+                    alert("Link copied! Share it anywhere for rich previews! 🚀")
+                  }}
+                >
+                  <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center">🔗</div>
+                  <span className="text-xs mt-1">Copy</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
