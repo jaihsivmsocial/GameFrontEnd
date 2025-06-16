@@ -1,19 +1,40 @@
 import VideoPageClient from "./VideoPageClient"
+import { getVideo } from "@/components/clipsorts/api" // Import getVideo to fetch dynamic data
 
-// This metadata will be generated server-side and should be picked up by crawlers.
-// It's designed to be robust even if the video data fetch fails.
+// Generate metadata dynamically based on video data
 export async function generateMetadata({ params }) {
   console.log(`🔥 GENERATING METADATA FOR: ${params.id}`)
 
-  const siteUrl = "https://test.tribez.gg"
-  const videoUrl = `${siteUrl}/video/${params.id}`
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://test.tribez.gg"
+  const videoPageUrl = `${siteUrl}/video/${params.id}`
+  const playerUrl = `${siteUrl}/video/${params.id}/player` // Dedicated player URL for embeds
 
-  // GUARANTEED metadata - no API calls that can fail during build/SSR for basic info
-  const title = "Amazing Video on Clip App"
-  const description = "Watch this incredible short video on Clip App - the best platform for sharing amazing content!"
-  const thumbnail = `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail`
+  let videoData = null
+  try {
+    // Attempt to fetch actual video data for rich previews
+    videoData = await getVideo(params.id)
+    console.log("Fetched video data for metadata:", videoData)
+  } catch (error) {
+    console.error(`Error fetching video data for metadata for ID ${params.id}:`, error)
+    // Fallback to generic data if API fails, ensuring metadata is always present
+    videoData = {
+      title: "Amazing Video on Clip App",
+      description: "Watch this incredible short video on Clip App - the best platform for sharing amazing content!",
+      thumbnailUrl: `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail`,
+      videoUrl: `${siteUrl}/placeholder-video.mp4`, // Fallback video URL
+      username: "Clip App User",
+    }
+  }
 
-  console.log(`✅ METADATA GENERATED:`, { title, description, videoUrl, thumbnail })
+  const title = videoData.title || "Amazing Video on Clip App"
+  const description =
+    videoData.description ||
+    `Watch this incredible short video by @${videoData.username || "Clip App User"} on Clip App!`
+  const thumbnailUrl =
+    videoData.thumbnailUrl || `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail`
+  const videoContentUrl = videoData.videoUrl || `${siteUrl}/placeholder-video.mp4` // Direct URL to video file
+
+  console.log(`✅ METADATA GENERATED:`, { title, description, videoPageUrl, thumbnailUrl, videoContentUrl, playerUrl })
 
   return {
     title: `${title} | Clip App`,
@@ -23,54 +44,52 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      url: videoUrl,
+      url: videoPageUrl,
       siteName: "Clip App",
       type: "video.other",
       locale: "en_US",
       images: [
         {
-          url: thumbnail,
+          url: thumbnailUrl,
           width: 1200,
           height: 630,
           alt: title,
-          type: "image/svg+xml", // Use svg+xml as placeholder is SVG
+          type: "image/svg+xml", // Use svg+xml for placeholder, adjust if actual image type
+        },
+      ],
+      // Crucial for video embeds in Open Graph
+      videos: [
+        {
+          url: videoContentUrl, // Direct URL to the video file
+          secureUrl: videoContentUrl,
+          type: "video/mp4", // Assuming MP4, adjust if other formats
+          width: 720, // Standard vertical video width
+          height: 1280, // Standard vertical video height
         },
       ],
     },
 
     // Twitter Card
     twitter: {
-      card: "summary_large_image",
+      card: "player", // Use 'player' card for embedded video player
       site: "@ClipApp", // Replace with your Twitter handle if you have one
       title: title,
       description: description,
-      images: [thumbnail],
+      image: thumbnailUrl,
+      // Crucial for video embeds in Twitter Card
+      player: {
+        url: playerUrl, // URL to the dedicated player page
+        width: 720,
+        height: 1280,
+        stream: videoContentUrl, // Direct URL to the video file for streaming
+      },
     },
 
-    // Additional explicit meta tags for maximum compatibility
-    other: {
-      "og:title": title,
-      "og:description": description,
-      "og:image": thumbnail,
-      "og:image:width": "1200",
-      "og:image:height": "630",
-      "og:image:alt": title,
-      "og:url": videoUrl,
-      "og:site_name": "Clip App",
-      "og:type": "video.other",
-      "og:locale": "en_US",
-
-      "twitter:card": "summary_large_image",
-      "twitter:site": "@ClipApp",
-      "twitter:title": title,
-      "twitter:description": description,
-      "twitter:image": thumbnail,
-      "twitter:image:alt": title,
-
-      description: description,
-      keywords: "video, clip, short video, social media",
-      author: "Clip App",
-      "theme-color": "#0073d5",
+    // Schema.org structured data (for Google search results)
+    alternates: {
+      types: {
+        "application/json": `${siteUrl}/api/videos/${params.id}/metadata`, // Point to your API metadata endpoint
+      },
     },
   }
 }
