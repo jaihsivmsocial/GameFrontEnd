@@ -1,13 +1,14 @@
 import VideoPageClient from "./VideoPageClient"
 
-// BULLETPROOF: Always generate metadata without API dependency
+// This metadata will be generated server-side and should be picked up by crawlers.
+// It's designed to be robust even if the video data fetch fails.
 export async function generateMetadata({ params }) {
   console.log(`🔥 GENERATING METADATA FOR: ${params.id}`)
 
   const siteUrl = "https://test.tribez.gg"
   const videoUrl = `${siteUrl}/video/${params.id}`
 
-  // GUARANTEED metadata - no API calls that can fail
+  // GUARANTEED metadata - no API calls that can fail during build/SSR for basic info
   const title = "Amazing Video on Clip App"
   const description = "Watch this incredible short video on Clip App - the best platform for sharing amazing content!"
   const thumbnail = `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail`
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }) {
           width: 1200,
           height: 630,
           alt: title,
-          type: "image/svg+xml",
+          type: "image/svg+xml", // Use svg+xml as placeholder is SVG
         },
       ],
     },
@@ -40,15 +41,14 @@ export async function generateMetadata({ params }) {
     // Twitter Card
     twitter: {
       card: "summary_large_image",
-      site: "@ClipApp",
+      site: "@ClipApp", // Replace with your Twitter handle if you have one
       title: title,
       description: description,
       images: [thumbnail],
     },
 
-    // Additional explicit meta tags
+    // Additional explicit meta tags for maximum compatibility
     other: {
-      // Open Graph explicit
       "og:title": title,
       "og:description": description,
       "og:image": thumbnail,
@@ -60,7 +60,6 @@ export async function generateMetadata({ params }) {
       "og:type": "video.other",
       "og:locale": "en_US",
 
-      // Twitter explicit
       "twitter:card": "summary_large_image",
       "twitter:site": "@ClipApp",
       "twitter:title": title,
@@ -68,67 +67,18 @@ export async function generateMetadata({ params }) {
       "twitter:image": thumbnail,
       "twitter:image:alt": title,
 
-      // Basic meta
       description: description,
       keywords: "video, clip, short video, social media",
       author: "Clip App",
-
-      // Discord specific
       "theme-color": "#0073d5",
-
-      // Additional social platforms
-      "article:author": "Clip App",
-      "article:publisher": "Clip App",
     },
   }
 }
 
+// This page component will now be rendered within its own isolated layout.
 export default async function VideoPage({ params }) {
   console.log(`🎬 VIDEO PAGE LOADING: ${params.id}`)
-
-  return (
-    <>
-      {/* EXPLICIT META TAGS IN HEAD */}
-      <head>
-        <title>Amazing Video on Clip App</title>
-        <meta
-          name="description"
-          content="Watch this incredible short video on Clip App - the best platform for sharing amazing content!"
-        />
-
-        {/* Open Graph */}
-        <meta property="og:title" content="Amazing Video on Clip App" />
-        <meta
-          property="og:description"
-          content="Watch this incredible short video on Clip App - the best platform for sharing amazing content!"
-        />
-        <meta
-          property="og:image"
-          content={`https://test.tribez.gg/placeholder.svg?height=630&width=1200&query=video-thumbnail`}
-        />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:url" content={`https://test.tribez.gg/video/${params.id}`} />
-        <meta property="og:site_name" content="Clip App" />
-        <meta property="og:type" content="video.other" />
-
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Amazing Video on Clip App" />
-        <meta
-          name="twitter:description"
-          content="Watch this incredible short video on Clip App - the best platform for sharing amazing content!"
-        />
-        <meta
-          name="twitter:image"
-          content={`https://test.tribez.gg/placeholder.svg?height=630&width=1200&query=video-thumbnail`}
-        />
-
-        {/* Discord */}
-        <meta name="theme-color" content="#0073d5" />
-      </head>
-
-      <VideoPageClient params={params} />
-    </>
-  )
+  // The VideoPageClient will handle fetching the actual video data
+  // and displaying it in the reels format.
+  return <VideoPageClient params={params} />
 }

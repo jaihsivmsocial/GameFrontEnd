@@ -6,21 +6,33 @@ import { getVideo } from "@/components/clipsorts/api"
 export default function VideoPageClient({ params }) {
   const [video, setVideo] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [isShareSupported, setIsShareSupported] = useState(false)
 
   useEffect(() => {
+    setIsShareSupported(!!navigator.share)
+
     const fetchVideo = async () => {
       try {
+        console.log(`Fetching video client-side for ID: ${params.id}`)
+        setLoading(true)
+        setError(null)
+
         const videoData = await getVideo(params.id)
+        console.log("Video data received:", videoData)
+
         setVideo(videoData)
-      } catch (error) {
-        console.error("Failed to load video:", error)
-        // Set fallback video data
+      } catch (err) {
+        console.error("Failed to load video:", err)
+        setError("Failed to load video. Please try again later.")
+        // Fallback to a generic video object if API fails
         setVideo({
           id: params.id,
-          title: "Amazing Video",
-          description: "Watch this amazing video on Clip App!",
-          username: "user",
-          videoUrl: "/placeholder-video.mp4",
+          title: "Video Not Available",
+          description: "This video could not be loaded.",
+          username: "Clip App User",
+          videoUrl: "/placeholder.mp4", // A generic placeholder video if you have one
+          thumbnailUrl: "/placeholder.svg?height=630&width=1200",
           userAvatar: "/placeholder.svg?height=40&width=40",
           likes: [],
           comments: [],
@@ -33,8 +45,24 @@ export default function VideoPageClient({ params }) {
       }
     }
 
-    fetchVideo()
+    if (params.id) {
+      fetchVideo()
+    }
   }, [params.id])
+
+  const handleShare = () => {
+    const shareUrl = `https://test.tribez.gg/video/${params.id}`
+    if (isShareSupported) {
+      navigator.share({
+        title: video?.title || "Amazing Video",
+        text: `Check out this video by @${video?.username || "user"}`,
+        url: shareUrl,
+      })
+    } else {
+      navigator.clipboard.writeText(shareUrl)
+      alert("Link copied! Share it anywhere for rich previews! 🚀")
+    }
+  }
 
   if (loading) {
     return (
@@ -47,93 +75,137 @@ export default function VideoPageClient({ params }) {
     )
   }
 
+  if (error || !video) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Video Not Found</h1>
+          <p className="text-gray-400 mb-4">{error || "The video you're looking for doesn't exist."}</p>
+          <button
+            onClick={() => (window.location.href = "/clip")}
+            className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded text-white transition-colors"
+          >
+            Back to Feed
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-black">
-      {/* Mobile reels container */}
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="relative w-full max-w-sm mx-auto">
-          {/* Video container - 9:16 aspect ratio */}
-          <div className="relative aspect-[9/16] w-full bg-black overflow-hidden rounded-lg">
-            {/* Video */}
-            <video
-              src={video.videoUrl || video.url}
-              className="w-full h-full object-cover"
-              controls
-              autoPlay
-              loop
-              playsInline
-              poster={video.thumbnailUrl}
-            />
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      {/* Reels container - centered and mobile-sized */}
+      <div className="relative w-full max-w-sm mx-auto bg-black h-screen flex items-center justify-center">
+        {/* Video element with 9:16 aspect ratio */}
+        <div className="relative aspect-[9/16] w-full bg-black overflow-hidden rounded-lg">
+          <video
+            src={video.videoUrl || video.url}
+            className="w-full h-full object-cover"
+            controls
+            autoPlay
+            loop
+            playsInline
+            poster={video.thumbnailUrl}
+          />
 
-            {/* Overlay */}
-            <div className="absolute inset-0">
-              {/* Top gradient */}
-              <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/50 to-transparent" />
+          {/* Overlay controls (TikTok style) */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Top gradient */}
+            <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/50 to-transparent" />
 
-              {/* Bottom gradient */}
-              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
+            {/* Bottom gradient */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
 
-              {/* Back button */}
-              <button
-                className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/30 flex items-center justify-center text-white"
-                onClick={() => (window.location.href = "/clip")}
-              >
-                ←
-              </button>
+            {/* Back button - top left */}
+            <button
+              className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/30 flex items-center justify-center text-white pointer-events-auto"
+              onClick={() => (window.location.href = "/clip")}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
 
-              {/* Share button */}
-              <button
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/30 flex items-center justify-center text-white"
-                onClick={() => {
-                  const shareUrl = `https://test.tribez.gg/video/${params.id}`
-                  navigator.clipboard.writeText(shareUrl)
-                  alert("Link copied! 🔗")
-                }}
-              >
-                📤
-              </button>
+            {/* Share button - top right */}
+            <button
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/30 flex items-center justify-center text-white pointer-events-auto"
+              onClick={handleShare}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                />
+              </svg>
+            </button>
 
-              {/* User info */}
-              <div className="absolute bottom-4 left-4 right-16">
-                <div className="flex items-center mb-2">
-                  <img
-                    src={video.userAvatar || "/placeholder.svg?height=40&width=40"}
-                    alt={video.username}
-                    className="w-10 h-10 rounded-full border-2 border-white mr-3"
-                  />
-                  <div>
-                    <div className="text-white font-semibold">@{video.username}</div>
-                    <div className="text-white/80 text-xs">{video.views || 0} views</div>
+            {/* User info - bottom left */}
+            <div className="absolute bottom-4 left-4 right-16 pointer-events-auto">
+              <div className="flex items-center mb-2">
+                <img
+                  src={video.userAvatar || "/placeholder.svg?height=40&width=40"}
+                  alt={video.username}
+                  className="w-10 h-10 rounded-full border-2 border-white mr-3"
+                />
+                <div>
+                  <div className="text-white font-semibold text-sm">@{video.username}</div>
+                  <div className="text-white/80 text-xs">
+                    {video.views || 0} views • {new Date(video.createdAt).toLocaleDateString()}
                   </div>
                 </div>
-                <div className="text-white font-medium">{video.title}</div>
-                {video.description && <div className="text-white/90 text-sm mt-1">{video.description}</div>}
               </div>
+              <div className="text-white text-sm mb-1 font-medium">{video.title}</div>
+              {video.description && <div className="text-white/90 text-xs line-clamp-2">{video.description}</div>}
+            </div>
 
-              {/* Action buttons */}
-              <div className="absolute bottom-4 right-4 flex flex-col space-y-4">
-                <button className="flex flex-col items-center text-white">
-                  <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center">❤️</div>
-                  <span className="text-xs mt-1">{video.likes?.length || 0}</span>
-                </button>
+            {/* Action buttons - bottom right */}
+            <div className="absolute bottom-4 right-4 flex flex-col items-center space-y-4 pointer-events-auto">
+              {/* Like button */}
+              <button className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center text-white">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
+                  </svg>
+                </div>
+                <span className="text-white text-xs mt-1">{video.likes?.length || 0}</span>
+              </button>
 
-                <button className="flex flex-col items-center text-white">
-                  <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center">💬</div>
-                  <span className="text-xs mt-1">{video.comments?.length || 0}</span>
-                </button>
+              {/* Comment button */}
+              <button className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center text-white">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
+                </div>
+                <span className="text-white text-xs mt-1">{video.comments?.length || 0}</span>
+              </button>
 
-                <button
-                  className="flex flex-col items-center text-white"
-                  onClick={() => {
-                    const shareUrl = `https://test.tribez.gg/video/${params.id}`
-                    navigator.clipboard.writeText(shareUrl)
-                    alert("Link copied! Share it anywhere for rich previews! 🚀")
-                  }}
-                >
-                  <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center">🔗</div>
-                  <span className="text-xs mt-1">Copy</span>
-                </button>
-              </div>
+              {/* Copy Link button */}
+              <button className="flex flex-col items-center" onClick={handleShare}>
+                <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center text-white">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                    />
+                  </svg>
+                </div>
+                <span className="text-white text-xs mt-1">Share</span>
+              </button>
             </div>
           </div>
         </div>
