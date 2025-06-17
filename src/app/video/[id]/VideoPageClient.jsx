@@ -77,7 +77,8 @@ export default function VideoPageClient({ video, error }) {
   }
 
   return (
-    <div className="w-screen h-screen bg-black flex items-center justify-center">
+    // This container now uses fixed positioning to overlay everything else
+    <div className="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
       {/* Reels container - centered and mobile-sized */}
       {/* This div now takes full screen height and width, and centers the video within it */}
       <div className="relative w-full h-full max-w-sm aspect-[9/16] bg-black overflow-hidden rounded-lg">
