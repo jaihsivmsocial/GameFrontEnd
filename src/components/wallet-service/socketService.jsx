@@ -103,7 +103,7 @@ export const getStreamId = () => {
 // Update the initializeSocket function to handle camera holder updates
 export const initializeSocket = () => {
   if (!socket) {
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://apitest.tribez.gg", {
+    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "https://apitest.tribez.gg", {
       transports: ["websocket"],
       autoConnect: true,
       reconnection: true,
