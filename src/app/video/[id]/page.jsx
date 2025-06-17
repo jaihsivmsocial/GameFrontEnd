@@ -18,12 +18,14 @@ export async function generateMetadata({ params }) {
   } catch (error) {
     console.error(`Error fetching video data for metadata for ID ${params.id}:`, error)
     // Fallback to generic data if API fails, ensuring metadata is always present
-    // IMPORTANT: These fallback URLs MUST be publicly accessible static files.
     videoData = {
+      id: params.id, // Ensure ID is present for fallback URLs
       title: "Amazing Video on Clip App",
       description: "Watch this incredible short video on Clip App - the best platform for sharing amazing content!",
-      thumbnailUrl: `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail`, // Fallback to a generic SVG placeholder if API fails
-      videoUrl: `${siteUrl}/video/${params.id}/player`, // Fallback to the player URL if API fails
+      // Fallback to a generic SVG placeholder if API fails to provide a thumbnail
+      thumbnailUrl: `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail`,
+      // Fallback to the player URL for video content if API fails
+      videoUrl: `${siteUrl}/video/${params.id}/player`,
       username: "Clip App User",
     }
   }
@@ -32,9 +34,11 @@ export async function generateMetadata({ params }) {
   const description =
     videoData.description ||
     `Watch this incredible short video by @${videoData.username || "Clip App User"} on Clip App!`
+  // Use the videoData.thumbnailUrl if available, otherwise use the generic SVG placeholder
   const thumbnailUrl =
-    videoData.thumbnailUrl || `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail` // Ensure this is a publicly accessible image URL
-  const videoContentUrl = videoData.videoUrl || `${siteUrl}/video/${params.id}/player` // Ensure this is a publicly accessible video URL
+    videoData.thumbnailUrl || `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail`
+  // Use the videoData.videoUrl if available, otherwise use the player URL as a fallback
+  const videoContentUrl = videoData.videoUrl || `${siteUrl}/video/${params.id}/player`
 
   // Log the final metadata object for debugging rich previews
   const finalMetadata = {
@@ -55,7 +59,7 @@ export async function generateMetadata({ params }) {
           width: 1200,
           height: 630,
           alt: title,
-          type: "image/jpeg", // Assuming your actual thumbnails are JPEG. Adjust if PNG/WEBP.
+          type: "image/jpeg", // IMPORTANT: Ensure this matches the actual type of your thumbnails (e.g., image/png, image/webp)
         },
       ],
       // Crucial for video embeds in Open Graph
@@ -63,7 +67,7 @@ export async function generateMetadata({ params }) {
         {
           url: videoContentUrl, // This will be videoData.videoUrl from API or the player URL fallback
           secureUrl: videoContentUrl,
-          type: "video/mp4", // Assuming your actual videos are MP4. Adjust if MOV/WEBM.
+          type: "video/mp4", // IMPORTANT: Ensure this matches the actual type of your videos (e.g., video/quicktime for .mov)
           width: 720,
           height: 1280,
         },
@@ -119,7 +123,7 @@ export default async function VideoPage({ params }) {
       description: "This video could not be loaded.",
       username: "Clip App User",
       videoUrl: "/placeholder-video.mp4", // A generic placeholder video if you have one
-      thumbnailUrl: "/placeholder-video-thumbnail.png", // A generic placeholder image
+      thumbnailUrl: "/placeholder.svg?height=630&width=1200", // A generic placeholder image
       userAvatar: "/placeholder.svg?height=40&width=40",
       likes: [],
       comments: [],
