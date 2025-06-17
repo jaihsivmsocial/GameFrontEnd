@@ -18,11 +18,12 @@ export async function generateMetadata({ params }) {
   } catch (error) {
     console.error(`Error fetching video data for metadata for ID ${params.id}:`, error)
     // Fallback to generic data if API fails, ensuring metadata is always present
+    // IMPORTANT: These fallback URLs MUST be publicly accessible static files.
     videoData = {
       title: "Amazing Video on Clip App",
       description: "Watch this incredible short video on Clip App - the best platform for sharing amazing content!",
-      thumbnailUrl: `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail`,
-      videoUrl: `${siteUrl}/placeholder-video.mp4`, // Fallback video URL
+      thumbnailUrl: `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail`, // Fallback to a generic SVG placeholder if API fails
+      videoUrl: `${siteUrl}/video/${params.id}/player`, // Fallback to the player URL if API fails
       username: "Clip App User",
     }
   }
@@ -32,12 +33,11 @@ export async function generateMetadata({ params }) {
     videoData.description ||
     `Watch this incredible short video by @${videoData.username || "Clip App User"} on Clip App!`
   const thumbnailUrl =
-    videoData.thumbnailUrl || `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail`
-  const videoContentUrl = videoData.videoUrl || `${siteUrl}/placeholder-video.mp4` // Direct URL to video file
+    videoData.thumbnailUrl || `${siteUrl}/placeholder.svg?height=630&width=1200&query=video-thumbnail` // Ensure this is a publicly accessible image URL
+  const videoContentUrl = videoData.videoUrl || `${siteUrl}/video/${params.id}/player` // Ensure this is a publicly accessible video URL
 
-  console.log(`✅ METADATA GENERATED:`, { title, description, videoPageUrl, thumbnailUrl, videoContentUrl, playerUrl })
-
-  return {
+  // Log the final metadata object for debugging rich previews
+  const finalMetadata = {
     title: `${title} | Clip App`,
     description,
 
@@ -51,21 +51,21 @@ export async function generateMetadata({ params }) {
       locale: "en_US",
       images: [
         {
-          url: thumbnailUrl,
+          url: thumbnailUrl, // This will be videoData.thumbnailUrl from API or the SVG fallback
           width: 1200,
           height: 630,
           alt: title,
-          type: "image/svg+xml", // Use svg+xml for placeholder, adjust if actual image type
+          type: "image/jpeg", // Assuming your actual thumbnails are JPEG. Adjust if PNG/WEBP.
         },
       ],
       // Crucial for video embeds in Open Graph
       videos: [
         {
-          url: videoContentUrl, // Direct URL to the video file
+          url: videoContentUrl, // This will be videoData.videoUrl from API or the player URL fallback
           secureUrl: videoContentUrl,
-          type: "video/mp4", // Assuming MP4, adjust if other formats
-          width: 720, // Standard vertical video width
-          height: 1280, // Standard vertical video height
+          type: "video/mp4", // Assuming your actual videos are MP4. Adjust if MOV/WEBM.
+          width: 720,
+          height: 1280,
         },
       ],
     },
@@ -79,10 +79,10 @@ export async function generateMetadata({ params }) {
       image: thumbnailUrl,
       // Crucial for video embeds in Twitter Card
       player: {
-        url: playerUrl, // URL to the dedicated player page
+        url: playerUrl,
         width: 720,
         height: 1280,
-        stream: videoContentUrl, // Direct URL to the video file for streaming
+        stream: videoContentUrl, // This will be videoData.videoUrl from API or the player URL fallback
       },
     },
 
@@ -93,6 +93,8 @@ export async function generateMetadata({ params }) {
       },
     },
   }
+  console.log(`✅ FINAL METADATA RETURNED:`, finalMetadata)
+  return finalMetadata
 }
 
 // This page component is now a Server Component
@@ -117,7 +119,7 @@ export default async function VideoPage({ params }) {
       description: "This video could not be loaded.",
       username: "Clip App User",
       videoUrl: "/placeholder-video.mp4", // A generic placeholder video if you have one
-      thumbnailUrl: "/placeholder.svg?height=630&width=1200",
+      thumbnailUrl: "/placeholder-video-thumbnail.png", // A generic placeholder image
       userAvatar: "/placeholder.svg?height=40&width=40",
       likes: [],
       comments: [],

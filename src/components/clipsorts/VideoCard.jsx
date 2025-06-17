@@ -122,6 +122,7 @@ export default function VideoCard({ video, isActive }) {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(shareableUrl)
       } else {
+        // Fallback for older browsers or non-secure contexts
         const textArea = document.createElement("textarea")
         textArea.value = shareableUrl
         textArea.style.position = "fixed"
@@ -133,10 +134,12 @@ export default function VideoCard({ video, isActive }) {
 
         try {
           document.execCommand("copy")
-          textArea.remove()
         } catch (err) {
-          textArea.remove()
+          console.error("Fallback copy failed:", err)
           throw new Error("Copy failed")
+        } finally {
+          // Ensure textarea is removed regardless of success or failure
+          document.body.removeChild(textArea)
         }
       }
 
@@ -180,15 +183,14 @@ export default function VideoCard({ video, isActive }) {
       const downloadLink = document.createElement("a")
       downloadLink.href = blobUrl
       downloadLink.download = filename
-      downloadLink.style.display = "none"
+      downloadLink.style.display = "none" // Hide the link
+      document.body.appendChild(downloadLink) // Temporarily add to DOM
 
-      document.body.appendChild(downloadLink)
-      downloadLink.click()
+      downloadLink.click() // Programmatically click the link
 
-      setTimeout(() => {
-        document.body.removeChild(downloadLink)
-        URL.revokeObjectURL(blobUrl)
-      }, 100)
+      // Clean up: revoke object URL and remove the element immediately
+      URL.revokeObjectURL(blobUrl)
+      document.body.removeChild(downloadLink) // Fix for "removeChild" error
     } catch (error) {
       console.error("Failed to download video:", error)
       alert("Failed to download video. Please try again.")
@@ -263,8 +265,12 @@ export default function VideoCard({ video, isActive }) {
   }
 
   const handleVideoError = (e) => {
-    console.error("Video error:", e)
+    console.error("Video error event:", e)
+    console.error("Video error code:", e.target.error.code)
+    console.error("Video error message:", e.target.error.message)
     setIsVideoLoaded(false)
+    // Provide user feedback for video errors
+    alert(`Video playback error: ${e.target.error.message || "Unknown error"}. Please try again later.`)
   }
 
   if (!isMounted) {
@@ -297,7 +303,7 @@ export default function VideoCard({ video, isActive }) {
         controls={false}
         onClick={togglePlayPause}
         onLoadedData={handleVideoLoad}
-        onError={handleVideoError}
+        onError={handleVideoError} // Enhanced error logging
       />
 
       {!isPlaying && isVideoLoaded && (
