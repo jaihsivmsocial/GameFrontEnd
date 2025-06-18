@@ -1,7 +1,14 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { likeVideo, addComment, shareVideo, getDownloadUrl, generateShareableUrl } from "@/components/clipsorts/api"
+import {
+  likeVideo,
+  addComment,
+  shareVideo,
+  getDownloadUrl,
+  generateShareableUrl,
+  incrementVideoView,
+} from "@/components/clipsorts/api"
 import { Modal, Form, Button } from "react-bootstrap"
 
 export default function VideoCard({ video, isActive }) {
@@ -18,6 +25,7 @@ export default function VideoCard({ video, isActive }) {
   const [isMounted, setIsMounted] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const videoRef = useRef(null)
+  const hasViewedRef = useRef(false) // NEW: Ref to track if view has been incremented for this video in current session
 
   useEffect(() => {
     setIsMounted(true)
@@ -35,6 +43,11 @@ export default function VideoCard({ video, isActive }) {
           playPromise
             .then(() => {
               setIsPlaying(true)
+              // NEW: Increment view when video starts playing and is active
+              if (!hasViewedRef.current) {
+                incrementVideoView(video.id)
+                hasViewedRef.current = true
+              }
             })
             .catch((err) => {
               console.error("Autoplay failed:", err)
@@ -44,9 +57,10 @@ export default function VideoCard({ video, isActive }) {
       } else {
         videoRef.current.pause()
         setIsPlaying(false)
+        hasViewedRef.current = false // Reset for next time it becomes active
       }
     }
-  }, [isActive, isMounted])
+  }, [isActive, isMounted, video.id]) // Add video.id to dependency array
 
   const togglePlayPause = () => {
     if (!isMounted) return
@@ -55,7 +69,14 @@ export default function VideoCard({ video, isActive }) {
       if (videoRef.current.paused) {
         videoRef.current
           .play()
-          .then(() => setIsPlaying(true))
+          .then(() => {
+            setIsPlaying(true)
+            // NEW: Increment view on manual play if not already counted
+            if (!hasViewedRef.current) {
+              incrementVideoView(video.id)
+              hasViewedRef.current = true
+            }
+          })
           .catch((err) => {
             console.error("Play failed:", err)
             setIsPlaying(false)
@@ -206,7 +227,7 @@ export default function VideoCard({ video, isActive }) {
       const shareableUrl = generateShareableUrl(video.id)
 
       try {
-        await shareVideo(video.id)
+        await shareVideo(video.id) // This increments the shares count on the backend
       } catch (apiError) {
         console.warn("Failed to increment share count:", apiError)
       }
