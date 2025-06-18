@@ -395,7 +395,7 @@ export async function shareVideo(id) {
 
     const data = await response.json()
     console.log("[shareVideo] Backend share successful:", data)
-    return data
+    return data // Return data to update frontend state
   } catch (error) {
     console.error(`[shareVideo] Error sharing video ${id}:`, error)
     throw error // Re-throw to be caught by frontend component
@@ -454,7 +454,7 @@ export async function getVideo(id, searchParams = {}) {
       }
     }
 
-    console.log(`Fetching video from: ${url.toString()}`)
+    console.log(`[api.jsx] Fetching video from: ${url.toString()}`)
     const response = await fetch(url.toString())
 
     if (!response.ok) {
@@ -487,6 +487,7 @@ export async function getVideo(id, searchParams = {}) {
       views: video.views || 0,
       downloads: video.downloads || 0,
       createdAt: video.createdAt || new Date().toISOString(),
+      linkClicks: video.linkClicks || 0, // Include linkClicks in the returned video object
     }
   } catch (error) {
     console.error(`Error fetching video ${id}:`, error)
@@ -517,7 +518,7 @@ export async function incrementVideoView(id) {
 
     const data = await response.json()
     console.log("[incrementVideoView] Backend view increment successful:", data)
-    return data
+    return data // Return data to update frontend state
   } catch (error) {
     console.error(`[incrementVideoView] Error incrementing view for video ${id}:`, error)
     // Do not re-throw, as view increment is a background task and shouldn't block UI
@@ -630,7 +631,7 @@ export function generateShareableUrl(id) {
 
   // Always return the full URL for proper sharing, and add a source parameter
   const shareUrl = `${siteUrl}/video/${id}?source=share`
-  console.log("Generated share URL:", shareUrl)
+  console.log("[api.jsx] Generated share URL:", shareUrl)
   return shareUrl
 }
 

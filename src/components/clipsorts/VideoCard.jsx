@@ -24,8 +24,9 @@ export default function VideoCard({ video, isActive }) {
   const [isDownloading, setIsDownloading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [viewsCount, setViewsCount] = useState(video.views || 0) // NEW: State for real-time views
+  const [sharesCount, setSharesCount] = useState(video.shares || 0) // NEW: State for real-time shares
   const videoRef = useRef(null)
-  const hasViewedRef = useRef(false) // NEW: Ref to track if view has been incremented for this video in current session
 
   useEffect(() => {
     setIsMounted(true)
@@ -43,21 +44,24 @@ export default function VideoCard({ video, isActive }) {
           playPromise
             .then(() => {
               setIsPlaying(true)
-              // NEW: Increment view when video starts playing and is active
-              if (!hasViewedRef.current) {
-                incrementVideoView(video.id)
-                hasViewedRef.current = true
-              }
+              // NEW: Increment view every time video starts playing and is active
+              // Removed hasViewedRef to allow repeated views to count
+              incrementVideoView(video.id)
+                .then((data) => {
+                  if (data && typeof data.views === "number") {
+                    setViewsCount(data.views) // Update views in real-time
+                  }
+                })
+                .catch((err) => console.error("Failed to increment view:", err))
             })
             .catch((err) => {
-              console.error("Autoplay failed:", err)
+              console.error("Autoplay failed (likely due to browser policy, user interaction needed):", err)
               setIsPlaying(false)
             })
         }
       } else {
         videoRef.current.pause()
         setIsPlaying(false)
-        hasViewedRef.current = false // Reset for next time it becomes active
       }
     }
   }, [isActive, isMounted, video.id]) // Add video.id to dependency array
@@ -71,11 +75,15 @@ export default function VideoCard({ video, isActive }) {
           .play()
           .then(() => {
             setIsPlaying(true)
-            // NEW: Increment view on manual play if not already counted
-            if (!hasViewedRef.current) {
-              incrementVideoView(video.id)
-              hasViewedRef.current = true
-            }
+            // NEW: Increment view on manual play
+            // Removed hasViewedRef to allow repeated views to count
+            incrementVideoView(video.id)
+              .then((data) => {
+                if (data && typeof data.views === "number") {
+                  setViewsCount(data.views) // Update views in real-time
+                }
+              })
+              .catch((err) => console.error("Failed to increment view:", err))
           })
           .catch((err) => {
             console.error("Play failed:", err)
@@ -227,7 +235,11 @@ export default function VideoCard({ video, isActive }) {
       const shareableUrl = generateShareableUrl(video.id)
 
       try {
-        await shareVideo(video.id) // This increments the shares count on the backend
+        // NEW: Update sharesCount in real-time
+        const shareResponse = await shareVideo(video.id) // This increments the shares count on the backend
+        if (shareResponse && typeof shareResponse.shares === "number") {
+          setSharesCount(shareResponse.shares)
+        }
       } catch (apiError) {
         console.warn("Failed to increment share count:", apiError)
       }
@@ -388,7 +400,7 @@ export default function VideoCard({ video, isActive }) {
             <i className="bi bi-arrow-up-right" style={{ fontSize: "20px", color: "black" }}></i>
           </div>
           <span className="text-white" style={{ fontSize: "12px", marginTop: "4px" }}>
-            Share
+            Share ({sharesCount}) {/* NEW: Display sharesCount */}
           </span>
         </div>
 
@@ -407,6 +419,9 @@ export default function VideoCard({ video, isActive }) {
         <div className="text-white">
           <div className="fw-bold">@{video.user?.username}</div>
           <div>{video.title}</div>
+          <div className="text-white/80 text-xs">
+            {viewsCount} views • {new Date(video.createdAt).toLocaleDateString()} {/* NEW: Display viewsCount */}
+          </div>
         </div>
       </div>
 
