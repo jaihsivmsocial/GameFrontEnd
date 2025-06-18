@@ -381,19 +381,24 @@ export async function addComment(id, commentData) {
 
 // Share a video (increment share count)
 export async function shareVideo(id) {
+  console.log(`[shareVideo] Attempting to call backend /api/videos/${id}/share`)
   try {
     const response = await fetch(`${BASEURL}/api/videos/${id}/share`, {
       method: "POST",
     })
 
     if (!response.ok) {
-      throw new Error(`Failed to share video: ${response.status}`)
+      const errorText = await response.text()
+      console.error(`[shareVideo] Backend response not OK: Status ${response.status}, Body: ${errorText}`)
+      throw new Error(`Failed to share video: ${response.status} - ${errorText}`)
     }
 
-    return await response.json()
+    const data = await response.json()
+    console.log("[shareVideo] Backend share successful:", data)
+    return data
   } catch (error) {
-    console.error(`Error sharing video ${id}:`, error)
-    throw error
+    console.error(`[shareVideo] Error sharing video ${id}:`, error)
+    throw error // Re-throw to be caught by frontend component
   }
 }
 
@@ -568,7 +573,7 @@ export async function deleteVideo(id) {
   }
 }
 
-// FIXED: Generate a shareable URL for a video with rich preview support
+// Generate a shareable URL for a video with rich preview support
 export function generateShareableUrl(id) {
   // Get the site URL from environment variables or current location
   let siteUrl = process.env.NEXT_PUBLIC_SITE_URL
@@ -583,8 +588,8 @@ export function generateShareableUrl(id) {
     siteUrl = "https://test.tribez.gg"
   }
 
-  // Always return the full URL for proper sharing
-  const shareUrl = `${siteUrl}/video/${id}`
+  // Always return the full URL for proper sharing, and add a source parameter
+  const shareUrl = `${siteUrl}/video/${id}?source=share` // ADDED ?source=share
   console.log("Generated share URL:", shareUrl)
   return shareUrl
 }
