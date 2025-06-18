@@ -13,6 +13,7 @@ export async function generateMetadata({ params }) {
   let videoData = null
   try {
     // Attempt to fetch actual video data for rich previews
+    // No searchParams needed for metadata generation, as it's just fetching data
     videoData = await getVideo(params.id)
     console.log("Fetched video data for metadata:", videoData)
   } catch (error) {
@@ -102,14 +103,15 @@ export async function generateMetadata({ params }) {
 }
 
 // This page component is now a Server Component
-export default async function VideoPage({ params }) {
-  console.log(`🎬 VIDEO PAGE LOADING: ${params.id}`)
+export default async function VideoPage({ params, searchParams }) {
+  console.log(`🎬 VIDEO PAGE LOADING: ${params.id}, Search Params:`, searchParams)
 
   let video = null
   let error = null
 
   try {
-    video = await getVideo(params.id)
+    // Pass searchParams to getVideo to handle linkClicks
+    video = await getVideo(params.id, searchParams)
     if (!video) {
       notFound() // If video is not found, Next.js will render a 404 page
     }
