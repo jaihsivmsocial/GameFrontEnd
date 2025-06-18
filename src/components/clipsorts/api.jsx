@@ -395,7 +395,7 @@ export async function shareVideo(id) {
 
     const data = await response.json()
     console.log("[shareVideo] Backend share successful:", data)
-    return data
+    return data // Return data to update frontend state
   } catch (error) {
     console.error(`[shareVideo] Error sharing video ${id}:`, error)
     throw error // Re-throw to be caught by frontend component
@@ -443,9 +443,19 @@ export async function getTrendingVideos() {
 }
 
 // Get a single video by ID
-export async function getVideo(id) {
+// Now accepts searchParams to pass to the backend for linkClicks
+export async function getVideo(id, searchParams = {}) {
   try {
-    const response = await fetch(`${BASEURL}/api/videos/${id}`)
+    const url = new URL(`${BASEURL}/api/videos/${id}`)
+    // Append searchParams to the URL
+    for (const key in searchParams) {
+      if (searchParams.hasOwnProperty(key)) {
+        url.searchParams.append(key, searchParams[key])
+      }
+    }
+
+    console.log(`[api.jsx] Fetching video from: ${url.toString()}`)
+    const response = await fetch(url.toString())
 
     if (!response.ok) {
       throw new Error(`Failed to fetch video: ${response.status}`)
@@ -477,10 +487,41 @@ export async function getVideo(id) {
       views: video.views || 0,
       downloads: video.downloads || 0,
       createdAt: video.createdAt || new Date().toISOString(),
+      linkClicks: video.linkClicks || 0, // Include linkClicks in the returned video object
     }
   } catch (error) {
     console.error(`Error fetching video ${id}:`, error)
     throw error
+  }
+}
+
+// NEW: Increment video view count
+export async function incrementVideoView(id) {
+  if (!isBrowser) {
+    throw new Error("View increment can only be performed in browser environment")
+  }
+
+  try {
+    console.log(`[incrementVideoView] Calling backend ${BASEURL}/api/videos/${id}/view`)
+    const response = await fetch(`${BASEURL}/api/videos/${id}/view`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`[incrementVideoView] Backend response not OK: Status ${response.status}, Body: ${errorText}`)
+      throw new Error(`Failed to increment view: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log("[incrementVideoView] Backend view increment successful:", data)
+    return data // Return data to update frontend state
+  } catch (error) {
+    console.error(`[incrementVideoView] Error incrementing view for video ${id}:`, error)
+    // Do not re-throw, as view increment is a background task and shouldn't block UI
   }
 }
 
@@ -589,8 +630,8 @@ export function generateShareableUrl(id) {
   }
 
   // Always return the full URL for proper sharing, and add a source parameter
-  const shareUrl = `${siteUrl}/video/${id}?source=share` // ADDED ?source=share
-  console.log("Generated share URL:", shareUrl)
+  const shareUrl = `${siteUrl}/video/${id}?source=share`
+  console.log("[api.jsx] Generated share URL:", shareUrl)
   return shareUrl
 }
 
