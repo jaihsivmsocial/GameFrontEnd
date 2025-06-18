@@ -104,7 +104,7 @@ export async function generateMetadata({ params }) {
 
 // This page component is now a Server Component
 export default async function VideoPage({ params, searchParams }) {
-  console.log(`🎬 VIDEO PAGE LOADING: ${params.id}, Search Params:`, searchParams)
+  console.log(`🎬 VIDEO PAGE LOADING: ${params.id}, Search Params:`, searchParams) // NEW: Log searchParams
 
   let video = null
   let error = null
@@ -132,6 +132,7 @@ export default async function VideoPage({ params, searchParams }) {
       shares: 0,
       views: 0,
       createdAt: new Date().toISOString(),
+      linkClicks: 0, // Ensure linkClicks is initialized even in fallback
     }
   }
 
