@@ -16,7 +16,7 @@
 //     font-size: 12px !important;
 //     padding: 0 !important;
 //     border-radius: 4px !important;
-//     flex: 0 0 auto !important;
+//     flex: 0 0 auto !impo tant;
 //     background: linear-gradient(to right, #090e12, #081e2e) !important;
 //   }
   

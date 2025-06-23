@@ -1,17 +1,15 @@
-
- import HomeCustom from "@/components/Home/HomeCustom"
 export const metadata = {
   title: "Mstribe",
-    
-};
+}
+
+import ClientPage from "./ClientPage"
 
 const page = () => {
   return (
     <>
- <HomeCustom/>
-
+      <ClientPage />
     </>
-  );
-};
+  )
+}
 
-export default page;
+export default page
