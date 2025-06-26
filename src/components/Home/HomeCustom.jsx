@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import styles from "../../viewscreen/screen.module.css"
-import { useSocket } from "../contexts/SocketContext"
+import { useSocket } from "../contexts/SocketContext" // Use useSocket from context
 import apiService from "../contexts/api-service"
 import WebRTCStream from "../../components/Home/WebRTCConnection"
 import VideoQualitySettings from "../Home/VideoQualitySettings"
@@ -29,9 +29,7 @@ export default function HomeCustom() {
     [pixelStreamingUrl],
   )
 
-  const socketContext = useSocket()
-  const socket = socketContext?.socket
-  const isConnected = socketContext?.isConnected || false
+  const { socket, isConnected } = useSocket() // Get socket and isConnected from context
 
   const [viewerCount, setViewerCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -303,8 +301,8 @@ export default function HomeCustom() {
 
         {/* Camera name */}
         {/* <div className={styles.cameraLabel}>
-          <span>{mainCamera.name || "Camera Feed"}</span>
-        </div> */}
+        <span>{mainCamera.name || "Camera Feed"}</span>
+      </div> */}
 
         <div className={styles.mainCam} style={{ zIndex: 30 }}>
           <div className={styles.camIcon}>
@@ -317,8 +315,8 @@ export default function HomeCustom() {
             />
           </div>
           {/* <div className={styles.camText}>
-            <div>{mainCamera.name || "Camera Feed"}</div>
-          </div> */}
+          <div>{mainCamera.name || "Camera Feed"}</div>
+        </div> */}
         </div>
 
         <div className={styles.liveIndicator} style={{ zIndex: 30 }}>
@@ -340,13 +338,13 @@ export default function HomeCustom() {
 
         {/* Add Video Quality Settings component */}
         {/* <div className="position-absolute bottom-0 end-0 p-2 d-none d-md-block" style={{ zIndex: 20 }}>
-          <VideoQualitySettings
-            streamId={mainCamera.streamId}
-            initialQuality={qualitySettings[mainCamera.streamId]?.quality || "auto"}
-            initialFrameRate={qualitySettings[mainCamera.streamId]?.frameRate || "60"}
-            onQualityChange={(quality, frameRate) => handleQualityChange(quality, frameRate, mainCamera.streamId)}
-          />
-        </div> */}
+        <VideoQualitySettings
+          streamId={mainCamera.streamId}
+          initialQuality={qualitySettings[mainCamera.streamId]?.quality || "auto"}
+          initialFrameRate={qualitySettings[mainCamera.streamId]?.frameRate || "60"}
+          onQualityChange={(quality, frameRate) => handleQualityChange(quality, frameRate, mainCamera.streamId)}
+        />
+      </div> */}
 
         {/* Show active indicator */}
         {isActive && (
@@ -465,7 +463,7 @@ export default function HomeCustom() {
             </div>
           </div>
           <div style={{ flex: 1, overflow: "hidden", marginTop: "22px" }}>
-            <RealTimeChatCompWrapper streamId={mainCamera.streamId} />
+            <RealTimeChatCompWrapper streamId="default-stream" />
           </div>
 
           {/* Scroll down indicator */}
@@ -552,7 +550,7 @@ export default function HomeCustom() {
             overflow: "hidden",
           }}
         >
-          <RealTimeChatCompWrapper streamId={mainCamera.streamId} isStandalonePage={false} />
+          <RealTimeChatCompWrapper streamId="default-stream" isStandalonePage={false} />
         </div>
       </div>
 

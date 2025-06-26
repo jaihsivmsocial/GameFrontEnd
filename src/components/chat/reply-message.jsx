@@ -1,16 +1,18 @@
 "use client"
 import Image from "next/image"
 import styles from "../../custonCss/home.module.css"
+import { useSocket } from "../contexts/SocketContext" // Import useSocket
 
-const ReplyMessage = ({ username, onSend, onCancel, message, setMessage, streamId, replyTo, socket }) => {
+const ReplyMessage = ({ username, onSend, onCancel, message, setMessage, streamId, replyTo }) => {
+  const { socket } = useSocket() // Get socket from context
+
   // Function to handle sending reply using socket
   const handleSendReply = () => {
     if (!message.trim() || !socket) return
 
     try {
-      // CHANGE: Store message content in a variable for reuse
       const messageContent = message.trim()
-      
+
       console.log("Sending reply via socket:", {
         content: messageContent,
         streamId,
@@ -21,7 +23,6 @@ const ReplyMessage = ({ username, onSend, onCancel, message, setMessage, streamI
         },
       })
 
-      // Send message via socket
       socket.emit("send_message", {
         content: messageContent,
         streamId,
@@ -32,10 +33,7 @@ const ReplyMessage = ({ username, onSend, onCancel, message, setMessage, streamI
         },
       })
 
-      // Clear the message input
       setMessage("")
-
-      // Call the parent's onSend callback to update UI
       onSend()
     } catch (error) {
       console.error("Error sending reply:", error)
@@ -56,7 +54,6 @@ const ReplyMessage = ({ username, onSend, onCancel, message, setMessage, streamI
   const formatContent = (content) => {
     if (!content) return null
 
-    // Split content by lines
     const lines = content.split("\n")
 
     return lines.map((line, index) => {
@@ -87,7 +84,6 @@ const ReplyMessage = ({ username, onSend, onCancel, message, setMessage, streamI
         </button>
       </div>
 
-      {/* Show the original message with the same styling as in the screenshot */}
       <div className={styles.originalMessage}>
         <div className={styles.originalMessageUsername}>{replyTo.sender.username}</div>
         {formatContent(replyTo.content)}

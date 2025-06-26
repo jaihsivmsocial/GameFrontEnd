@@ -3,23 +3,53 @@
 import RealTimeChatCompWrapper from "../../components/chat/RealTimeChatCompWrapper"
 
 export default function ChatPage() {
-  // You can pass a specific streamId if needed, or use the default
   const streamId = "default-stream"
 
   return (
     <div
       style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        width: "100vw", // Ensure it takes full width
-        backgroundColor: "rgba(255, 255, 255, 0.1)", // Match the chat's background for a seamless look
-        padding: "20px",
-        boxSizing: "border-box", // Include padding in width/height
+        margin: 0,
+        padding: 0,
+        height: "100vh",
+        // backgroundColor: "#000", // optional: dark background for streamer look
+        overflow: "hidden",
       }}
     >
-      <RealTimeChatCompWrapper streamId={streamId} />
+      <div className="row g-0" style={{ margin: 0 }}>
+        <div className="col-10 p-0">
+          {/* Main content area */}
+        </div>
+
+        <div
+          className="col-2"
+          style={{
+            height: "340px",
+            width: "270px",
+            padding: 0,
+            margin: 0,
+          }}
+        >
+          <div
+            style={{
+              width: "270px",
+              height: "340px",
+              background: "rgba(0, 0, 0, 0.2)",
+              boxSizing: "border-box",
+              borderRadius: "10px",
+              color: "white",
+              fontFamily: "Arial, sans-serif",
+              overflowY: "auto",
+              margin: 0,
+            }}
+          >
+            <RealTimeChatCompWrapper
+              streamId={streamId}
+              isStandalonePage={false}
+              isReadOnly={true}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
