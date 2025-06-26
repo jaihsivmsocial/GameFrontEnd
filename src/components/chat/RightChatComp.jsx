@@ -2,15 +2,13 @@
 import { useEffect, useState, useRef } from "react"
 import styles from "../../custonCss/home.module.css"
 import Image from "next/image"
-import io from "socket.io-client"
 import AuthHeaderButtons from "../../components/register/SignupLogin"
 import ReplyMessage from "../../components/chat/reply-message"
-import { BASEURL } from "@/utils/apiservice"
+import { useSocket } from "../../components/contexts/SocketContext" // Import useSocket
 import { useMediaQuery } from "../../components/chat/use-mobile"
 
 // Helper function to validate and fix image URLs
 const getValidImageUrl = (url) => {
-  // Check if the URL is valid (starts with http://, https://, or /)
   if (!url || typeof url !== "string") {
     return "/placeholder.svg?height=30&width=30"
   }
@@ -19,7 +17,6 @@ const getValidImageUrl = (url) => {
     return url
   }
 
-  // If it's not a valid URL format, use a placeholder
   return "/placeholder.svg?height=30&width=30"
 }
 
@@ -37,7 +34,6 @@ const isUrl = (text) => {
 const formatContent = (content) => {
   if (!content) return null
 
-  // Split content by lines
   const lines = content.split("\n")
 
   return lines.map((line, index) => {
@@ -56,231 +52,64 @@ const formatContent = (content) => {
   })
 }
 
-const RealTimeChatComp = ({ streamId = "default-stream" }) => {
-  // We'll always keep the chat open since we're removing the toggle functionality
-  const [socket, setSocket] = useState(null)
-  const [messages, setMessages] = useState([])
+const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) => {
+  // Accept isReadOnly prop
+  // Consume from SocketContext
+  const { socket, isConnected, messages, setMessages, updateSocketAuth, getAuthDetails, currentUserData } = useSocket()
+
   const [message, setMessage] = useState("")
-  const [connected, setConnected] = useState(false)
-  const [anonymousId, setAnonymousId] = useState("")
   const messagesEndRef = useRef(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
 
-  // Auth related states
+  // Auth related states (can remain local as they control modal visibility)
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userData, setUserData] = useState(null)
-  // Add a flag to track if we're waiting for auth
   const [waitingForAuth, setWaitingForAuth] = useState(false)
-  // Store the message that was being sent when auth was required
   const [pendingMessage, setPendingMessage] = useState("")
 
   // Reply related states
   const [replyTo, setReplyTo] = useState(null)
   const [showReplyUI, setShowReplyUI] = useState(false)
 
-  // Check if user is logged in
-  useEffect(() => {
-    // Check for auth token in localStorage
-    const token = localStorage.getItem("authToken")
-    if (token) {
-      setIsLoggedIn(true)
-      // You could fetch user data here if needed
-      const username = localStorage.getItem("username")
-      const avatar = localStorage.getItem("avatar") || "/placeholder.svg?height=40&width=40"
-      setUserData({ username, avatar })
-
-      // If we were waiting for auth and now we're logged in, send the pending message
-      if (waitingForAuth && pendingMessage) {
-        // Reset the waiting flag
-        setWaitingForAuth(false)
-
-        // Set the message from the pending message
-        setMessage(pendingMessage)
-
-        // Clear the pending message
-        setPendingMessage("")
-
-        // We don't auto-send here to give the user a chance to review
-      }
-    } else {
-      setIsLoggedIn(false)
-      setUserData(null)
-    }
-  }, [waitingForAuth, pendingMessage])
-
-  // Initialize socket connection
-  useEffect(() => {
-    // Generate a random anonymous ID if not already set
-    if (!anonymousId) {
-      const newAnonId = `anon-${Math.random().toString(36).substring(2, 10)}`
-      setAnonymousId(newAnonId)
-      localStorage.setItem("anonymousId", newAnonId)
-    }
-
-    // Connect to socket server
-    const newSocket = io(`${process.env.NEXT_PUBLIC_API_URL || BASEURL}`, {
-      transports: ["websocket"],
-      auth: {
-        anonymousId,
-        // Use the actual username as customUsername if available
-        customUsername: isLoggedIn && userData ? userData.username : `User${Math.floor(Math.random() * 10000)}`,
-        realUsername: isLoggedIn && userData ? userData.username : null,
-        token: localStorage.getItem("authToken") || null,
-      },
-    })
-
-    // Socket event listeners
-    newSocket.on("connect", () => {
-      console.log("Connected to socket server")
-      setConnected(true)
-
-      // Join the stream room
-      newSocket.emit("join_stream", { streamId })
-    })
-
-    newSocket.on("disconnect", () => {
-      console.log("Disconnected from socket server")
-      setConnected(false)
-    })
-
-    newSocket.on("new_message", (newMessage) => {
-      console.log("New message received:", newMessage)
-      // Fix any invalid profile picture URLs
-      if (newMessage.sender && newMessage.sender.profilePicture) {
-        newMessage.sender.profilePicture = getValidImageUrl(newMessage.sender.profilePicture)
-      }
-
-      // Check if this is a duplicate of a pending message we already added
-      if (newMessage.id.startsWith("msg-")) {
-        // Remove any temporary messages with the same content and sender
-        setMessages((prev) => {
-          const filtered = prev.filter(
-            (msg) =>
-              !(
-                msg.isPending &&
-                msg.content === newMessage.content &&
-                msg.sender.username === newMessage.sender.username
-              ),
-          )
-          return [...filtered, newMessage]
-        })
-      } else {
-        setMessages((prev) => [...prev, newMessage])
-      }
-    })
-
-    newSocket.on("recent_messages", (recentMessages) => {
-      console.log("Recent messages received:", recentMessages)
-      // Fix any invalid profile picture URLs in recent messages
-      const fixedMessages = recentMessages.map((msg) => {
-        if (msg.sender && msg.sender.profilePicture) {
-          return {
-            ...msg,
-            sender: {
-              ...msg.sender,
-              profilePicture: getValidImageUrl(msg.sender.profilePicture),
-            },
-          }
-        }
-        return msg
-      })
-      setMessages(fixedMessages)
-    })
-
-    newSocket.on("error", (error) => {
-      console.error("Socket error:", error)
-    })
-
-    setSocket(newSocket)
-
-    // Cleanup on unmount
-    return () => {
-      if (newSocket) {
-        newSocket.emit("leave_stream", { streamId })
-        newSocket.disconnect()
-      }
-    }
-  }, [anonymousId, streamId, isLoggedIn, userData])
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  // Fetch initial messages via API
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || BASEURL}/api/messages/${streamId}`)
-
-        const data = await response.json()
-        if (data.messages && data.messages.length > 0) {
-          // Fix any invalid profile picture URLs in fetched messages
-          const fixedMessages = data.messages.map((msg) => {
-            if (msg.sender && msg.sender.profilePicture) {
-              return {
-                ...msg,
-                sender: {
-                  ...msg.sender,
-                  profilePicture: getValidImageUrl(msg.sender.profilePicture),
-                },
-              }
-            }
-            return msg
-          })
-          setMessages(fixedMessages)
-        }
-      } catch (error) {
-        console.error("Error fetching messages:", error)
-      }
-    }
-
-    fetchMessages()
-  }, [streamId])
-
-  // Handle auth state changes from AuthHeaderButtons
-  const handleAuthStateChange = (loggedIn, user) => {
-    console.log("Auth state changed:", loggedIn, user)
-    setIsLoggedIn(loggedIn)
-    setUserData(user)
-
-    // Only close the auth modal if login was successful
-    if (loggedIn) {
-      setShowAuthModal(false)
-
-      // If we were waiting for auth, set the flag to trigger the useEffect
-      if (waitingForAuth) {
-        // Keep the modal closed, we'll handle the message in the useEffect
-        setWaitingForAuth(true)
-      }
-    }
-
-    // Update socket auth when login status changes
-    if (socket && loggedIn) {
-      socket.auth = {
-        ...socket.auth,
-        customUsername: loggedIn && user ? user.username : `User${Math.floor(Math.random() * 10000)}`,
-        realUsername: loggedIn && user ? user.username : null,
-        token: localStorage.getItem("authToken") || null,
-      }
-
-      // Reconnect to apply the new auth
-      socket.disconnect().connect()
-    }
-  }
-
-  // Send message function - now checks for authentication and handles rate limiting
+  // Rate limiting states
   const [isRateLimited, setIsRateLimited] = useState(false)
   const [rateLimitMessage, setRateLimitMessage] = useState("")
   const rateLimitTimerRef = useRef(null)
 
-  // Handle reply button click
+  // Check if user is logged in and handle pending message after auth
+  useEffect(() => {
+    const { isLoggedIn } = getAuthDetails()
+    // If we were waiting for auth and now we're logged in, send the pending message
+    if (waitingForAuth && pendingMessage && isLoggedIn) {
+      setWaitingForAuth(false)
+      setMessage(pendingMessage)
+      setPendingMessage("")
+      // We don't auto-send here to give the user a chance to review
+    }
+  }, [waitingForAuth, pendingMessage, getAuthDetails])
+
+  // Scroll to bottom when messages change (now from context)
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  // Handle auth state changes from AuthHeaderButtons
+  const handleAuthStateChange = (loggedIn, user) => {
+    console.log("Auth state changed:", loggedIn, user)
+    // Trigger socket auth update in context
+    updateSocketAuth()
+
+    // Only close the auth modal if login was successful
+    if (loggedIn) {
+      setShowAuthModal(false)
+    }
+  }
+
+  // Handle reply button click - only allow if not read-only and authenticated
   const handleReply = (msg) => {
-    // Check if user is logged in
-    const token = localStorage.getItem("authToken")
-    if (!token) {
-      // Show auth modal if not logged in
+    if (isReadOnly) return // Prevent reply if read-only
+
+    const { isLoggedIn } = getAuthDetails()
+    if (!isLoggedIn) {
       setWaitingForAuth(true)
       setShowAuthModal(true)
       return
@@ -288,7 +117,6 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
 
     setReplyTo(msg)
     setShowReplyUI(true)
-    // Scroll to the reply UI
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }, 100)
@@ -296,7 +124,6 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
 
   // Handle after reply is sent
   const handleAfterReplySent = () => {
-    // Clear the reply states
     setReplyTo(null)
     setShowReplyUI(false)
   }
@@ -307,34 +134,35 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
     setShowReplyUI(false)
   }
 
-  // Send message function - now checks for authentication
+  // Send message function - only allow if not read-only and authenticated
   const handleSendMessage = (e) => {
     e.preventDefault()
-    if (!message.trim() || !socket || !connected) return
+    if (isReadOnly) return // Prevent sending if read-only
+    if (!message.trim() || !socket || !isConnected) return
 
-    // Check if user is logged in
-    const token = localStorage.getItem("authToken")
-    if (!token) {
-      // Store the current message before showing auth modal
+    const { isLoggedIn, anonymousId, customUsername } = getAuthDetails() // Get customUsername here
+    if (!isLoggedIn) {
       setPendingMessage(message)
-
-      // Set waiting flag to true
       setWaitingForAuth(true)
-
-      // Show auth modal if not logged in
       setShowAuthModal(true)
       return
     }
 
-    // If currently rate limited, show feedback
     if (isRateLimited) {
-      // Show a temporary message that we're rate limited
       setRateLimitMessage("Please wait before sending more messages")
       return
     }
 
-    // Store message content in a variable for reuse
     const messageContent = message.trim()
+
+    // Use currentUserData for the sender's profile picture and username if logged in
+    // Otherwise, use the generated customUsername for anonymous users
+    const senderDetails = {
+      id: isLoggedIn ? currentUserData?.id : anonymousId,
+      username: isLoggedIn ? currentUserData?.username : customUsername, // Use customUsername for anonymous
+      profilePicture: isLoggedIn ? getValidImageUrl(currentUserData?.avatar) : "/placeholder.svg?height=40&width=40",
+      isAnonymous: !isLoggedIn,
+    }
 
     // Create a temporary message object for immediate display
     const tempMessage = {
@@ -342,66 +170,42 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       content: messageContent,
       streamId,
       timestamp: Date.now(),
-      sender: {
-        id: anonymousId,
-        username: userData?.username || "You",
-        profilePicture: userData?.avatar || "/placeholder.svg?height=40&width=40",
-        isAnonymous: false,
-      },
+      sender: senderDetails, // Pass the constructed senderDetails
       replyTo: null,
       isPending: true, // Mark as pending to potentially style differently
     }
 
-    // Add to messages immediately for instant feedback
+    // Add to messages immediately for instant feedback (using context's setMessages)
     setMessages((prev) => [...prev, tempMessage])
 
     console.log("Sending message via socket:", {
       content: messageContent,
       streamId,
       replyTo: null,
+      sender: senderDetails, // Ensure sender details are sent to the server
     })
 
-    // Send message via socket
     socket.emit("send_message", {
       content: messageContent,
       streamId,
       replyTo: null,
+      sender: senderDetails, // Ensure sender details are sent to the server
     })
 
-    // Clear the message
     setMessage("")
   }
 
-  useEffect(() => {
-    if (socket) {
-      // Update socket auth when login status changes
-      socket.auth = {
-        ...socket.auth,
-        // Use the actual username as customUsername if available
-        customUsername: isLoggedIn && userData ? userData.username : `User${Math.floor(Math.random() * 10000)}`,
-        realUsername: isLoggedIn && userData ? userData.username : null,
-        token: localStorage.getItem("authToken") || null,
-      }
-
-      // Reconnect to apply the new auth
-      if (isLoggedIn && userData) {
-        socket.disconnect().connect()
-      }
-    }
-  }, [isLoggedIn, userData, socket])
-
+  // Handle socket errors (rate limiting)
   useEffect(() => {
     if (!socket) return
 
     const handleError = (error) => {
       console.error("Socket error:", error)
 
-      // Handle rate limiting errors
       if (error.code === "RATE_LIMIT") {
         setIsRateLimited(true)
         setRateLimitMessage(error.message)
 
-        // Clear rate limit after the suggested retry time
         if (rateLimitTimerRef.current) {
           clearTimeout(rateLimitTimerRef.current)
         }
@@ -432,14 +236,13 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
       <div
         className={styles.chatSection}
         style={{
-          background: "linear-gradient(90deg, #0b1526 0%, #0a1a2e 100%)",
           backdropFilter: "blur(10px)",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
           height: "100%",
           position: "relative",
-          paddingBottom: "30px",
+          paddingBottom: isReadOnly ? "0px" : "30px", // Adjust padding if read-only
           marginLeft: "12px",
           marginRight: "12px",
           paddingTop: "25px",
@@ -449,9 +252,9 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
           className={styles.chatMessages}
           style={{
             flex: 1,
-            overflowY: "auto",
+            overflowY: isReadOnly ? "hidden" : "auto", // Hide scroll if read-only
             padding: "0",
-            marginBottom: "48px", // Increased to make room for input and scroll indicator
+            marginBottom: isReadOnly ? "0px" : "48px", // Adjust margin if read-only
           }}
         >
           {messages.length === 0 ? (
@@ -523,7 +326,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                         marginBottom: "2px",
                       }}
                     >
-                      {msg.sender?.username || "Anonymous"}
+                      {msg.sender?.username}
                     </div>
                     {msg.replyTo && (
                       <div
@@ -590,124 +393,128 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
         </div>
 
         {/* Show reply UI when replying to a message */}
-        {showReplyUI && replyTo && (
-          <ReplyMessage
-            username={replyTo.sender.username}
-            onSend={handleAfterReplySent}
-            onCancel={handleCancelReply}
-            message={message}
-            setMessage={setMessage}
-            streamId={streamId}
-            replyTo={replyTo}
-            socket={socket}
-          />
-        )}
+        {showReplyUI &&
+          replyTo &&
+          !isReadOnly && ( // Conditionally render reply UI
+            <ReplyMessage
+              username={replyTo.sender.username}
+              onSend={handleAfterReplySent}
+              onCancel={handleCancelReply}
+              message={message}
+              setMessage={setMessage}
+              streamId={streamId}
+              replyTo={replyTo}
+            />
+          )}
 
-        {!showReplyUI && (
-          <form
-            onSubmit={handleSendMessage}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              padding: "10px 15px",
-              backgroundColor: "transparent",
-              position: "absolute",
-              bottom: "49px",
-              left: 0,
-              right: 0,
-              width: "100%",
-              zIndex: 5,
-            }}
-          >
-            <div
+        {!showReplyUI &&
+          !isReadOnly && ( // Conditionally render input form
+            <form
+              onSubmit={handleSendMessage}
               style={{
-                flex: 1,
-                backgroundColor: "white",
-                borderRadius: "20px",
                 display: "flex",
                 alignItems: "center",
-                height: "40px",
-                marginRight: "8px",
-                overflow: "hidden",
+                padding: "10px 15px",
+                backgroundColor: "transparent",
+                position: "absolute",
+                bottom: "49px",
+                left: 0,
+                right: 0,
+                width: "100%",
+                zIndex: 5,
               }}
             >
-              <input
-                type="text"
-                placeholder="Type Here..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                disabled={!connected}
+              <div
                 style={{
                   flex: 1,
-                  backgroundColor: "transparent",
-                  color: "#333",
-                  border: "none",
-                  padding: "8px 15px",
-                  fontSize: "14px",
-                  height: "100%",
-                  outline: "none",
-                }}
-              />
-              <button
-                type="submit"
-                disabled={!connected || !message.trim()}
-                style={{
-                  backgroundColor: "#0ea5e9",
-                  border: "none",
-                  borderRadius: "50%",
-                  cursor: "pointer",
-                  padding: 0,
+                  backgroundColor: "white",
+                  borderRadius: "20px",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
                   height: "40px",
-                  width: "40px",
-                  transition: "transform 0.2s",
+                  marginRight: "8px",
+                  overflow: "hidden",
                 }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path
-                    d="M22 2L15 22L11 13L2 9L22 2Z"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-          </form>
-        )}
+                <input
+                  type="text"
+                  placeholder="Type Here..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  disabled={!isConnected}
+                  style={{
+                    flex: 1,
+                    backgroundColor: "transparent",
+                    color: "#333",
+                    border: "none",
+                    padding: "8px 15px",
+                    fontSize: "14px",
+                    height: "100%",
+                    outline: "none",
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={!isConnected || !message.trim()}
+                  style={{
+                    backgroundColor: "#0ea5e9",
+                    border: "none",
+                    borderRadius: "50%",
+                    cursor: "pointer",
+                    padding: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "40px",
+                    width: "40px",
+                    transition: "transform 0.2s",
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M22 2L15 22L11 13L2 9L22 2Z"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          )}
 
-        {/* Scroll down indicator */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "0",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            padding: "5px 0",
-            color: "white",
-            fontSize: "12px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "5px",
-            backgroundColor: "rgba(13, 18, 30, 0.8)",
-            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-            zIndex: 4,
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 9L12 16L5 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          SCROLL DOWN
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 9L12 16L5 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
+        {/* Scroll down indicator - Conditionally render */}
+        {!isReadOnly && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: "0",
+              left: 0,
+              right: 0,
+              textAlign: "center",
+              padding: "5px 0",
+              color: "white",
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "5px",
+              backgroundColor: "rgba(13, 18, 30, 0.8)",
+              borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+              zIndex: 4,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 9L12 16L5 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            SCROLL DOWN
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 9L12 16L5 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        )}
 
         {isRateLimited && rateLimitMessage && (
           <div
@@ -776,7 +583,7 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
                         className={styles.avatar}
                       />
                     </div>
-                    <div className={styles.originalMessageUsername}>{msg.sender?.username || "Anonymous"}</div>
+                    <div className={styles.originalMessageUsername}>{msg.sender?.username}</div>
                   </td>
                   <td className={styles.messageCell}>
                     <div className={styles.messageCellContent}>
@@ -799,41 +606,42 @@ const RealTimeChatComp = ({ streamId = "default-stream" }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Show reply UI when replying to a message */}
-      {showReplyUI && replyTo && (
-        <ReplyMessage
-          username={replyTo.sender.username}
-          onSend={handleAfterReplySent}
-          onCancel={handleCancelReply}
-          message={message}
-          setMessage={setMessage}
-          streamId={streamId}
-          replyTo={replyTo}
-          socket={socket}
-        />
-      )}
-
-      {!showReplyUI && (
-        <form onSubmit={handleSendMessage} className={styles.chatInput}>
-          <input
-            type="text"
-            placeholder="Type Here..."
-            className={styles.messageInput}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            disabled={!connected}
+      {showReplyUI &&
+        replyTo &&
+        !isReadOnly && ( // Conditionally render reply UI
+          <ReplyMessage
+            username={replyTo.sender.username}
+            onSend={handleAfterReplySent}
+            onCancel={handleCancelReply}
+            message={message}
+            setMessage={setMessage}
+            streamId={streamId}
+            replyTo={replyTo}
           />
-          <button type="submit" className={styles.sendButton} disabled={!connected || !message.trim()}>
-            <Image
-              src="/assets/img/chat/send-message.png?height=20&width=20"
-              width={20}
-              height={20}
-              alt="Send"
-              className={styles.icon}
+        )}
+
+      {!showReplyUI &&
+        !isReadOnly && ( // Conditionally render input form
+          <form onSubmit={handleSendMessage} className={styles.chatInput}>
+            <input
+              type="text"
+              placeholder="Type Here..."
+              className={styles.messageInput}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              disabled={!isConnected}
             />
-          </button>
-        </form>
-      )}
+            <button type="submit" className={styles.sendButton} disabled={!isConnected || !message.trim()}>
+              <Image
+                src="/assets/img/chat/send-message.png?height=20&width=20"
+                width={20}
+                height={20}
+                alt="Send"
+                className={styles.icon}
+              />
+            </button>
+          </form>
+        )}
 
       {isRateLimited && rateLimitMessage && <div className={styles.rateLimitMessage}>{rateLimitMessage}</div>}
 
