@@ -18,7 +18,7 @@ import { walletAPI } from "../components/wallet-service/api"
 
 export default function StreamBottomBar() {
   const [donationAmount, setDonationAmount] = useState("")
-  const [betAmount, setBetAmount] = useState("100") // Set default bet amount
+  const [betAmount, setBetAmount] = useState("") 
   const [giftToPlayer, setGiftToPlayer] = useState(false)
   const [addToPrizepool, setAddToPrizepool] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
