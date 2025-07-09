@@ -13,6 +13,17 @@ const api = axios.create({
 
 const getAuthToken = () => {
   try {
+    // 1. Check for token in URL query parameters
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search)
+      const urlToken = urlParams.get("token")
+      if (urlToken) {
+        console.log("Found token in URL query parameter.")
+        return urlToken
+      }
+    }
+
+    // 2. Fallback to localStorage
     const authToken = localStorage.getItem("authToken")
     if (authToken) {
       return authToken
@@ -27,7 +38,7 @@ const getAuthToken = () => {
     }
     return null
   } catch (e) {
-    console.error("Error accessing localStorage:", e)
+    console.error("Error accessing localStorage or URL parameters:", e)
     return null
   }
 }
@@ -68,7 +79,6 @@ export const paymentApi = {
       return error.response?.data || { message: "Error checking bet placement" }
     }
   },
-
   createPaymentIntent: async (paymentData) => {
     try {
       console.log("Creating payment intent with data:", paymentData)
@@ -79,7 +89,6 @@ export const paymentApi = {
       throw error.response?.data || { message: "Error creating payment intent" }
     }
   },
-
   confirmPayment: async (paymentId, confirmData) => {
     try {
       const response = await api.post(`/payments/confirm/${paymentId}`, confirmData)
@@ -88,7 +97,6 @@ export const paymentApi = {
       throw error.response?.data || { message: "Error confirming payment" }
     }
   },
-
   getPaymentMethods: async () => {
     try {
       console.log("Fetching payment methods from API")
@@ -100,7 +108,6 @@ export const paymentApi = {
       return { paymentMethods: [] }
     }
   },
-
   addPaymentMethod: async (paymentMethodData) => {
     try {
       const response = await api.post("/payments/methods", paymentMethodData)
@@ -109,7 +116,6 @@ export const paymentApi = {
       throw error.response?.data || { message: "Error adding payment method" }
     }
   },
-
   deletePaymentMethod: async (methodId) => {
     try {
       const response = await api.delete(`/payments/methods/${methodId}`)
@@ -118,7 +124,6 @@ export const paymentApi = {
       throw error.response?.data || { message: "Error deleting payment method" }
     }
   },
-
   getPaymentHistory: async (params = {}) => {
     try {
       const response = await api.get("/payments/history", { params })
@@ -127,7 +132,6 @@ export const paymentApi = {
       throw error.response?.data || { message: "Error getting payment history" }
     }
   },
-
   getPaymentById: async (paymentId) => {
     try {
       const response = await api.get(`/payments/${paymentId}`)
@@ -136,7 +140,6 @@ export const paymentApi = {
       throw error.response?.data || { message: "Error getting payment" }
     }
   },
-
   createSetupIntent: async () => {
     try {
       const response = await api.post("/payments/setup-intent")
@@ -145,7 +148,6 @@ export const paymentApi = {
       throw error.response?.data || { message: "Error creating setup intent" }
     }
   },
-
   debugAuth: () => {
     const token = getAuthToken()
     console.log("Current auth token:", token ? token.substring(0, 10) + "..." : "none")
@@ -172,7 +174,6 @@ export const paymentApi = {
       },
     }
   },
-
   getWalletBalance: async () => {
     console.log("paymentApi: Fetching wallet balance (mock)...")
     await new Promise((resolve) => setTimeout(resolve, 500))
