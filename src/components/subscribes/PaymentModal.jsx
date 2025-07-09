@@ -1,6 +1,4 @@
-
 "use client"
-
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import Modal from "react-bootstrap/Modal"
@@ -13,7 +11,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js"
-import paymentApi from "../../components/subscribes/paymentApi"
+import paymentApi from "@/components/subscribes/paymentApi" // Adjusted import path
 import styles from "./modal.module.css"
 
 const STRIPE_PUBLISHABLE_KEY =
@@ -28,7 +26,6 @@ const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY, {
 const StripeLoader = () => {
   const stripe = useStripe()
   const elements = useElements()
-
   useEffect(() => {
     // This effect runs when the component mounts, ensuring Stripe is loaded
     if (stripe && elements) {
@@ -40,14 +37,12 @@ const StripeLoader = () => {
       }
     }
   }, [stripe, elements])
-
   // Return empty div instead of CardElement
   return <div style={{ display: "none" }}></div>
 }
 
 const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, currentBalance }) => {
   console.log("PaymentFormContent rendered with amountNeeded:", amountNeeded)
-
   const stripe = useStripe()
   const elements = useElements()
   const [paymentMethod, setPaymentMethod] = useState("credit")
@@ -63,20 +58,16 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
   const [cardNumberComplete, setCardNumberComplete] = useState(false)
   const [cardExpiryComplete, setCardExpiryComplete] = useState(false)
   const [cardCvcComplete, setCardCvcComplete] = useState(false)
-
   // Initialize with amountNeeded only, no default values
   const [paymentAmount, setPaymentAmount] = useState(amountNeeded > 0 ? Number(amountNeeded) : 0)
-
   // Keep track of the latest amountNeeded value
   const latestAmountNeeded = useRef(amountNeeded)
 
   // Update payment amount when amountNeeded prop changes
   useEffect(() => {
     console.log("Amount needed updated from API:", amountNeeded, typeof amountNeeded)
-
     // Always update the ref with the latest value
     latestAmountNeeded.current = amountNeeded
-
     // Only update if amountNeeded is provided and greater than 0
     if (amountNeeded > 0) {
       console.log("Setting payment amount to exact API value:", Number(amountNeeded))
@@ -101,9 +92,7 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
         console.log("⏳ Waiting for Stripe to load...")
       }
     }
-
     checkStripeReady()
-
     // Poll every second to check if Stripe is ready
     const interval = setInterval(() => {
       if (stripe && elements) {
@@ -112,7 +101,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
         clearInterval(interval)
       }
     }, 1000)
-
     return () => clearInterval(interval)
   }, [stripe, elements])
 
@@ -128,13 +116,11 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
   useEffect(() => {
     const fetchPaymentMethods = async () => {
       if (!show || fetchingMethods) return
-
       setFetchingMethods(true)
       try {
         console.log("Fetching payment methods...")
         const { paymentMethods } = await paymentApi.getPaymentMethods()
         console.log("Payment methods fetched:", paymentMethods)
-
         if (paymentMethods && Array.isArray(paymentMethods)) {
           setSavedPaymentMethods(paymentMethods)
         }
@@ -145,7 +131,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
         setFetchingMethods(false)
       }
     }
-
     if (show) {
       fetchPaymentMethods()
     }
@@ -160,7 +145,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
       setError(null)
     }
   }
-
   const handleCardExpiryChange = (event) => {
     setCardExpiryComplete(event.complete)
     if (event.error) {
@@ -169,7 +153,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
       setError(null)
     }
   }
-
   const handleCardCvcChange = (event) => {
     setCardCvcComplete(event.complete)
     if (event.error) {
@@ -187,7 +170,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-
     console.log(amountNeeded, "amt need", currentBalance, "current balance")
     console.log(paymentAmount, "payment amount")
 
@@ -213,7 +195,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
       localStorage.getItem("authToken") ||
       (localStorage.getItem("userData") && JSON.parse(localStorage.getItem("userData")).token) ||
       (localStorage.getItem("authData") && JSON.parse(localStorage.getItem("authData")).token)
-
     console.log("Auth token available:", token ? "Yes" : "No")
 
     try {
@@ -224,14 +205,12 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
           setLoading(false)
           return
         }
-
         console.log("Processing balance payment for amount:", finalAmount)
         const { payment } = await paymentApi.createPaymentIntent({
           amount: finalAmount,
           currency: "usd",
           paymentMethod: "balance",
         })
-
         console.log("Balance payment successful:", payment)
         onSuccess?.(payment)
         onHide()
@@ -246,7 +225,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
           setLoading(false)
           return
         }
-
         if (!stripeReady || !stripe || !elements) {
           setError("Stripe is not ready. Please try again.")
           setLoading(false)
@@ -269,7 +247,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
           setLoading(false)
           return
         }
-
         console.log("Payment intent created:", { clientSecret: clientSecret ? "received" : "missing", paymentId })
 
         // Get the card elements
@@ -313,14 +290,12 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
               paymentIntentId: paymentResult.paymentIntent.id,
               saveCard,
             })
-
             console.log("Payment confirmed:", payment)
             onSuccess?.(payment)
             onHide()
           } else if (paymentResult.paymentIntent.status === "requires_action") {
             // 3D Secure authentication required
             console.log("3D Secure authentication required")
-
             // Show 3D Secure dialog
             const { error, paymentIntent } = await stripe.handleCardAction(clientSecret)
 
@@ -332,7 +307,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
             } else if (paymentIntent.status === "requires_confirmation") {
               // After successful authentication, confirm the payment
               const confirmResult = await stripe.confirmCardPayment(clientSecret)
-
               if (confirmResult.error) {
                 console.error("Confirmation error:", confirmResult.error)
                 setError(confirmResult.error.message)
@@ -342,9 +316,7 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                 // Payment confirmed after authentication
                 const { payment } = await paymentApi.confirmPayment(paymentId, {
                   paymentIntentId: confirmResult.paymentIntent.id,
-                  saveCard,
                 })
-
                 console.log("Payment confirmed after 3D Secure:", payment)
                 onSuccess?.(payment)
                 onHide()
@@ -358,7 +330,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
       } else if (selectedPaymentMethod) {
         // Using a saved payment method
         console.log("Processing payment with saved method:", selectedPaymentMethod)
-
         // Create payment intent
         const { clientSecret, paymentId } = await paymentApi.createPaymentIntent({
           amount: finalAmount,
@@ -381,7 +352,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
           const { payment } = await paymentApi.confirmPayment(paymentId, {
             paymentIntentId: paymentResult.paymentIntent.id,
           })
-
           console.log("Payment confirmed:", payment)
           onSuccess?.(payment)
           onHide()
@@ -393,13 +363,11 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
       }
     } catch (err) {
       console.error("Payment processing error:", err)
-
       // Enhanced error logging
       if (err.response) {
         console.error("Error response data:", err.response.data)
         console.error("Error response status:", err.response.status)
       }
-
       // Check if it's an authentication error
       if (
         err.response?.status === 401 ||
@@ -410,10 +378,9 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
       } else if (err.response?.status === 500) {
         setError("Server error. Please try again later or contact support.")
       } else {
-        setError(err.message || "An error occurred during payment processing")
+        setError(err.response?.data?.message || err.message || "An unknown error occurred during payment processing")
       }
-
-      onError?.(err)
+      onError?.(err.response?.data || err)
       setLoading(false)
     } finally {
       setLoading(false)
@@ -450,12 +417,10 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
     hidePostalCode: true,
     placeholder: "8561 6499 9992 XXXX",
   }
-
   const cardExpiryStyle = {
     ...stripeElementStyle,
     placeholder: "MM/YY",
   }
-
   const cardCvcStyle = {
     ...stripeElementStyle,
     placeholder: "CVC",
@@ -478,16 +443,15 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
               <p>Choose how you want to proceed with payment.</p>
             </div>
             <div className={styles["payment-icons"]}>
-              <Image src="/assets/img/paymentimg/visa.png" alt="Visa" width={40} height={24} />
-              <Image src="/assets/img/funds/Mastercard.png" alt="Mastercard" width={40} height={24} />
-              <Image src="/assets/img/funds/Discover.png" alt="Discover" width={40} height={24} />
-              <Image src="/assets/img/funds/American Express.png" alt="American Express" width={40} height={24} />
+              <Image src="/placeholder.svg?height=24&width=40" alt="Visa" width={40} height={24} />
+              <Image src="/placeholder.svg?height=24&width=40" alt="Mastercard" width={40} height={24} />
+              <Image src="/placeholder.svg?height=24&width=40" alt="Discover" width={40} height={24} />
+              <Image src="/placeholder.svg?height=24&width=40" alt="American Express" width={40} height={24} />
             </div>
             <button type="button" className={styles["close-button"]} onClick={onHide} aria-label="Close">
               <span>&times;</span>
             </button>
           </div>
-
           <form onSubmit={handleSubmit}>
             <div className={styles["payment-content"]}>
               {/* Payment methods */}
@@ -506,7 +470,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                     />
                     <label htmlFor="creditCard">Credit Card</label>
                   </div>
-
                   <div className={styles["payment-method-option"]}>
                     <input
                       type="radio"
@@ -521,7 +484,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                     <label htmlFor="debitCard">Debit Card</label>
                   </div>
                 </div>
-
                 <div className={styles["payment-method-row"]}>
                   <div className={styles["payment-method-option"]}>
                     <input
@@ -536,7 +498,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                     />
                     <label htmlFor="paypal">Paypal</label>
                   </div>
-
                   <div className={styles["payment-method-option"]}>
                     <input
                       type="radio"
@@ -551,7 +512,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                     <label htmlFor="crypto">Cryptocurrency</label>
                   </div>
                 </div>
-
                 <div className={styles["payment-method-option"]}>
                   <input
                     type="radio"
@@ -567,7 +527,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                   <div className={styles["balance-amount"]}>Available Balance: ${accountBalance.toFixed(2)}</div>
                 </div>
               </div>
-
               {/* Card details - MODIFIED SECTION */}
               <div className={styles["card-details"]}>
                 {(paymentMethod === "credit" || paymentMethod === "debit") && !selectedPaymentMethod && (
@@ -583,7 +542,7 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                       )}
                       <div className={styles["card-logo"]}>
                         <Image
-                          src="/assets/img/paymentimg/visa.png"
+                          src="/placeholder.svg?height=24&width=40"
                           alt="Visa"
                           width={40}
                           height={24}
@@ -591,7 +550,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                         />
                       </div>
                     </div>
-
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       {/* Card Holder Name */}
                       <div className={styles["card-name-wrapper"]}>
@@ -603,7 +561,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                           placeholder="Mark Jake"
                         />
                       </div>
-
                       {/* Expiry Date - Using Stripe Element */}
                       <div className={styles["card-expiry-wrapper"]}>
                         {stripeReady ? (
@@ -616,7 +573,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                           <div className={styles["loading-stripe-small"]}>Loading...</div>
                         )}
                       </div>
-
                       {/* CVV - Using Stripe Element */}
                       <div className={styles["card-cvv-wrapper"]}>
                         {stripeReady ? (
@@ -632,15 +588,12 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                     </div>
                   </>
                 )}
-
                 {error && <div className={styles["error-message"]}>{error}</div>}
-
                 <div className={styles["payment-footer"]}>
                   <div className={styles["save-card"]}>
                     <input type="checkbox" id="saveCard" checked={saveCard} onChange={() => setSaveCard(!saveCard)} />
                     <label htmlFor="saveCard">Save card details for future payments</label>
                   </div>
-
                   <button type="submit" className={styles["continue-button"]} disabled={loading || !stripeReady}>
                     {loading
                       ? "Processing..."
@@ -669,9 +622,7 @@ export default function PaymentModal(props) {
       },
     ],
   }
-
   console.log("PaymentModal wrapper rendered with amountNeeded:", props.amountNeeded)
-
   return (
     <Elements stripe={stripePromise} options={stripeOptions}>
       <StripeLoader />
