@@ -26,7 +26,7 @@ export default function ClientLayout({ children }) {
   }
 
   const pathname = usePathname() // Get the current pathname
-  const showHeader = pathname !== "/chat" // Determine if the header should be shown
+  const showHeader = pathname !== "/chat" && pathname !== "/purchase" // Determine if the header should be shown
 
   return (
     <html lang="en">
