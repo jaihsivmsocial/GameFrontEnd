@@ -1,8 +1,8 @@
 "use client"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import PaymentModal from "../../components/subscribes/paymentModal" // Adjust path as needed
-import paymentApi from "../../components/subscribes/paymentApi" // Adjust path as needed
+import PaymentModal from "@/components/subscribes/PaymentModal.jsx" // Adjust path as needed
+import paymentApi from "@/components/subscribes/paymentApi" // Adjust path as needed
 import styles from "./purchase-currency.module.css" // Adjust path as needed
 
 export default function PurchaseCurrencyPage() {
