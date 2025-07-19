@@ -10,3 +10,9 @@
 // }
 
 // module.exports=SpectatePage
+
+import SpectateButton from "../../components/SpectateButton";
+
+export default function SpectatePage() {
+  return <SpectateButton />;
+}
