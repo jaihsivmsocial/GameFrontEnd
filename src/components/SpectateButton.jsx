@@ -7,7 +7,10 @@ import apiService from "../components/contexts/api-service"
 
 const SpectateButton = ({ streamId = "stream-1" }) => {
   const [hover, setHover] = useState(false)
-  const { activeButton, setActiveButton } = useNavigation()
+  // const { activeButton, setActiveButton } = useNavigation()
+  const navigation = useNavigation() || {}
+const activeButton = navigation.activeButton
+const setActiveButton = navigation.setActiveButton || (() => {})
   const isActive = activeButton === "spectate"
   const [viewerCount, setViewerCount] = useState(0)
   const [isStreamActive, setIsStreamActive] = useState(false)
