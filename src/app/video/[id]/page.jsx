@@ -6,7 +6,7 @@ import VideoPageClient from "./VideoPageClient"
 export async function generateMetadata({ params }) {
   console.log(`🔥 GENERATING METADATA FOR: ${params.id}`)
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://test.tribez.gg"
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://api.5mof.gg"
   const videoPageUrl = `${siteUrl}/video/${params.id}`
   const playerUrl = `${siteUrl}/video/${params.id}/player` // Dedicated player URL for embeds
 

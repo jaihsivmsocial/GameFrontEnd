@@ -626,7 +626,7 @@ export function generateShareableUrl(id) {
 
   // Fallback to your production domain
   if (!siteUrl) {
-    siteUrl = "https://test.tribez.gg"
+    siteUrl = "http://api.5mof.gg"
   }
 
   // Always return the full URL for proper sharing, and add a source parameter
