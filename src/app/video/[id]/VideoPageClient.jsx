@@ -37,7 +37,7 @@ export default function VideoPageClient({ video, error }) {
   }
 
   const handleShare = () => {
-    const shareUrl = `https://test.tribez.gg/video/${video.id}`
+    const shareUrl = `http://api.5mof.gg/video/${video.id}`
     if (navigator.share) {
       navigator
         .share({
