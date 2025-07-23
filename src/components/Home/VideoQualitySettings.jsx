@@ -155,215 +155,215 @@ const VideoQualitySettings = ({
     }
   }
 
-  return (
-    <div
-      className={styles.videoQualitySettings}
-      ref={settingsRef}
-      style={{ display: "flex", flexDirection: "row", gap: "8px" }}
-    >
-      {/* Settings button */}
-      <button
-        className={styles.settingsButton}
-        onClick={() => setShowSettings(!showSettings)}
-        aria-label="Video settings"
-      >
-        <img
-          src="/assets/img/iconImage/settings 1.png"
-          alt="Settings"
-          style={{ width: "24px", height: "24px", strokeL: "white" }}
-        />
-      </button>
+  // return (
+  //   // <div
+  //   //   className={styles.videoQualitySettings}
+  //   //   ref={settingsRef}
+  //   //   style={{ display: "flex", flexDirection: "row", gap: "8px" }}
+  //   // >
+  //   //   {/* Settings button */}
+  //   //   <button
+  //   //     className={styles.settingsButton}
+  //   //     onClick={() => setShowSettings(!showSettings)}
+  //   //     aria-label="Video settings"
+  //   //   >
+  //   //     <img
+  //   //       src="/assets/img/iconImage/settings 1.png"
+  //   //       alt="Settings"
+  //   //       style={{ width: "24px", height: "24px", strokeL: "white" }}
+  //   //     />
+  //   //   </button>
 
-      {/* Preview button */}
-      <button className={styles.settingsButtons} onClick={handlePreviewClick} aria-label="Preview video">
-        <img
-          src="/assets/img/preview/preview 1 (4).png"
-          alt="Preview"
-          style={{ width: "24px", height: "24px", strokeL: "white",}}
-        />
-      </button>
+  //   //   {/* Preview button */}
+  //   //   <button className={styles.settingsButtons} onClick={handlePreviewClick} aria-label="Preview video">
+  //   //     <img
+  //   //       src="/assets/img/preview/preview 1 (4).png"
+  //   //       alt="Preview"
+  //   //       style={{ width: "24px", height: "24px", strokeL: "white",}}
+  //   //     />
+  //   //   </button>
 
-      {/* Settings menu */}
-      {showSettings && (
-        <div className={styles.horizontalSettingsMenu}>
-          {/* Quality row */}
-          <div className={styles.settingRow} onClick={toggleQualityOptions}>
-            <div className={styles.settingIcon}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8.5 6H15.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M6 10H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M8.5 14H15.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M6 18H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div className={styles.settingLabel}>Resolution</div>
-            <div className={styles.settingValue}>{getQualityDisplayText()}</div>
-            <div className={styles.settingArrow}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          </div>
+  //   //   {/* Settings menu */}
+  //   //   {showSettings && (
+  //   //     <div className={styles.horizontalSettingsMenu}>
+  //   //       {/* Quality row */}
+  //   //       <div className={styles.settingRow} onClick={toggleQualityOptions}>
+  //   //         <div className={styles.settingIcon}>
+  //   //           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  //   //             <path d="M8.5 6H15.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M6 10H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M8.5 14H15.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M6 18H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //           </svg>
+  //   //         </div>
+  //   //         <div className={styles.settingLabel}>Resolution</div>
+  //   //         <div className={styles.settingValue}>{getQualityDisplayText()}</div>
+  //   //         <div className={styles.settingArrow}>
+  //   //           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  //   //             <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  //   //           </svg>
+  //   //         </div>
+  //   //       </div>
 
-          {/* Frame Rate row */}
-          <div className={styles.settingRow} onClick={toggleFrameRateOptions}>
-            <div className={styles.settingIcon}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2V6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M12 18V22" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path
-                  d="M4.93 4.93L7.76 7.76"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M16.24 16.24L19.07 19.07"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path d="M2 12H6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M18 12H22" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path
-                  d="M4.93 19.07L7.76 16.24"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M16.24 7.76L19.07 4.93"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className={styles.settingLabel}>Frame Rate</div>
-            <div className={styles.settingValue}>{frameRate} FPS</div>
-            <div className={styles.settingArrow}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          </div>
+  //   //       {/* Frame Rate row */}
+  //   //       <div className={styles.settingRow} onClick={toggleFrameRateOptions}>
+  //   //         <div className={styles.settingIcon}>
+  //   //           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  //   //             <path d="M12 2V6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M12 18V22" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path
+  //   //               d="M4.93 4.93L7.76 7.76"
+  //   //               stroke="white"
+  //   //               strokeWidth="1.5"
+  //   //               strokeLinecap="round"
+  //   //               strokeLinejoin="round"
+  //   //             />
+  //   //             <path
+  //   //               d="M16.24 16.24L19.07 19.07"
+  //   //               stroke="white"
+  //   //               strokeWidth="1.5"
+  //   //               strokeLinecap="round"
+  //   //               strokeLinejoin="round"
+  //   //             />
+  //   //             <path d="M2 12H6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M18 12H22" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path
+  //   //               d="M4.93 19.07L7.76 16.24"
+  //   //               stroke="white"
+  //   //               strokeWidth="1.5"
+  //   //               strokeLinecap="round"
+  //   //               strokeLinejoin="round"
+  //   //             />
+  //   //             <path
+  //   //               d="M16.24 7.76L19.07 4.93"
+  //   //               stroke="white"
+  //   //               strokeWidth="1.5"
+  //   //               strokeLinecap="round"
+  //   //               strokeLinejoin="round"
+  //   //             />
+  //   //           </svg>
+  //   //         </div>
+  //   //         <div className={styles.settingLabel}>Frame Rate</div>
+  //   //         <div className={styles.settingValue}>{frameRate} FPS</div>
+  //   //         <div className={styles.settingArrow}>
+  //   //           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  //   //             <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  //   //           </svg>
+  //   //         </div>
+  //   //       </div>
 
-          {/* Keyboard Shortcuts row */}
-          <div className={styles.settingRow}>
-            <div className={styles.settingIcon}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect
-                  x="2"
-                  y="4"
-                  width="20"
-                  height="16"
-                  rx="2"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path d="M6 8V8.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M10 8V8.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M14 8V8.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M18 8V8.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M6 12V12.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M10 12V12.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M14 12V12.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M18 12V12.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M6 16V16.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M18 16V16.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M10 16H14" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div className={styles.settingLabel}>Keyboard Shortcuts</div>
-            <div className={styles.settingValue}>View</div>
-            <div className={styles.settingArrow}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          </div>
+  //   //       {/* Keyboard Shortcuts row */}
+  //   //       <div className={styles.settingRow}>
+  //   //         <div className={styles.settingIcon}>
+  //   //           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  //   //             <rect
+  //   //               x="2"
+  //   //               y="4"
+  //   //               width="20"
+  //   //               height="16"
+  //   //               rx="2"
+  //   //               stroke="white"
+  //   //               strokeWidth="1.5"
+  //   //               strokeLinecap="round"
+  //   //               strokeLinejoin="round"
+  //   //             />
+  //   //             <path d="M6 8V8.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M10 8V8.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M14 8V8.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M18 8V8.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M6 12V12.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M10 12V12.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M14 12V12.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M18 12V12.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M6 16V16.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M18 16V16.01" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //             <path d="M10 16H14" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  //   //           </svg>
+  //   //         </div>
+  //   //         <div className={styles.settingLabel}>Keyboard Shortcuts</div>
+  //   //         <div className={styles.settingValue}>View</div>
+  //   //         <div className={styles.settingArrow}>
+  //   //           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  //   //             <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  //   //           </svg>
+  //   //         </div>
+  //   //       </div>
 
-          {/* Quality options dropdown */}
-          {showQualityOptions && (
-            <div className={styles.optionsDropdown}>
-              {/* <div className={styles.optionsHeader}>
-                <span>Video resolution will change, but player size will remain the same</span>
-              </div> */}
-              <div
-                className={`${styles.optionItem} ${quality === "auto" ? styles.activeOption : ""}`}
-                onClick={() => handleQualityChange("auto")}
-              >
-                Auto (1080p)
-              </div>
-              <div
-                className={`${styles.optionItem} ${quality === "1080p" ? styles.activeOption : ""}`}
-                onClick={() => handleQualityChange("1080p")}
-              >
-                1080p HD
-              </div>
-              <div
-                className={`${styles.optionItem} ${quality === "720p" ? styles.activeOption : ""}`}
-                onClick={() => handleQualityChange("720p")}
-              >
-                720p HD
-              </div>
-              <div
-                className={`${styles.optionItem} ${quality === "480p" ? styles.activeOption : ""}`}
-                onClick={() => handleQualityChange("480p")}
-              >
-                480p
-              </div>
-              <div
-                className={`${styles.optionItem} ${quality === "360p" ? styles.activeOption : ""}`}
-                onClick={() => handleQualityChange("360p")}
-              >
-                360p
-              </div>
-              <div
-                className={`${styles.optionItem} ${quality === "240p" ? styles.activeOption : ""}`}
-                onClick={() => handleQualityChange("240p")}
-              >
-                240p
-              </div>
-              <div
-                className={`${styles.optionItem} ${quality === "144p" ? styles.activeOption : ""}`}
-                onClick={() => handleQualityChange("144p")}
-              >
-                144p
-              </div>
-            </div>
-          )}
+  //   //       {/* Quality options dropdown */}
+  //   //       {showQualityOptions && (
+  //   //         <div className={styles.optionsDropdown}>
+  //   //           {/* <div className={styles.optionsHeader}>
+  //   //             <span>Video resolution will change, but player size will remain the same</span>
+  //   //           </div> */}
+  //   //           <div
+  //   //             className={`${styles.optionItem} ${quality === "auto" ? styles.activeOption : ""}`}
+  //   //             onClick={() => handleQualityChange("auto")}
+  //   //           >
+  //   //             Auto (1080p)
+  //   //           </div>
+  //   //           <div
+  //   //             className={`${styles.optionItem} ${quality === "1080p" ? styles.activeOption : ""}`}
+  //   //             onClick={() => handleQualityChange("1080p")}
+  //   //           >
+  //   //             1080p HD
+  //   //           </div>
+  //   //           <div
+  //   //             className={`${styles.optionItem} ${quality === "720p" ? styles.activeOption : ""}`}
+  //   //             onClick={() => handleQualityChange("720p")}
+  //   //           >
+  //   //             720p HD
+  //   //           </div>
+  //   //           <div
+  //   //             className={`${styles.optionItem} ${quality === "480p" ? styles.activeOption : ""}`}
+  //   //             onClick={() => handleQualityChange("480p")}
+  //   //           >
+  //   //             480p
+  //   //           </div>
+  //   //           <div
+  //   //             className={`${styles.optionItem} ${quality === "360p" ? styles.activeOption : ""}`}
+  //   //             onClick={() => handleQualityChange("360p")}
+  //   //           >
+  //   //             360p
+  //   //           </div>
+  //   //           <div
+  //   //             className={`${styles.optionItem} ${quality === "240p" ? styles.activeOption : ""}`}
+  //   //             onClick={() => handleQualityChange("240p")}
+  //   //           >
+  //   //             240p
+  //   //           </div>
+  //   //           <div
+  //   //             className={`${styles.optionItem} ${quality === "144p" ? styles.activeOption : ""}`}
+  //   //             onClick={() => handleQualityChange("144p")}
+  //   //           >
+  //   //             144p
+  //   //           </div>
+  //   //         </div>
+  //   //       )}
 
-          {/* Frame Rate options dropdown */}
-          {showFrameRateOptions && (
-            <div className={styles.optionsDropdown}>
-              <div className={styles.optionsHeader}>
-                <span>Higher frame rate provides smoother video playback</span>
-              </div>
-              <div
-                className={`${styles.optionItem} ${frameRate === "60" ? styles.activeOption : ""}`}
-                onClick={() => handleFrameRateChange("60")}
-              >
-                60 FPS
-              </div>
-              <div
-                className={`${styles.optionItem} ${frameRate === "30" ? styles.activeOption : ""}`}
-                onClick={() => handleFrameRateChange("30")}
-              >
-                30 FPS
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
+  //   //       {/* Frame Rate options dropdown */}
+  //   //       {showFrameRateOptions && (
+  //   //         <div className={styles.optionsDropdown}>
+  //   //           <div className={styles.optionsHeader}>
+  //   //             <span>Higher frame rate provides smoother video playback</span>
+  //   //           </div>
+  //   //           <div
+  //   //             className={`${styles.optionItem} ${frameRate === "60" ? styles.activeOption : ""}`}
+  //   //             onClick={() => handleFrameRateChange("60")}
+  //   //           >
+  //   //             60 FPS
+  //   //           </div>
+  //   //           <div
+  //   //             className={`${styles.optionItem} ${frameRate === "30" ? styles.activeOption : ""}`}
+  //   //             onClick={() => handleFrameRateChange("30")}
+  //   //           >
+  //   //             30 FPS
+  //   //           </div>
+  //   //         </div>
+  //   //       )}
+  //   //     </div>
+  //   //   )}
+  //   // </div>
+  // )
 }
 
 export default VideoQualitySettings

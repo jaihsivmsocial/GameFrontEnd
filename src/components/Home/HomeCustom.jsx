@@ -228,15 +228,7 @@ export default function HomeCustom() {
 
     return (
       <div className={`${styles.cameraContainer} ${styles.mainCameraView}`} style={{ position: "relative", zIndex: 1 }}>
-        {/* Camera icon in top left */}
-        <div className={styles.cameraIconCircle}>
-          <Image src="/placeholder.svg?height=16&width=16" width={16} height={16} alt="Camera" />
-        </div>
-
-        {/* Info button in top right */}
-        <div className={styles.infoButton}>
-          <Image src="/placeholder.svg?height=16&width=16" width={16} height={16} alt="Info" />
-        </div>
+     
 
         {/* IMPROVED: Render iframe for pixel streaming or WebRTC for regular streaming */}
         {mainCamera.isPixelStreaming ? (
@@ -299,27 +291,9 @@ export default function HomeCustom() {
           </video>
         )}
 
-        {/* Camera name */}
-        {/* <div className={styles.cameraLabel}>
-        <span>{mainCamera.name || "Camera Feed"}</span>
-      </div> */}
+      
 
-        <div className={styles.mainCam} style={{ zIndex: 30 }}>
-          <div className={styles.camIcon}>
-            <Image
-              src="/placeholder.svg?height=24&width=24"
-              width={24}
-              height={24}
-              alt="Camera"
-              className={styles.icon}
-            />
-          </div>
-          {/* <div className={styles.camText}>
-          <div>{mainCamera.name || "Camera Feed"}</div>
-        </div> */}
-        </div>
-
-        <div className={styles.liveIndicator} style={{ zIndex: 30 }}>
+        {/* <div className={styles.liveIndicator} style={{ zIndex: 30 }}>
           <div className={styles.viewerCount}>
             <Image
               src="/assets/img/iconImage/livefeed_3106921.png"
@@ -334,18 +308,7 @@ export default function HomeCustom() {
             />
             {viewerCount}
           </div>
-        </div>
-
-        {/* Add Video Quality Settings component */}
-        {/* <div className="position-absolute bottom-0 end-0 p-2 d-none d-md-block" style={{ zIndex: 20 }}>
-        <VideoQualitySettings
-          streamId={mainCamera.streamId}
-          initialQuality={qualitySettings[mainCamera.streamId]?.quality || "auto"}
-          initialFrameRate={qualitySettings[mainCamera.streamId]?.frameRate || "60"}
-          onQualityChange={(quality, frameRate) => handleQualityChange(quality, frameRate, mainCamera.streamId)}
-        />
-      </div> */}
-
+        </div> */}
         {/* Show active indicator */}
         {isActive && (
           <div className={styles.activeIndicator}>
@@ -437,21 +400,6 @@ export default function HomeCustom() {
                 background: "linear-gradient(to right, rgb(15, 67, 72) 0%, rgb(8 22 23) 40%, rgba(2, 2, 2, 0) 100%)",
               }}
             >
-              <Image
-                src="/assets/img/chat/chatmob.png?height=16&width=16"
-                width={16}
-                height={16}
-                alt="Chat"
-                style={{ marginRight: "6px" }}
-              />
-              <span
-                style={{
-                  color: "#fff",
-                  fontSize: "15px",
-                }}
-              >
-                {viewerCount} chatting right now
-              </span>
             </div>
             <div style={{ position: "absolute", top: "190px", right: "10px", zIndex: "20" }}>
               <VideoQualitySettings
