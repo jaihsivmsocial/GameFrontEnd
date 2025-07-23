@@ -248,7 +248,7 @@ const setActiveButton = navigation.setActiveButton || (() => {})
 
   // Format viewer count with commas
   const formattedViewerCount = viewerCount.toLocaleString()
-
+  if (isMobileView) return null // <- 👈 Add this for remove mobile view button
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Link

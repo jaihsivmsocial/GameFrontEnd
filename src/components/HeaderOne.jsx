@@ -133,25 +133,25 @@ const HeaderOne = () => {
         <div
           className="mobile-header"
           style={{
-            background: "linear-gradient(to right, #090909, #081e2e)",
+            // background: "linear-gradient(to right, #090909, #081e2e)",
 
-            padding: "15px 0",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+            // padding: "15px 0",
+            // borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
           {/* Title and Auth Buttons */}
           <div
             style={{
               padding: "0 15px 15px",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-              marginBottom: "15px",
+              // borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              // marginBottom: "15px",
               display: "flex",
               justifyContent: "space-between", // Added to distribute content
               alignItems: "center", // Added to center vertically
             }}
           >
             {/* Title */}
-            <div
+            {/* <div
               style={{
                 color: "#06b6d4",
                 fontSize: "22px",
@@ -166,7 +166,7 @@ const HeaderOne = () => {
               5 Minutes
               <br />
               Of Fame
-            </div>
+            </div> */}
 
             {/* Login/Signup Buttons */}
             <div

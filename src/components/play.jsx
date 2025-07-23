@@ -33,7 +33,7 @@ const PlayButton = () => {
   const handleClick = () => {
     setActiveButton("play")
   }
-
+  if (isMobileView) return null // <- 👈 Add this
   return (
     <Link
       href="/play"
