@@ -7,16 +7,13 @@ import ReplyMessage from "../../components/chat/reply-message"
 import { useSocket } from "../../components/contexts/SocketContext" // Import useSocket
 import { useMediaQuery } from "../../components/chat/use-mobile"
 
-// Helper function to validate and fix image URLs
 const getValidImageUrl = (url) => {
   if (!url || typeof url !== "string") {
     return "/placeholder.svg?height=30&width=30"
   }
-
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) {
     return url
   }
-
   return "/placeholder.svg?height=30&width=30"
 }
 
@@ -33,30 +30,57 @@ const isUrl = (text) => {
 // Format the message content
 const formatContent = (content) => {
   if (!content) return null
-
   const lines = content.split("\n")
-
   return lines.map((line, index) => {
     if (isUrl(line.trim())) {
       return (
-        <div key={index} className={styles.originalMessageUrl}>
+        <span key={index} className={styles.originalMessageUrl}>
           {line}
-        </div>
+        </span>
       )
     }
     return (
-      <div key={index} className={styles.originalMessageContent}>
+      <span key={index} className={styles.originalMessageContent}>
         {line}
-      </div>
+      </span>
     )
   })
+}
+
+// Helper function to get a consistent color for a username
+const getUserColor = (username) => {
+  const specificColors = {
+    "DEVILL-MONSTER": "#FF6347", // Tomato (reddish)
+    JAMES5423: "#8A2BE2", // BlueViolet (purple)
+    SARAHx420: "#E67E22", // Carrot Orange (burnt orange/brown)
+    AECH: "#00CED1", // DarkTurquoise (teal/cyan)
+    TWEETTEERR: "#6A5ACD", // SlateBlue (purple-blue)
+  }
+
+  if (specificColors[username]) {
+    return specificColors[username]
+  }
+
+  // Fallback for other usernames
+  const fallbackColors = [
+    "#FF4C4C",
+    "#CCCCCC",
+    "#FF9900",
+    "#99FFFF",
+    "#66CCFF"
+  ]
+  let hash = 0
+  for (let i = 0; i < username.length; i++) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const index = Math.abs(hash % fallbackColors.length)
+  return fallbackColors[index]
 }
 
 const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) => {
   // Accept isReadOnly prop
   // Consume from SocketContext
   const { socket, isConnected, messages, setMessages, updateSocketAuth, getAuthDetails, currentUserData } = useSocket()
-
   const [message, setMessage] = useState("")
   const messagesEndRef = useRef(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -97,7 +121,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
     console.log("Auth state changed:", loggedIn, user)
     // Trigger socket auth update in context
     updateSocketAuth()
-
     // Only close the auth modal if login was successful
     if (loggedIn) {
       setShowAuthModal(false)
@@ -107,14 +130,12 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
   // Handle reply button click - only allow if not read-only and authenticated
   const handleReply = (msg) => {
     if (isReadOnly) return // Prevent reply if read-only
-
     const { isLoggedIn } = getAuthDetails()
     if (!isLoggedIn) {
       setWaitingForAuth(true)
       setShowAuthModal(true)
       return
     }
-
     setReplyTo(msg)
     setShowReplyUI(true)
     setTimeout(() => {
@@ -139,7 +160,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
     e.preventDefault()
     if (isReadOnly) return // Prevent sending if read-only
     if (!message.trim() || !socket || !isConnected) return
-
     const { isLoggedIn, anonymousId, customUsername } = getAuthDetails() // Get customUsername here
     if (!isLoggedIn) {
       setPendingMessage(message)
@@ -147,14 +167,11 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
       setShowAuthModal(true)
       return
     }
-
     if (isRateLimited) {
       setRateLimitMessage("Please wait before sending more messages")
       return
     }
-
     const messageContent = message.trim()
-
     // Use currentUserData for the sender's profile picture and username if logged in
     // Otherwise, use the generated customUsername for anonymous users
     const senderDetails = {
@@ -163,7 +180,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
       profilePicture: isLoggedIn ? getValidImageUrl(currentUserData?.avatar) : "/placeholder.svg?height=40&width=40",
       isAnonymous: !isLoggedIn,
     }
-
     // Create a temporary message object for immediate display
     const tempMessage = {
       id: `temp-${Date.now()}`,
@@ -174,42 +190,34 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
       replyTo: null,
       isPending: true, // Mark as pending to potentially style differently
     }
-
     // Add to messages immediately for instant feedback (using context's setMessages)
     setMessages((prev) => [...prev, tempMessage])
-
     console.log("Sending message via socket:", {
       content: messageContent,
       streamId,
       replyTo: null,
       sender: senderDetails, // Ensure sender details are sent to the server
     })
-
     socket.emit("send_message", {
       content: messageContent,
       streamId,
       replyTo: null,
       sender: senderDetails, // Ensure sender details are sent to the server
     })
-
     setMessage("")
   }
 
   // Handle socket errors (rate limiting)
   useEffect(() => {
     if (!socket) return
-
     const handleError = (error) => {
       console.error("Socket error:", error)
-
       if (error.code === "RATE_LIMIT") {
         setIsRateLimited(true)
         setRateLimitMessage(error.message)
-
         if (rateLimitTimerRef.current) {
           clearTimeout(rateLimitTimerRef.current)
         }
-
         rateLimitTimerRef.current = setTimeout(
           () => {
             setIsRateLimited(false)
@@ -219,9 +227,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
         )
       }
     }
-
     socket.on("error", handleError)
-
     return () => {
       socket.off("error", handleError)
       if (rateLimitTimerRef.current) {
@@ -236,7 +242,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
       <div
         className={styles.chatSection}
         style={{
-          backdropFilter: "blur(10px)",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
@@ -246,6 +251,8 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
           marginLeft: "12px",
           marginRight: "12px",
           paddingTop: "25px",
+          backgroundColor: "#0d1117", // Solid dark background matching screenshot
+          border: "none", // Removed border
         }}
       >
         <div
@@ -253,8 +260,9 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
           style={{
             flex: 1,
             overflowY: isReadOnly ? "hidden" : "auto", // Hide scroll if read-only
-            padding: "0",
+            padding: "8px", // Adjusted padding
             marginBottom: isReadOnly ? "0px" : "48px", // Adjust margin if read-only
+            backgroundColor: "transparent", // Transparent, relying on chatSection background
           }}
         >
           {messages.length === 0 ? (
@@ -274,60 +282,36 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
                   key={msg.id}
                   style={{
                     display: "flex",
-                    padding: "8px 10px",
-                    marginBottom: "2px",
-                    backgroundColor: "rgba(30, 30, 40, 0.4)",
-                    borderRadius: "8px",
-                    margin: "6px 10px",
-                    border: "1px solid white",
-                    // Add subtle styling for pending messages
+                    marginBottom: "8px", // Adjusted margin for vertical spacing
                     opacity: msg.isPending ? 0.7 : 1,
                   }}
                 >
                   <div
                     style={{
                       width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      overflow: "hidden",
                       marginRight: "10px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
+                      flexShrink: 0, // Prevent avatar from shrinking
                     }}
                   >
-                    <div
-                      style={{
-                        width: "30px",
-                        height: "30px",
-                        borderRadius: "50%",
-                        overflow: "hidden",
-                        marginBottom: "2px",
-                      }}
-                    >
-                      <Image
-                        src={getValidImageUrl(msg.sender?.profilePicture) || "/placeholder.svg?height=30&width=30"}
-                        width={30}
-                        height={30}
-                        alt="User avatar"
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                    </div>
+                    <Image
+                      src={getValidImageUrl(msg.sender?.profilePicture) || "/placeholder.svg?height=40&width=40"}
+                      width={40}
+                      height={40}
+                      alt="User avatar"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
                   </div>
                   <div
                     style={{
                       flex: 1,
                       display: "flex",
                       flexDirection: "column",
+                      justifyContent: "center", // Vertically center content if it's single line
                     }}
                   >
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: "bold",
-                        color: "#06b6d4", // Cyan color for username
-                        marginBottom: "2px",
-                      }}
-                    >
-                      {msg.sender?.username}
-                    </div>
                     {msg.replyTo && (
                       <div
                         style={{
@@ -344,14 +328,23 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
                     )}
                     <div
                       style={{
-                        fontSize: "13px",
-                        color: "white",
+                        fontSize: "14px",
                         wordBreak: "break-word",
+                        display: "flex", // Use flex to keep username and content inline
+                        alignItems: "baseline", // Align text baselines
                       }}
                     >
-                      {formatContent(msg.content)}
+                      <span
+                        style={{
+                          fontWeight: "bold",
+                          color: getUserColor(msg.sender?.username || ""),
+                          marginRight: "4px", // Space between username and colon
+                        }}
+                      >
+                        {msg.sender?.username}:
+                      </span>
+                      <span style={{ color: "#E6E6E6" }}>{formatContent(msg.content)}</span>
                     </div>
-                    {/* Add colored line below message if needed */}
                     {msg.highlight && (
                       <div
                         style={{
@@ -391,7 +384,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
           )}
           <div ref={messagesEndRef} />
         </div>
-
         {/* Show reply UI when replying to a message */}
         {showReplyUI &&
           replyTo &&
@@ -406,16 +398,13 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
               replyTo={replyTo}
             />
           )}
-
         {!showReplyUI &&
           !isReadOnly && ( // Conditionally render input form
             <form
               onSubmit={handleSendMessage}
+              className={styles.chatInput} // Use the class from CSS module
               style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "10px 15px",
-                backgroundColor: "transparent",
+                backgroundColor: "transparent", // Form background transparent
                 position: "absolute",
                 bottom: "49px",
                 left: 0,
@@ -427,11 +416,11 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
               <div
                 style={{
                   flex: 1,
-                  backgroundColor: "white",
-                  borderRadius: "20px",
+                  backgroundColor: "white", // This div gets the white background
+                  borderRadius: "7px",
                   display: "flex",
                   alignItems: "center",
-                  height: "40px",
+                  height: "45px",
                   marginRight: "8px",
                   overflow: "hidden",
                 }}
@@ -442,9 +431,10 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   disabled={!isConnected}
+                  className={styles.messageInput} // Keep this for other styles like placeholder color
                   style={{
                     flex: 1,
-                    backgroundColor: "transparent",
+                    backgroundColor: "transparent", // Input itself is transparent, its parent div is white
                     color: "#333",
                     border: "none",
                     padding: "8px 15px",
@@ -456,6 +446,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
                 <button
                   type="submit"
                   disabled={!isConnected || !message.trim()}
+                  className={styles.sendButton}
                   style={{
                     backgroundColor: "#0ea5e9",
                     border: "none",
@@ -484,7 +475,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
               </div>
             </form>
           )}
-
         {/* Scroll down indicator - Conditionally render */}
         {!isReadOnly && (
           <div
@@ -515,7 +505,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
             </svg>
           </div>
         )}
-
         {isRateLimited && rateLimitMessage && (
           <div
             style={{
@@ -534,7 +523,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
             {rateLimitMessage}
           </div>
         )}
-
         {/* Auth Modal */}
         {showAuthModal && (
           <div
@@ -594,7 +582,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
                           {formatContent(msg.replyTo.content)}
                         </div>
                       )}
-
                       {formatContent(msg.content)}
                     </div>
                   </td>
@@ -605,7 +592,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
         )}
         <div ref={messagesEndRef} />
       </div>
-
       {showReplyUI &&
         replyTo &&
         !isReadOnly && ( // Conditionally render reply UI
@@ -619,7 +605,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
             replyTo={replyTo}
           />
         )}
-
       {!showReplyUI &&
         !isReadOnly && ( // Conditionally render input form
           <form onSubmit={handleSendMessage} className={styles.chatInput}>
@@ -642,9 +627,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
             </button>
           </form>
         )}
-
       {isRateLimited && rateLimitMessage && <div className={styles.rateLimitMessage}>{rateLimitMessage}</div>}
-
       {/* Auth Modal */}
       {showAuthModal && (
         <div
