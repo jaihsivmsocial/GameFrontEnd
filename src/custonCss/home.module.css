@@ -391,10 +391,10 @@ f1c2e
 
 /* Chat Section */
 .chatSection {
-  background-color: " linear-gradient(to bottom, #0d1117, #111720) !important";
+  /* background-color: " linear-gradient(to right, rgb(9, 9, 9), rgb(8, 30, 46))"; */
   /* backdrop-filter: blur(5px) !important; */
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 16px !important;
+  /* border: 1px solid rgba(255, 255, 255, 0.2) !important; */
+  /* border-radius: 16px !important; */
   height: 100% !important;
   display: flex !important;
   flex-direction: column !important;

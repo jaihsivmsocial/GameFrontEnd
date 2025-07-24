@@ -142,7 +142,7 @@ const HeaderOne = () => {
           {/* Title and Auth Buttons */}
           <div
             style={{
-              padding: "0 15px 15px",
+              // padding: "0 15px 15px",
               // borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
               // marginBottom: "15px",
               display: "flex",
