@@ -248,10 +248,10 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
           height: "100%",
           position: "relative",
           paddingBottom: isReadOnly ? "0px" : "30px", // Adjust padding if read-only
-          marginLeft: "12px",
-          marginRight: "12px",
-          paddingTop: "25px",
-          backgroundColor: "#0d1117", // Solid dark background matching screenshot
+          marginLeft: "7px",
+          marginRight: "7px",
+          paddingTop: "9px",
+          // backgroundColor: "#0d1117", // Solid dark background matching screenshot
           border: "none", // Removed border
         }}
       >
