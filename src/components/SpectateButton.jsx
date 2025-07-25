@@ -251,51 +251,18 @@ const setActiveButton = navigation.setActiveButton || (() => {})
   if (isMobileView) return null // <- 👈 Add this for remove mobile view button
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <Link
-        href="/Shop"
-        className="btn text-white d-flex align-items-center justify-content-center"
-        style={{
-          background: isActive ? baseGradient : "#071019",
-          border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
-          width: isMobileView ? "115px" : "178px", // Different width based on device
-          height: isMobileView ? "30px" : "37px", // Different height based on device
-          fontWeight: "bold",
-          fontSize: isMobileView ? "12px" : "14px", // Adjust font size for better proportions
-          font: "Poppins",
-          letterSpacing: "1px",
-          boxShadow: hover ? "0 0 5px rgba(0, 160, 233, 0.5)" : "0 0 5px rgba(0, 70, 192, 0.4)",
-          padding: "0",
-          overflow: "hidden",
-          gap: "8px",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginLeft: isMobileView ? "0" : "12px",
-        }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        onClick={handleClick}
-      >
-        <img
-          src={isActive ? "/assets/img/iconImage/eye 1.png" : "/assets/img/iconImage/eye 1.png"}
-          alt="eye icon"
-          width={isMobileView ? "18" : "20"} // Slightly smaller icon for mobile
-          height={isMobileView ? "18" : "20"}
-          style={{ marginRight: "4px" }}
-        />
-        SPECTATE
-      </Link>
+
 
       {/* Viewer count display */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          marginTop: "5px",
+          marginTop: "30px",
           fontSize: isMobileView ? "10px" : "12px", // Smaller font for mobile
           color: "white",
           fontWeight: "normal",
+          marginLeft:"-1426px" // Adjust margin for mobile
         }}
       >
         <img

@@ -218,7 +218,7 @@ export default function ClipPage() {
             {/* Welcome Header */}
             <div className="text-center mb-3">
               <img
-                src="/assets/img/logo/headlogo.png"
+                src="/assets/img/logo/5 Minutes Of Fame (2).png"
                 alt="Logo"
                 style={{
                   maxWidth: "150px",
@@ -365,7 +365,7 @@ export default function ClipPage() {
             {/* Welcome Header replaced with Image */}
             <div className="text-center mb-3">
               <img
-                src="/assets/img/logo/headlogo.png"
+                src="/assets/img/logo/5 Minutes Of Fame (2).png"
                 alt="Logo"
                 style={{
                   maxWidth: "150px",
