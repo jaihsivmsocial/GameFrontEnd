@@ -1,4 +1,6 @@
 "use client"
+
+import Image from "next/image"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import styles from "../../viewscreen/screen.module.css"
 import { useSocket } from "../contexts/SocketContext" // Use useSocket from context
@@ -6,28 +8,15 @@ import apiService from "../contexts/api-service"
 import WebRTCStream from "../../components/Home/WebRTCConnection"
 import VideoQualitySettings from "../Home/VideoQualitySettings"
 import RealTimeChatCompWrapper from "../chat/RealTimeChatCompWrapper"
-import StreamBottomBar from "../../components/stream-bottom-bar.jsx"
-import StreamBottomHighlights from "@/components/streamhighlight/stream-highlight" // Import the new component
+import StreamBottomBar from "../../components/stream-bottom-bar"
 import { useMediaQuery } from "../../components/chat/use-mobile"
 
 export default function HomeCustom() {
   // Media query for mobile detection
   const isMobile = useMediaQuery("(max-width: 768px)")
-
-  // State to hold the current question and countdown for sharing
-  const [sharedQuestion, setSharedQuestion] = useState(null)
-  const [sharedCountdown, setSharedCountdown] = useState(0)
-
-  // Callback to update shared question state from StreamBottomBar
-  const handleQuestionUpdate = useCallback((question, countdown) => {
-    setSharedQuestion(question)
-    setSharedCountdown(countdown)
-  }, [])
-
   // IMPROVED: Use environment variable with fallback for pixel streaming URL
   const pixelStreamingUrl =
     "https://www.youtube.com/embed/live_stream?channel=UCil13nNe4DHOFJZdcMJFJSg&autoplay=1&mute=1"
-
   // Main camera definition - IMPROVED: Use the pixel streaming URL
   const mainCamera = useMemo(
     () => ({
@@ -41,6 +30,7 @@ export default function HomeCustom() {
   )
 
   const { socket, isConnected } = useSocket() // Get socket and isConnected from context
+
   const [viewerCount, setViewerCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [activeVideo, setActiveVideo] = useState(false) // Track if video is currently playing
@@ -57,6 +47,7 @@ export default function HomeCustom() {
     if (!activeVideo) return
 
     console.log(`Video stopped playing for camera ${mainCamera.id}`)
+
     // Mark video as inactive
     setActiveVideo(false)
 
@@ -87,6 +78,7 @@ export default function HomeCustom() {
     if (activeVideo) return
 
     console.log(`Video started playing for camera ${mainCamera.id}`)
+
     // Mark video as active
     setActiveVideo(true)
 
@@ -134,8 +126,7 @@ export default function HomeCustom() {
     if (!socket || !isConnected) return
 
     // Handle viewer count updates
-    const handleViewerCount = (data) => {
-      const { streamId, count } = data
+    const handleViewerCount = ({ streamId, count }) => {
       if (streamId === mainCamera.streamId) {
         console.log(`Received viewer count update for ${streamId}: ${count}`)
         setViewerCount(count)
@@ -185,6 +176,7 @@ export default function HomeCustom() {
   const handleQualityChange = useCallback(
     (quality, frameRate, cameraStreamId) => {
       console.log(`Quality changed for ${cameraStreamId}: ${quality}, Frame rate: ${frameRate}`)
+
       // Update quality settings
       setQualitySettings((prev) => ({
         ...prev,
@@ -201,7 +193,7 @@ export default function HomeCustom() {
       if (iframeRef.current && mainCamera.isPixelStreaming) {
         try {
           // Example of sending quality settings to the pixel streaming iframe
-          iframeRef.current.contentWindow?.postMessage(
+          iframeRef.current.contentWindow.postMessage(
             {
               type: "qualityChange",
               quality: quality,
@@ -233,8 +225,11 @@ export default function HomeCustom() {
 
   const renderCameraView = useCallback(() => {
     const isActive = activeVideo
+
     return (
       <div className={`${styles.cameraContainer} ${styles.mainCameraView}`} style={{ position: "relative", zIndex: 1 }}>
+     
+
         {/* IMPROVED: Render iframe for pixel streaming or WebRTC for regular streaming */}
         {mainCamera.isPixelStreaming ? (
           <div className={styles.videoPlayer} style={{ width: "100%", height: "100%", position: "relative" }}>
@@ -295,6 +290,9 @@ export default function HomeCustom() {
             Your browser does not support the video tag.
           </video>
         )}
+
+      
+
         {/* <div className={styles.liveIndicator} style={{ zIndex: 30 }}>
           <div className={styles.viewerCount}>
             <Image
@@ -369,6 +367,7 @@ export default function HomeCustom() {
             {renderCameraView()}
           </div>
         </div>
+
         {/* Chat Section - Below the video stream */}
         <div
           style={{
@@ -400,7 +399,8 @@ export default function HomeCustom() {
                 alignItems: "center",
                 background: "linear-gradient(to right, rgb(15, 67, 72) 0%, rgb(8 22 23) 40%, rgba(2, 2, 2, 0) 100%)",
               }}
-            ></div>
+            >
+            </div>
             <div style={{ position: "absolute", top: "190px", right: "10px", zIndex: "20" }}>
               <VideoQualitySettings
                 streamId={mainCamera.streamId}
@@ -413,6 +413,7 @@ export default function HomeCustom() {
           <div style={{ flex: 1, overflow: "hidden", marginTop: "22px" }}>
             <RealTimeChatCompWrapper streamId="default-stream" />
           </div>
+
           {/* Scroll down indicator */}
           <div
             style={{
@@ -428,6 +429,7 @@ export default function HomeCustom() {
             }}
           ></div>
         </div>
+
         {/* Mobile Bottom Navigation Bar */}
         <div
           style={{
@@ -446,75 +448,72 @@ export default function HomeCustom() {
             borderTopRightRadius: "20px",
           }}
         >
-          <StreamBottomBar onQuestionUpdate={handleQuestionUpdate} />
+          <StreamBottomBar />
         </div>
       </div>
     )
   }
 
-  // Desktop layout
+  // Desktop layout (original)
   return (
     <div
       className={styles.mainAndGameWrapper}
       style={{
         display: "flex",
-        flexDirection: "column", // Changed to column for vertical split
+        flexDirection: "column",
         overflow: "hidden",
-        height: "100vh", // Ensure it takes full viewport height
+        position: "relative",
       }}
     >
-      {/* Top 85% for existing video + chat/betting */}
+      {/* Main content area with fixed height and scrollable */}
       <div
+        className={styles.mainContent}
         style={{
-          flex: "17", // 85% of height
-          display: "flex",
-          flexDirection: "row", // Horizontal split for video and chat
-          height: "85%", // Explicit height for clarity
+          flex: 1,
+          overflow: "hidden",
+          position: "relative",
         }}
       >
-        {/* 80% of the 85% height for Video Section */}
+        {/* Single View Mode - Only showing main camera */}
         <div
           className={styles.videoSection}
           style={{
-            flex: "8", // 80% of the width of this row
-            flexShrink: 0,
             height: "100%",
             position: "relative",
             zIndex: 1,
-            minWidth: 0,
           }}
         >
           {renderCameraView()}
         </div>
 
-        {/* 20% of the 85% height for Chat and Betting Section */}
+        {/* Chat Overlay */}
         <div
           style={{
-            flex: "2", // 20% of the width of this row
-            flexShrink: 1,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            background: "linear-gradient(to right, #090909, #081e2e)",
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            height: "65%",
+            width: "300px",
+            zIndex: 25,
             overflow: "hidden",
-            minWidth: 0,
           }}
         >
           <RealTimeChatCompWrapper streamId="default-stream" isStandalonePage={false} />
         </div>
       </div>
 
-      {/* Bottom 15% for new StreamBottomHighlights component */}
-      <div
+      {/* Bottom Bar - Fixed at bottom */}
+      {/* <div
         style={{
-          flex: "3", // 15% of height
-          height: "15%", // Explicit height for clarity
+          position: "sticky",
+          bottom: 0,
           width: "100%",
-          flexShrink: 0,
+          zIndex: 40,
+          backgroundColor: "#211c17",
         }}
       >
-        <StreamBottomHighlights currentQuestion={sharedQuestion} countdown={sharedCountdown} />
-      </div>
+        <StreamBottomBar />
+      </div> */}
     </div>
   )
 }
