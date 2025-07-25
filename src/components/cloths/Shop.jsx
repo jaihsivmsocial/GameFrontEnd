@@ -37,7 +37,8 @@ const Shop = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: "45px" 
+        // marginLeft: "45px", 
+        marginRight: "-100px",
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}

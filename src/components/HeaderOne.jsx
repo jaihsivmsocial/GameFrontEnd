@@ -72,16 +72,15 @@ const HeaderOne = () => {
               <div className="d-flex items-center">
                 <Link href="/" style={{ marginLeft: "-105px" }}>
                   <div style={{ display: "flex", alignItems: "center" }}>
-                    <img src="/assets/img/logo/headlogo.png" alt="img" />
+                    <img src="/assets/img/logo/5 Minutes Of Fame (2).png" alt="img" />
                     <span
                       style={{
                         color: "white",
                         fontWeight: "Rajdhani",
                         font: "bold",
-                        fontSize: "27.58px",
+                        fontSize: "49.2px",
                         marginLeft: "8px",
-                        width: "103px",
-                        height: "46px",
+                        height: "42px",
                         lineHeight: "85%",
                         letterSpacing: "-4%",
                         stroke: "FFFFFF",
@@ -91,37 +90,41 @@ const HeaderOne = () => {
                 </Link>
               </div>
             </div>
-            <div className={styles.liveIcon} style={{ marginLeft: "-100px" }}>
-              <img
-                src="/assets/img/bg/live.png"
-                width={16}
-                height={16}
-                alt="Live"
-                className={styles.icon || ""}
-                onError={(e) => {
-                  e.currentTarget.src = "/placeholder.svg?height=16&width=16"
-                  console.log("Failed to load image: /assets/img/live.png")
-                }}
-              />
-              LIVE
-            </div>
-            {/* Navigation Buttons with fixed positioning */}
-            <div className="d-flex align-items-center" style={{ gap: "20px" }}>
-              <div style={{ width: "180px", height: "37px" }}>
-                <Shop />
-              </div>
+         <img
+  src="/assets/img/live/live.png"
+  alt="Live"
+  width={212}
+  height={212}
+  style={{
+    width: "auto",
+    height: "24px", // you can adjust height here
+    marginLeft: "-120px",
+  }}
+  onError={(e) => {
+    e.currentTarget.src = "/placeholder.svg";
+    console.log("Failed to load image: /assets/img/live.png");
+  }}
+/>
 
-              <div style={{ width: "180px", height: "37px" }}>
+            {/* Navigation Buttons with fixed positioning */}
+            <div className="d-flex align-items-center" >
+             
+
+              <div>
                 <SpectateButton />
               </div>
-              <div style={{ width: "180px", height: "37px" }}>
-                <PlayButton />
-              </div>
-              <div style={{ width: "180px", height: "37px" }}>
+            
+              <div >
                 <Clip />
               </div>
-              <div style={{ minWidth: "180px" }}>
+              <div >
                 <AuthHeaderButtons />
+              </div>
+                <div>
+                <PlayButton />
+              </div>
+               <div >
+                <Shop />
               </div>
             </div>
           </div>

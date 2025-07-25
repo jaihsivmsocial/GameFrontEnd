@@ -373,11 +373,11 @@ export default function AuthHeaderButtons({
       clearTimeout(postLoginTimerRef.current)
       postLoginTimerRef.current = null
     }
-    try {
-      await fetch(`${BASEURL}/api/logout`, { method: "POST", credentials: "include" })
-    } catch (error) {
-      console.error("Logout API error:", error)
-    }
+    // try {
+    //   await fetch(`${BASEURL}/api/logout`, { method: "POST", credentials: "include" })
+    // } catch (error) {
+    //   console.error("Logout API error:", error)
+    // }
     localStorage.removeItem("authToken")
     localStorage.removeItem("username")
     localStorage.removeItem("avatar")
@@ -443,7 +443,7 @@ export default function AuthHeaderButtons({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginRight: "6px",
+        marginRight: "16px",
         borderRadius: "4px",
         fontSize: isSpecificMobileSize ? "12px" : "inherit",
       }}
@@ -474,7 +474,7 @@ export default function AuthHeaderButtons({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginRight: isSpecificMobileSize ? "0" : "-95px",
+        marginRight: isSpecificMobileSize ? "0" : "337px",
         borderRadius: "4px",
         fontSize: isSpecificMobileSize ? "12px" : "inherit",
       }}
@@ -515,7 +515,7 @@ export default function AuthHeaderButtons({
               ></button>{" "}
               <div className="text-center mb-3">
                 <img
-                  src="/assets/img/logo/headlogo.png"
+                  src="/assets/img/logo/5 Minutes Of Fame (2).png"
                   alt="M's TRIBE Logo"
                   style={{ maxWidth: "150px", height: "auto" }}
                 />
@@ -628,7 +628,7 @@ export default function AuthHeaderButtons({
               ></button>{" "}
               <div className="text-center mb-3">
                 <img
-                  src="/assets/img/logo/headlogo.png"
+                  src="/assets/img/logo/5 Minutes Of Fame (2).png"
                   alt="M's TRIBE Logo"
                   style={{ maxWidth: "150px", height: "auto" }}
                 />
@@ -769,7 +769,7 @@ export default function AuthHeaderButtons({
                 ></button>{" "}
                 <div className="text-center mb-3">
                   <img
-                    src="/assets/img/logo/headlogo.png"
+                    src="/assets/img/logo/5 Minutes Of Fame (2).png"
                     alt="M's TRIBE Logo"
                     style={{ maxWidth: "150px", height: "auto" }}
                   />
@@ -888,7 +888,7 @@ export default function AuthHeaderButtons({
                 ></button>{" "}
                 <div className="text-center mb-3">
                   <img
-                    src="/assets/img/logo/headlogo.png"
+                    src="/assets/img/logo/5 Minutes Of Fame (2).png"
                     alt="M's TRIBE Logo"
                     style={{ maxWidth: "150px", height: "auto" }}
                   />
