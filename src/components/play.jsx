@@ -39,8 +39,8 @@ const PlayButton = () => {
       href="/play"
       className="btn text-white d-flex align-items-center justify-content-center"
       style={{
-        background: isActive ? baseGradient : "linear-gradient(to right, #ff5500, #ff7b00,  #fe5e00)",
-        border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
+         background: "linear-gradient(to right, #090e12, #081e2e)",
+         border: `2px solid ${isActive ? "#0046c0" : "#05678a"}`,
         width: isMobileView ? "115px" : "143px", // Different width based on device
         height: isMobileView ? "30px" : "37px", // Different height based on device
         fontWeight: "bold",
@@ -55,7 +55,7 @@ const PlayButton = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: isMobileView ? "0" : "13px", // Remove negative margin on mobile
+       marginRight:"22px" // Remove negative margin on mobile
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}

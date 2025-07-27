@@ -98,7 +98,7 @@ const HeaderOne = () => {
   style={{
     width: "auto",
     height: "24px", // you can adjust height here
-    marginLeft: "-120px",
+    marginLeft: "-12px",
   }}
   onError={(e) => {
     e.currentTarget.src = "/placeholder.svg";
@@ -108,7 +108,7 @@ const HeaderOne = () => {
 
             {/* Navigation Buttons with fixed positioning */}
             <div className="d-flex align-items-center" >
-             
+          
 
               <div>
                 <SpectateButton />

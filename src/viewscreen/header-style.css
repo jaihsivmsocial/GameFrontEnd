@@ -258,9 +258,9 @@
   }
 
   /* Remove negative margin from signup button in mobile view */
-  .btn.btn-dark.border.border-info.text-white[style*='marginRight: "-95px"'] {
+  /* .btn.btn-dark.border.border-info.text-white[style*='marginRight: "-95px"'] {
     margin-right: 0 !important;
-  }
+  } */
 
   /* Specific styling for login/signup buttons */
   .auth-button-mobile {
@@ -283,9 +283,9 @@
   }
 
   /* Remove negative margin from signup button in mobile view */
-  .btn.btn-dark.border.border-info.text-white[style*='marginRight: "-95px"'] {
+  /* .btn.btn-dark.border.border-info.text-white[style*='marginRight: "-95px"'] {
     margin-right: 0 !important;
-  }
+  } */
 
   /* Specific styling for login/signup buttons */
   .auth-button-mobile {
@@ -308,9 +308,9 @@
   }
 
   /* Remove negative margin from signup button in mobile view */
-  .btn.btn-dark.border.border-info.text-white[style*='marginRight: "-95px"'] {
+  /* .btn.btn-dark.border.border-info.text-white[style*='marginRight: "-95px"'] {
     margin-right: 0 !important;
-  }
+  } */
 
   /* Specific styling for login/signup buttons */
   .auth-button-mobile {
@@ -339,9 +339,9 @@
   }
 
   /* Remove negative margin from signup button in mobile view */
-  .btn.btn-dark.border.border-info.text-white[style*='marginRight: "-95px"'] {
+  /* .btn.btn-dark.border.border-info.text-white[style*='marginRight: "-95px"'] {
     margin-right: 0 !important;
-  }
+  } */
 
   /* Specific styling for login/signup buttons */
   .auth-button-mobile {

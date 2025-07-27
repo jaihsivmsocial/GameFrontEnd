@@ -1,231 +1,177 @@
-"use client"
 import Image from "next/image"
 import { Play, ArrowRight } from "lucide-react"
 
 export default function StreamBottomHighlights({ currentQuestion, countdown }) {
-  // Function to render the question text with "ERIC" highlighted
-  const renderQuestionText = (questionText) => {
-    if (!questionText) return "No active question"
-    // Split by text inside quotes, keeping the quotes for splitting logic
-    const parts = questionText.split(/(".*?")/)
-    return (
-      <>
-        {parts.map((part, index) => {
-          // If the part starts and ends with a quote, it's the highlighted text
-          if (part.startsWith('"') && part.endsWith('"')) {
-            return (
-              <span key={index} style={{ color: "#06b6d4" }}>
-                {part.slice(1, -1)} {/* Remove quotes for display */}
-              </span>
-            )
-          }
-          // Otherwise, it's regular text
-          return <span key={index}>{part}</span>
-        })}
-      </>
-    )
-  }
+  const highlights = [
+    {
+      id: 1,
+      thumbnail: "/placeholder.svg?height=40&width=60",
+      time: "0:05",
+      date: "24-07-2025",
+      title: "MojoOnPC killed ExWhyZed",
+      type: "Quick Highlight",
+    },
+    {
+      id: 2,
+      thumbnail: "/placeholder.svg?height=40&width=60",
+      time: "0:05",
+      date: "24-07-2025",
+      title: "Craziest Play of the Day",
+      type: "Quick Highlight",
+    },
+  ]
 
-  // Calculate progress bar width based on countdown (assuming max 36 seconds for full bar)
-  const progressBarWidth = currentQuestion && countdown > 0 ? (countdown / 36) * 100 : 0
+  const progress = currentQuestion && currentQuestion.duration > 0 ? (countdown / currentQuestion.duration) * 100 : 0
 
   return (
     <div
       style={{
-        background: "#071323", // Dark background from screenshot
-        color: "white",
-        padding: "10px 20px", // Adjusted padding
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        height: "100%", // Take full height of its parent (15% row)
-        width: "80%",
-        boxSizing: "border-box", // Include padding in height calculation
-        position: "relative", // For pagination dots positioning
+        padding: "10px 0",
+        backgroundColor: "#071323", // Dark background for the entire highlights section
+        height: "100%",
+        width: "100%",
+        boxSizing: "border-box",
       }}
     >
-      {/* Highlight Cards Container (80% width) */}
+      {/* Highlights Section (approx 80% width) */}
       <div
         style={{
+          flex: "8", // 80% of the width of this container
           display: "flex",
-          gap: "15px", // Spacing between highlight cards
-          flex: "8", // Takes 80% of the available space
-          flexShrink: 1, // Allow shrinking if needed, but prefer to maintain size
-          overflowX: "auto", // Enable horizontal scrolling if needed
-          paddingBottom: "5px", // For scrollbar if present
-          scrollbarWidth: "none", // Hide scrollbar for Firefox
-          msOverflowStyle: "none", // Hide scrollbar for IE/Edge
-          "&::-webkit-scrollbar": {
-            display: "none", // Hide scrollbar for Chrome/Safari
-          },
+          gap: "15px",
+          alignItems: "center",
+          paddingLeft: "20px", // Padding to align with video content
+          boxSizing: "border-box",
         }}
       >
-        {/* Highlight Card 1 */}
-        <div
-          style={{
-            backgroundColor: "#0e1a2b",
-            border: "1px solid #06b6d4",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            padding: "8px",
-            minWidth: "250px", // Fixed width for highlight cards to ensure they don't collapse too much
-            flexShrink: 0, // Prevent shrinking below minWidth
-          }}
-        >
+        {highlights.map((highlight) => (
           <div
+            key={highlight.id}
             style={{
-              position: "relative",
-              width: "60px",
-              height: "40px",
-              borderRadius: "4px",
-              overflow: "hidden",
-              marginRight: "10px",
-            }}
-          >
-            <Image
-              src="/placeholder.svg?height=40&width=60&text=Highlight 1"
-              alt="Highlight Thumbnail"
-              width={60}
-              height={40}
-              style={{ objectFit: "cover" }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                bottom: "2px",
-                left: "2px",
-                backgroundColor: "rgba(0,0,0,0.7)",
-                color: "white",
-                fontSize: "10px",
-                padding: "1px 4px",
-                borderRadius: "2px",
-              }}
-            >
-              0:05
-            </div>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "10px", color: "#9ca3af", marginBottom: "2px" }}>24-07-2025</div>
-            <div style={{ fontSize: "14px", fontWeight: "bold", color: "white", lineHeight: "1.2" }}>
-              MojoOnPC killed ExWhyZed
-            </div>
-            <div style={{ fontSize: "10px", color: "#9ca3af" }}>Quick Highlight</div>
-          </div>
-          <button
-            style={{
-              backgroundColor: "#0ea5e9",
-              borderRadius: "50%",
-              width: "30px",
-              height: "30px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              cursor: "pointer",
-              marginLeft: "10px",
+              backgroundColor: "#0e1a2b", // Slightly lighter dark for highlight cards
+              borderRadius: "8px",
+              border: "1px solid #06b6d4", // Light blue border
+              padding: "8px",
+              gap: "10px",
+              minWidth: "250px", // Ensure cards have a minimum width
+              boxSizing: "border-box",
             }}
           >
-            <Play size={16} color="white" fill="white" />
-          </button>
-        </div>
-
-        {/* Highlight Card 2 */}
-        <div
-          style={{
-            backgroundColor: "#0e1a2b",
-            border: "1px solid #06b6d4",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            padding: "8px",
-            minWidth: "250px", // Fixed width for highlight cards
-            flexShrink: 0, // Prevent shrinking below minWidth
-          }}
-        >
-          <div
-            style={{
-              position: "relative",
-              width: "60px",
-              height: "40px",
-              borderRadius: "4px",
-              overflow: "hidden",
-              marginRight: "10px",
-            }}
-          >
-            <Image
-              src="/placeholder.svg?height=40&width=60&text=Highlight 2"
-              alt="Highlight Thumbnail"
-              width={60}
-              height={40}
-              style={{ objectFit: "cover" }}
-            />
-            <div
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              <Image
+                src={highlight.thumbnail || "/placeholder.svg"}
+                alt="Highlight Thumbnail"
+                width={60}
+                height={40}
+                style={{ borderRadius: "4px", objectFit: "cover" }}
+              />
+              <span
+                style={{
+                  position: "absolute",
+                  bottom: "2px",
+                  left: "2px",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  color: "#fff",
+                  fontSize: "10px",
+                  padding: "2px 4px",
+                  borderRadius: "3px",
+                }}
+              >
+                {highlight.time}
+              </span>
+            </div>
+            <div style={{ flexGrow: 1 }}>
+              <div style={{ color: "#9ca3af", fontSize: "10px", marginBottom: "2px" }}>
+                {highlight.date}
+                <span
+                  style={{
+                    marginLeft: "5px",
+                    display: "inline-block",
+                    width: "15px",
+                    height: "1px",
+                    backgroundColor: "#9ca3af",
+                    verticalAlign: "middle",
+                  }}
+                ></span>
+              </div>
+              <div style={{ color: "#fff", fontSize: "14px", fontWeight: "bold", lineHeight: "1.2" }}>
+                {highlight.title}
+              </div>
+              <div style={{ color: "#9ca3af", fontSize: "10px" }}>{highlight.type}</div>
+            </div>
+            <button
               style={{
-                position: "absolute",
-                bottom: "2px",
-                left: "2px",
-                backgroundColor: "rgba(0,0,0,0.7)",
-                color: "white",
-                fontSize: "10px",
-                padding: "1px 4px",
-                borderRadius: "2px",
+                backgroundColor: "#0ea5e9", // Bright blue for play button
+                borderRadius: "50%",
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                cursor: "pointer",
+                flexShrink: 0,
               }}
             >
-              0:05
-            </div>
+              <Play size={16} color="#fff" fill="#fff" />
+            </button>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "10px", color: "#9ca3af", marginBottom: "2px" }}>24-07-2025</div>
-            <div style={{ fontSize: "14px", fontWeight: "bold", color: "white", lineHeight: "1.2" }}>
-              Craziest Play of the Day
-            </div>
-            <div style={{ fontSize: "10px", color: "#9ca3af" }}>Quick Highlight</div>
-          </div>
-          <button
-            style={{
-              backgroundColor: "#0ea5e9",
-              borderRadius: "50%",
-              width: "30px",
-              height: "30px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              cursor: "pointer",
-              marginLeft: "10px",
-            }}
-          >
-            <Play size={16} color="white" fill="white" />
-          </button>
+        ))}
+        {/* Pagination dots */}
+        <div style={{ display: "flex", gap: "5px", marginLeft: "10px" }}>
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#9ca3af" }}></span>
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#9ca3af" }}></span>
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#9ca3af" }}></span>
         </div>
       </div>
 
-      {/* Question Card (20% width) */}
+      {/* Question Card Section (approx 20% width) */}
       <div
         style={{
-          backgroundColor: "#1a2b3c", // Darker background for the question card
-          borderRadius: "8px",
-          padding: "10px 15px",
+          flex: "2", // 20% of the width of this container
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          flex: "2", // Takes 20% of the available space
-          minWidth: "300px", // Minimum width to prevent content from squishing too much
-          flexShrink: 0, // Prevent shrinking below minWidth
-          marginLeft: "15px", // Add some space between highlights and question card
+          backgroundColor: "#1a2b3c", // Darker background for question card
+          borderRadius: "8px",
+          padding: "10px 15px",
+          marginRight: "20px", // Margin to align with chat section
+          height: "calc(100% - 20px)", // Adjust height to fit within parent with padding
+          boxSizing: "border-box",
+          minWidth: "280px", // Ensure question card has a minimum width
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, marginRight: "15px" }}>
-          <div style={{ fontSize: "16px", color: "white", fontWeight: "bold", marginBottom: "5px" }}>
-            {renderQuestionText(currentQuestion?.question || 'Will "ERIC" survive for 60 seconds?')}
+        <div style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
+          <div style={{ color: "#fff", fontSize: "16px", fontWeight: "normal" }}>
+            {currentQuestion ? (
+              <>
+                Will <span style={{ color: "#06b6d4", fontWeight: "bold" }}>{currentQuestion.text.split('"')[1]}</span>{" "}
+                {currentQuestion.text.split('"')[2]}
+              </>
+            ) : (
+              "No active question"
+            )}
           </div>
-          <div style={{ width: "100%", height: "3px", backgroundColor: "#0e1a2b", borderRadius: "2px" }}>
+          <div
+            style={{
+              width: "100%",
+              height: "4px",
+              backgroundColor: "#0e1a2b", // Darker background for progress bar track
+              borderRadius: "2px",
+              marginTop: "8px",
+              overflow: "hidden",
+            }}
+          >
             <div
               style={{
-                width: `${progressBarWidth}%`,
+                width: `${progress}%`,
                 height: "100%",
-                backgroundColor: "#06b6d4",
+                backgroundColor: "#06b6d4", // Light blue for progress bar fill
                 borderRadius: "2px",
                 transition: "width 1s linear",
               }}
@@ -234,7 +180,7 @@ export default function StreamBottomHighlights({ currentQuestion, countdown }) {
         </div>
         <button
           style={{
-            backgroundColor: "#0ea5e9",
+            backgroundColor: "#0ea5e9", // Bright blue for arrow button
             borderRadius: "50%",
             width: "40px",
             height: "40px",
@@ -243,26 +189,12 @@ export default function StreamBottomHighlights({ currentQuestion, countdown }) {
             justifyContent: "center",
             border: "none",
             cursor: "pointer",
+            marginLeft: "15px",
+            flexShrink: 0,
           }}
         >
-          <ArrowRight size={20} color="white" />
+          <ArrowRight size={20} color="#fff" />
         </button>
-      </div>
-
-      {/* Pagination Dots */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "5px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          display: "flex",
-          gap: "5px",
-        }}
-      >
-        <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#9ca3af" }}></div>
-        <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#9ca3af" }}></div>
-        <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#9ca3af" }}></div>
       </div>
     </div>
   )
