@@ -89,7 +89,7 @@ const setActiveButton = navigation.setActiveButton || (() => {})
         // Add viewer ID to socket auth
         socket.auth = {
           ...socket.auth,
-          viewerId: apiService.getViewerId()
+          // viewerId: apiService.getViewerId()
         }
         socket.emit("join_stream", { streamId })
       }
