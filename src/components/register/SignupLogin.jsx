@@ -426,11 +426,11 @@ export default function AuthHeaderButtons({
     {/* LOGIN Button */}
     <button
       type="button"
-      className="btn btn-dark border border-info text-white auth-button-mobile"
+      className="btn btn-dark border border-info  auth-button-mobile"
       style={{
         backgroundColor: isSpecificMobileSize ? "#081e2e" : "#050505",
         background: isSpecificMobileSize ? "linear-gradient(to right, #090e12, #070a0f)" : "#050505",
-        border: "1px solid #0dcaf0",
+          border: "2px solid$ #0046c0",
         width: isSpecificMobileSize ? "75px" : "141px",
         height: isSpecificMobileSize ? "26px" : "37px",
         fontWeight: "bold",
@@ -461,7 +461,7 @@ export default function AuthHeaderButtons({
       style={{
         backgroundColor: isSpecificMobileSize ? "#081e2e" : "#050505",
         background: isSpecificMobileSize ? "linear-gradient(to right, #070a0f, #070a0f)" : "#050505",
-        border: "1px solid #0dcaf0",
+        border: "2px solid #0046c0",
         width: isSpecificMobileSize ? "75px" : "141px",
         height: isSpecificMobileSize ? "26px" : "37px",
         fontWeight: "bold",
@@ -474,7 +474,7 @@ export default function AuthHeaderButtons({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginRight: isSpecificMobileSize ? "0" : "337px",
+        marginRight: isSpecificMobileSize ? "0" : "61px",
         borderRadius: "4px",
         fontSize: isSpecificMobileSize ? "12px" : "inherit",
       }}

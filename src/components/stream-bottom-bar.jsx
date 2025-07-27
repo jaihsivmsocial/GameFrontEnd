@@ -1629,7 +1629,8 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       {!isMobile && (
         <div
           style={{
-            background: "#071323", // Solid dark background from screenshot
+            background: "linear-gradient(180deg, #022A57 0%, #08192C 100%)",
+ // Solid dark background from screenshot
             color: "white",
             padding: "15px", // Adjusted padding to match screenshot
             display: "flex",

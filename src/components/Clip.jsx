@@ -21,7 +21,7 @@ const Clip = () => {
       className="btn text-white d-flex align-items-center justify-content-center"
       style={{
         background: isActive ? baseGradient : "#071019",
-        border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
+        border: `2px solid ${isActive ? "#0046c0" : "#05678a"}`,
         width: isActive ? "143px" : "143px",
         height: "37px",
         fontWeight: "bold",
@@ -39,13 +39,15 @@ const Clip = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        marginRight:"370px",
+     
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onClick={handleClick}
     >
       <img
-        src={isActive ? "/assets/img/iconImage/fi_3180028.png" : "/assets/img/iconImage/fi_3180028.png"}
+        src={isActive ? "/assets/img/icon/Video_Editor.png" : "/assets/img/icon/Video_Editor.png"}
         alt="icon"
         width="20"
         height="20"

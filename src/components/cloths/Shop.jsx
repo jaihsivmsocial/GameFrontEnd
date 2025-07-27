@@ -20,7 +20,7 @@ const Shop = () => {
       className="btn text-white d-flex align-items-center justify-content-center"
       style={{
         background: isActive ? baseGradient : "#071019",
-        border: `0.5px solid ${isActive ? "#0046c0" : "#FFFFFF"}`,
+        border: `2px solid ${isActive ? "#0046c0" : "#05678a"}`,
         width: isActive ? "143px" : "143px",
         height: "37px",
         fontWeight: "bold",

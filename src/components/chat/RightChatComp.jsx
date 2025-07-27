@@ -515,6 +515,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
         width: "100%", // Ensure it takes full width of its parent container
         background: "linear-gradient(to right, #090909, #081e2e)",
         overflow: "hidden",
+        borderLeft: "1px solid #0ea5e9", // Added this line for the vertical separator
       }}
     >
       {/* Toggle Buttons */}
@@ -543,6 +544,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
             justifyContent: "center",
             gap: "8px",
             transition: "background-color 0.3s ease",
+            borderRadius: "9px",
           }}
         >
           <MessageCircle size={20} />
@@ -565,6 +567,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
             justifyContent: "center",
             gap: "8px",
             transition: "background-color 0.3s ease",
+            borderRadius: "9px",
           }}
         >
           <Gem size={20} />

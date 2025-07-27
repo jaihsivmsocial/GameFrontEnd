@@ -7,7 +7,7 @@ import WebRTCStream from "../../components/Home/WebRTCConnection"
 import VideoQualitySettings from "../Home/VideoQualitySettings"
 import RealTimeChatCompWrapper from "../chat/RealTimeChatCompWrapper"
 import StreamBottomBar from "../../components/stream-bottom-bar.jsx"
-import StreamBottomHighlights from "@/components/streamhighlight/stream-highlight" // Import the new component
+import StreamBottomHighlights from "@/components/streamhighlight/stream-highlight.jsx" // Corrected import path and extension
 import { useMediaQuery } from "../../components/chat/use-mobile"
 
 export default function HomeCustom() {
@@ -295,9 +295,9 @@ export default function HomeCustom() {
             Your browser does not support the video tag.
           </video>
         )}
-        {/* <div className={styles.liveIndicator} style={{ zIndex: 30 }}>
-          <div className={styles.viewerCount}>
-            <Image
+        <div className={styles.liveIndicator} style={{ zIndex: 30 }}>
+          {/* <div className={styles.viewerCount}>
+            <img
               src="/assets/img/iconImage/livefeed_3106921.png"
               width={16}
               height={16}
@@ -305,12 +305,12 @@ export default function HomeCustom() {
               className={styles.icon}
               onError={(e) => {
                 e.target.src = "/placeholder.svg?height=16&width=16"
-                console.log("Failed to load image: /assets/img/iconImage/livefeed_3106921.png")
+                console.log("Failed to load image")
               }}
             />
             {viewerCount}
-          </div>
-        </div> */}
+          </div> */}
+        </div>
         {/* Show active indicator */}
         {isActive && (
           <div className={styles.activeIndicator}>
@@ -458,27 +458,27 @@ export default function HomeCustom() {
       className={styles.mainAndGameWrapper}
       style={{
         display: "flex",
-        flexDirection: "column", // Changed to column for vertical split
+        flexDirection: "row", // Main container is a row
         overflow: "hidden",
         height: "100vh", // Ensure it takes full viewport height
       }}
     >
-      {/* Top 85% for existing video + chat/betting */}
+      {/* Left Column: Video Section (approx 70% width) + StreamBottomHighlights (15% height of this column) */}
       <div
         style={{
-          flex: "17", // 85% of height
+          flex: "7", // Approx 70% width of the total screen
           display: "flex",
-          flexDirection: "row", // Horizontal split for video and chat
-          height: "85%", // Explicit height for clarity
+          flexDirection: "column", // Stack video and highlights vertically
+          height: "100%", // Takes full height of the main wrapper
+          minWidth: 0,
         }}
       >
-        {/* 80% of the 85% height for Video Section */}
+        {/* Video Section (takes remaining height after highlights) */}
         <div
           className={styles.videoSection}
           style={{
-            flex: "8", // 80% of the width of this row
-            flexShrink: 0,
-            height: "100%",
+            flex: "auto", // Takes remaining height
+            height: "85%", // Explicit height for clarity
             position: "relative",
             zIndex: 1,
             minWidth: 0,
@@ -487,33 +487,35 @@ export default function HomeCustom() {
           {renderCameraView()}
         </div>
 
-        {/* 20% of the 85% height for Chat and Betting Section */}
+        {/* Bottom 15% for new StreamBottomHighlights component */}
         <div
           style={{
-            flex: "2", // 20% of the width of this row
-            flexShrink: 1,
-            height: "100%",
+            flex: "0 0 15%", // Fixed 15% height of this column
+            width: "100%", // Spans full width of this column
+            flexShrink: 0,
             display: "flex",
-            flexDirection: "column",
-            background: "linear-gradient(to right, #090909, #081e2e)",
-            overflow: "hidden",
-            minWidth: 0,
+            justifyContent: "center", // Center content horizontally within this div
+            alignItems: "center",
           }}
         >
-          <RealTimeChatCompWrapper streamId="default-stream" isStandalonePage={false} />
+          <StreamBottomHighlights currentQuestion={sharedQuestion} countdown={sharedCountdown} />
         </div>
       </div>
 
-      {/* Bottom 15% for new StreamBottomHighlights component */}
+      {/* Right Column: Chat Section (approx 30% width) */}
       <div
         style={{
-          flex: "3", // 15% of height
-          height: "15%", // Explicit height for clarity
-          width: "100%",
-          flexShrink: 0,
+          flex: "2", // Approx 30% width of the total screen
+          flexShrink: 1,
+          height: "100%", // Fills entire height of the main wrapper
+          display: "flex",
+          flexDirection: "column",
+          background: "linear-gradient(to right, #090909, #081e2e)",
+          overflow: "hidden",
+          minWidth: 0,
         }}
       >
-        <StreamBottomHighlights currentQuestion={sharedQuestion} countdown={sharedCountdown} />
+        <RealTimeChatCompWrapper streamId="default-stream" isStandalonePage={false} />
       </div>
     </div>
   )
