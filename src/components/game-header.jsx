@@ -1026,7 +1026,6 @@ const GameHeader = () => {
   return (
     <div
       style={{
-        background: "#0a0f1a",
         color: "white",
         padding: "0",
         display: "flex",
@@ -1192,7 +1191,7 @@ const GameHeader = () => {
       </div>
 
       {/* Character 2: POM */}
-      <div style={{ display: "flex", alignItems: "center", marginLeft: "30px" }}>
+      {/* <div style={{ display: "flex", alignItems: "center", marginLeft: "30px" }}>
         <div
           style={{
             width: "48px",
@@ -1258,7 +1257,7 @@ const GameHeader = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Next Reward Timer - Positioned at the far right */}
       <div

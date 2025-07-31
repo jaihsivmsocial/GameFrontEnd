@@ -43,17 +43,17 @@ const nextConfig = {
   },
 
   images: {
-    domains: ["mstribe-website.s3.eu-north-1.amazonaws.com"],
+    domains: ["5mofstore.ams3.digitaloceanspaces.com"],
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "mstribe-website.s3.eu-north-1.amazonaws.com",
+        hostname: "5mofstore.ams3.digitaloceanspaces.com",
         port: "",
         pathname: "/profile-pictures/**",
       },
       {
         protocol: "https",
-        hostname: "mstribe-website.s3.eu-north-1.amazonaws.com",
+        hostname: "5mofstore.ams3.digitaloceanspaces.com",
         port: "",
         pathname: "/videos/**",
       },

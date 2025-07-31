@@ -98,7 +98,7 @@ const HeaderOne = () => {
   style={{
     width: "auto",
     height: "24px", // you can adjust height here
-    marginLeft: "-12px",
+    // marginLeft: "-12px",
   }}
   onError={(e) => {
     e.currentTarget.src = "/placeholder.svg";
