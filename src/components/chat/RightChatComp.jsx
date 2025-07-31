@@ -397,6 +397,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
                 height: "45px",
                 marginRight: "8px",
                 overflow: "hidden",
+                marginBottom:"25px"
               }}
             >
               <input
@@ -697,7 +698,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
             >
               <input
                 type="text"
-                placeholder="Type Here..."
+                placeholder="Type your message..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 disabled={!isConnected}

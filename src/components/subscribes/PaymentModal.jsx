@@ -26,6 +26,7 @@ const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY, {
 const StripeLoader = () => {
   const stripe = useStripe()
   const elements = useElements()
+
   useEffect(() => {
     // This effect runs when the component mounts, ensuring Stripe is loaded
     if (stripe && elements) {
@@ -37,6 +38,7 @@ const StripeLoader = () => {
       }
     }
   }, [stripe, elements])
+
   // Return empty div instead of CardElement
   return <div style={{ display: "none" }}></div>
 }
@@ -225,6 +227,7 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
           setLoading(false)
           return
         }
+
         if (!stripeReady || !stripe || !elements) {
           setError("Stripe is not ready. Please try again.")
           setLoading(false)
@@ -276,7 +279,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
           const paymentResult = await stripe.confirmCardPayment(clientSecret, {
             payment_method: stripePaymentMethod.id,
           })
-
           console.log("Payment result:", paymentResult)
 
           if (paymentResult.error) {
@@ -307,6 +309,7 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
             } else if (paymentIntent.status === "requires_confirmation") {
               // After successful authentication, confirm the payment
               const confirmResult = await stripe.confirmCardPayment(clientSecret)
+
               if (confirmResult.error) {
                 console.error("Confirmation error:", confirmResult.error)
                 setError(confirmResult.error.message)
@@ -403,7 +406,6 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
         "::placeholder": {
           color: "#aab7c4",
         },
-        padding: "12px 15px",
       },
       invalid: {
         color: "#fa755a",
@@ -430,7 +432,7 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
     <Modal
       show={show}
       onHide={onHide}
-      centered={false}
+      centered={true} // Set to true for proper centering
       dialogClassName={styles["payment-modal-dialog"]}
       contentClassName={styles["payment-modal-content"]}
     >
@@ -536,18 +538,16 @@ const PaymentFormContent = ({ show, onHide, onSuccess, onError, amountNeeded, cu
                       {stripeReady ? (
                         <div className={styles["stripe-card-number-wrapper"]}>
                           <CardNumberElement onChange={handleCardNumberChange} options={cardNumberStyle} />
+                          {/* Placeholder for Autofill link */}
+                          <div className={styles["autofill-link"]}>
+                            <span>Autofill link</span>
+                          </div>
                         </div>
                       ) : (
                         <div className={styles["loading-stripe"]}>Loading payment form...</div>
                       )}
                       <div className={styles["card-logo"]}>
-                        <Image
-                          src="/placeholder.svg?height=24&width=40"
-                          alt="Visa"
-                          width={40}
-                          height={24}
-                          style={{ marginRight: 337 }}
-                        />
+                        <Image src="/placeholder.svg?height=24&width=40" alt="Visa" width={40} height={24} />
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
