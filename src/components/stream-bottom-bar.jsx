@@ -69,6 +69,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
   const lastCameraHolderNameRef = useRef(null)
   // Get wallet balance from context
   const [walletBalance, setWalletBalance] = useState(0)
+
   // Add this function to update the wallet balance
   const updateWalletBalanceUI = (newBalance) => {
     setWalletBalance(newBalance)
@@ -84,6 +85,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       window.dispatchEvent(event)
     }
   }
+
   // Initialize wallet balance from localStorage on component mount
   useEffect(() => {
     // Get initial wallet balance from localStorage
@@ -92,6 +94,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       setWalletBalance(userData.walletBalance)
     }
   }, [])
+
   // Check if user is logged in on component mount
   useEffect(() => {
     const token = localStorage.getItem("authToken")
@@ -110,6 +113,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       window.removeEventListener("resize", checkMobile)
     }
   }, [])
+
   // Add a function to handle token expiration and automatic logout
   const handleTokenExpiration = () => {
     // Clear auth token
@@ -124,6 +128,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     // Show message
     setBetError("Your session has expired. Please log in again.")
   }
+
   // Add token expiration check to fetchWalletBalance function
   // Update the fetchWalletBalance function to ensure it uses the actual balance
   const fetchWalletBalance = async () => {
@@ -195,6 +200,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       }
     }
   }
+
   // Calculate potential payout based on current odds with 5% platform fee
   const calculatePotentialPayout = useCallback(
     (amount, choice) => {
@@ -216,6 +222,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     },
     [currentQuestion],
   )
+
   // Modify the handleNewQuestion function to ensure timer appears immediately
   const handleNewQuestion = useCallback(
     (data) => {
@@ -285,7 +292,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       }, 1000)
       // Reset betting state
       setSelectedChoice(null)
-      setBetAmount("100")
+      // REMOVED: setBetAmount("100"); // This line was causing the bet amount to reset
       setBetError(null)
       setBetSuccess(false)
       // Update percentages
@@ -294,7 +301,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       // Update total bets for this question
       setCurrentQuestionTotalBets(formatCurrency(normalizedQuestion.totalBetAmount))
       setCurrentQuestionPlayers(normalizedQuestion.totalPlayers)
-
       // Notify parent component of question update
       if (onQuestionUpdate) {
         onQuestionUpdate(normalizedQuestion, timeLeft)
@@ -302,6 +308,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     },
     [onQuestionUpdate],
   )
+
   // New handler functions for question events
   const handleNewQuestionReceived = (event) => {
     if (event.detail && event.detail.question) {
@@ -309,12 +316,14 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       handleNewQuestion(event.detail.question)
     }
   }
+
   const handleCurrentQuestionReceived = (event) => {
     if (event.detail && event.detail.question) {
       console.log("Current question event received:", event.detail.question)
       handleNewQuestion(event.detail.question)
     }
   }
+
   // Watch for camera holder changes to reset timer and fetch new question
   const fetchActiveQuestion = useCallback(
     async (retryCount = 0, forceRefresh = false) => {
@@ -404,6 +413,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     },
     [cameraHolder, handleNewQuestion, onQuestionUpdate],
   )
+
   useEffect(() => {
     if (cameraHolder && cameraHolder.CameraHolderName) {
       // Check if camera holder name has changed
@@ -425,11 +435,15 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       }
     }
   }, [cameraHolder, fetchActiveQuestion])
+
   // Initialize socket connection and fetch active question
   useEffect(() => {
-    // Initialize socket
+    // Initialize socket (assuming this is a singleton and only connects if not already connected)
     const socket = initializeSocket()
     socketRef.current = socket
+    // Set initial connection status immediately
+    setSocketConnected(socket.connected)
+
     // Track socket connection status
     socket.on("connect", () => {
       setSocketConnected(true)
@@ -453,6 +467,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     socket.on("disconnect", () => {
       setSocketConnected(false)
     })
+
     // Initialize with any existing camera holder
     const initialCameraHolder = getCurrentCameraHolder()
     if (initialCameraHolder) {
@@ -473,6 +488,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         }
       })
     }
+
     // Listen for camera holder updates
     const handleCameraHolderUpdate = (event) => {
       if (event.detail && event.detail.cameraHolder) {
@@ -484,6 +500,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         }
       }
     }
+
     // Add listener for active_question_loaded events from the API
     const handleActiveQuestionLoaded = (event) => {
       if (event.detail && event.detail.question) {
@@ -491,6 +508,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         handleNewQuestion(event.detail.question)
       }
     }
+
     // Add listener for question_refreshed events
     const handleQuestionRefreshed = (event) => {
       if (event.detail && event.detail.question) {
@@ -498,6 +516,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         handleNewQuestion(event.detail.question)
       }
     }
+
     // Add listener for socket connection events
     const handleSocketConnected = () => {
       setSocketConnected(true)
@@ -505,6 +524,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     const handleSocketDisconnected = () => {
       setSocketConnected(false)
     }
+
     window.addEventListener("camera_holder_updated", handleCameraHolderUpdate)
     window.addEventListener("new_question_received", handleNewQuestionReceived)
     window.addEventListener("current_question_received", handleCurrentQuestionReceived)
@@ -512,10 +532,12 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     window.addEventListener("question_refreshed", handleQuestionRefreshed)
     window.addEventListener("socket_connected", handleSocketConnected)
     window.addEventListener("socket_disconnected", handleSocketDisconnected)
+
     // Fetch active question immediately
     fetchActiveQuestion(0, true)
     // Fetch betting stats
     fetchBettingStats()
+
     // Listen for socket events with updated event names
     socketEvents.onNewQuestion((data) => {
       console.log("New question from socket:", data)
@@ -578,7 +600,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             : data.biggestWinThisWeek
         setBiggestWin(formatCurrency(rawValue))
       } else {
-        // If biggestWinThisWeek is not provided, set to $0
+        // If biggestWinThisWeek is not provided, set to "$0"
         setBiggestWin("$0")
       }
       if (data.activePlayers !== undefined) {
@@ -597,6 +619,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         setTotalPlayers(data.count)
       }
     })
+
     // Listen for wallet updates
     socket.on("wallet_update", (data) => {
       if (data.newBalance !== undefined) {
@@ -614,6 +637,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         }
       }
     })
+
     // Listen for bet results
     socket.on("bet_result", (data) => {
       if (data.success && data.newBalance !== undefined) {
@@ -635,6 +659,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         }
       }
     })
+
     // Add a socket event listener for biggest win updates
     socket.on("biggest_win_update", (data) => {
       if (data.biggestWinThisWeek !== undefined) {
@@ -646,6 +671,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         setBiggestWin(formatCurrency(rawValue))
       }
     })
+
     socket.on("camera_holder_update", (data) => {
       if (data && data.cameraHolder) {
         setCameraHolder(data.cameraHolder)
@@ -656,6 +682,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         window.dispatchEvent(event)
       }
     })
+
     // Set up more frequent camera holder checks to ensure we always have a question
     cameraHolderCheckRef.current = setInterval(() => {
       const now = Date.now()
@@ -682,6 +709,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         }
       }
     }, 1000) // Check every second instead of 500ms
+
     // Set up automatic question refresh every 15 seconds instead of 30
     questionRefreshTimerRef.current = setInterval(() => {
       if (cameraHolder && cameraHolder.CameraHolderName && cameraHolder.CameraHolderName !== "None") {
@@ -692,6 +720,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         }
       }
     }, 30000) // Increase to 30 seconds instead of 15
+
     // Remove any debug buttons that might have been added
     if (typeof document !== "undefined") {
       const debugButton = document.getElementById("socket-debug-button")
@@ -699,6 +728,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         debugButton.remove()
       }
     }
+
     // Add this after the other socket event listeners
     socket.on("question_update", (data) => {
       console.log("Question update received:", data)
@@ -712,6 +742,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         )
       }
     })
+
     // Also listen for question_created events
     socket.on("question_created", (data) => {
       console.log("Question created received:", data)
@@ -725,27 +756,15 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         )
       }
     })
+
     return () => {
-      // Clean up socket listeners with updated event names
+      // Clean up socketEvents listeners
       socketEvents.removeListener("new_question")
       socketEvents.removeListener("bet_placed")
       socketEvents.removeListener("question_resolved")
       socketEvents.removeListener("betting_stats")
       socketEvents.removeListener("total_bets_update")
       socketEvents.removeListener("player_count_update")
-      socket.off("wallet_update")
-      socket.off("bet_result")
-      socket.off("biggest_win_update")
-      socket.off("camera_holder_update")
-      socket.off("question_update")
-      socket.off("question_created")
-      window.removeEventListener("camera_holder_updated", handleCameraHolderUpdate)
-      window.removeEventListener("new_question_received", handleNewQuestionReceived)
-      window.removeEventListener("current_question_received", handleCurrentQuestionReceived)
-      window.removeEventListener("active_question_loaded", handleActiveQuestionLoaded)
-      window.removeEventListener("question_refreshed", handleQuestionRefreshed)
-      window.removeEventListener("socket_connected", handleSocketConnected)
-      window.removeEventListener("socket_disconnected", handleSocketDisconnected)
       // Clear any active timer
       if (timerRef.current) {
         clearInterval(timerRef.current)
@@ -760,6 +779,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       }
     }
   }, [cameraHolder, currentQuestion, fetchActiveQuestion, handleNewQuestion, lastCameraHolderUpdate, onQuestionUpdate])
+
   // Update potential payout when bet amount or choice changes
   useEffect(() => {
     if (selectedChoice && betAmount) {
@@ -769,6 +789,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       setPotentialPayout("$0")
     }
   }, [selectedChoice, betAmount, currentQuestion, calculatePotentialPayout])
+
   // Add a global API response interceptor to check for token expiration
   useEffect(() => {
     const handleApiResponse = (event) => {
@@ -791,6 +812,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       window.removeEventListener("api_response", handleApiResponse)
     }
   }, [])
+
   // Listen for payment success events
   useEffect(() => {
     const handlePaymentSuccess = (event) => {
@@ -812,6 +834,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       window.removeEventListener("payment_success", handlePaymentSuccess)
     }
   }, [pendingBetData, autoPlaceBetAfterPayment])
+
   // Format currency
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "$0"
@@ -825,14 +848,15 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     // Format the number with $ sign and commas
     return `$${numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
+
   // Format countdown time
   const formatCountdown = (seconds) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
-  // Now modify the fetchActiveQuestion function to remove the fallback question creation
 
+  // Now modify the fetchActiveQuestion function to remove the fallback question creation
   // Fetch betting stats - enhanced to get real data
   const fetchBettingStats = async () => {
     try {
@@ -880,6 +904,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       }
     }
   }
+
   // Function to place a bet after successful payment
   const placeBetAfterPayment = async (betData) => {
     try {
@@ -928,6 +953,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       setIsProcessing(false)
     }
   }
+
   // Add this function to update betting stats after placing a bet
   const updateStatsAfterBet = (betAmount) => {
     // Update question-specific total bets by adding the new bet amount
@@ -940,6 +966,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     // Increment current question player count
     setCurrentQuestionPlayers((prevCount) => prevCount + 1)
   }
+
   // Handle payment success
   const handlePaymentSuccess = (paymentData) => {
     // Update wallet balance
@@ -972,11 +999,13 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     // Close the payment modal
     setShowPaymentModal(false)
   }
+
   // Modify handlePlaceBet to check for token expiration
   const handlePlaceBet = async (choice, fundsAlreadyAdded = false) => {
     // Reset status
     setBetSuccess(false)
     setBetError(null)
+
     // Check authentication first
     const token = localStorage.getItem("authToken")
     if (!token || !isLoggedIn) {
@@ -984,20 +1013,25 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       setShowAuthModal(true)
       return
     }
+
     // Check if there's a valid camera holder
     if (!cameraHolder || !cameraHolder.CameraHolderName || cameraHolder.CameraHolderName === "None") {
       // Don't show error message here
       return
     }
-    if (!choice || !betAmount || countdown <= 0) {
-      setBetError("Please select Yes or No and enter a bet amount")
+
+    if (!betAmount || countdown <= 0) {
+      setBetError("Please enter a bet amount")
       return
     }
+
     try {
       setIsProcessing(true)
       const betAmountNumber = Number.parseFloat(betAmount)
+
       // Get the latest wallet balance
       await fetchWalletBalance()
+
       // Check if user has enough balance
       if (betAmountNumber > walletBalance && !fundsAlreadyAdded) {
         // Calculate how much more is needed
@@ -1005,6 +1039,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         // Show error message with exact amount needed
         setBetError(`Insufficient balance. You need $${additionalFundsNeeded.toFixed(2)} more to place this bet.`)
         setBetSuccess(false) // Ensure success message is cleared
+
         // Prepare bet data for after payment
         const betData = {
           questionId: currentQuestion.id,
@@ -1038,14 +1073,17 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         setIsProcessing(false)
         return
       }
+
       // Get current stream ID from URL or use a default
       const streamId = getStreamId()
+
       // Make sure we have a valid question ID
       if (!currentQuestion || !currentQuestion.id) {
         setBetError("No active betting question available")
         setIsProcessing(false)
         return
       }
+
       // Prepare the bet data
       const betData = {
         questionId: currentQuestion.id,
@@ -1053,6 +1091,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         amount: betAmountNumber,
         streamId: streamId,
       }
+
       // Optimistically update the UI to show the bet amount deducted
       const newBalance = walletBalance - betAmountNumber
       updateWalletBalanceUI(newBalance)
@@ -1067,6 +1106,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         })
         window.dispatchEvent(event)
       }
+
       // Only update stats and show success if we have sufficient funds
       if (betAmountNumber <= walletBalance) {
         // IMPORTANT: Update stats immediately for better UX
@@ -1081,6 +1121,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           outcome: choice, // Optimistically show the user's choice as the outcome
         }))
       }
+
       const response = await bettingAPI.placeBet(betData)
       if (response.success) {
         // Update wallet balance with the actual value from the server
@@ -1190,11 +1231,13 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       setIsProcessing(false)
     }
   }
+
   // Function to get the stream ID from the URL
   const getStreamId = () => {
     const currentUrl = window.location.pathname
     return currentUrl.includes("/stream/") ? currentUrl.split("/stream/")[1].split("/")[0] : "default-stream"
   }
+
   // Handle auth state changes from the AuthHeaderButtons component
   const handleAuthStateChange = (loggedIn, userData) => {
     setIsLoggedIn(loggedIn)
@@ -1207,23 +1250,27 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       setShowAuthModal(false)
     }
   }
+
   // Handle signup button click
   const handleSignupClick = () => {
     setInitialAuthView("signup")
     setShowAuthModal(true)
   }
+
   // Handle subscribe button click
   const handleSubscribeClick = () => {
     setPaymentAmount(10) // Default subscription amount
     setPaymentForBet(false)
     setShowPaymentModal(true)
   }
+
   // Handle add funds click
   const handleAddFundsClick = (amount = 10) => {
     setPaymentAmount(amount)
     setPaymentForBet(false)
     setShowPaymentModal(true)
   }
+
   // Mobile Bottom Bar
   const renderMobileBottomBar = () => {
     return (
@@ -1234,7 +1281,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           left: 0,
           right: 0,
           background: "#071323",
-          padding: "10px",
+          padding: "-3px", // Corrected padding
           display: "flex",
           justifyContent: "space-around",
           zIndex: 1000,
@@ -1249,7 +1296,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             background: "none",
             border: "none",
             color: "white",
-            padding: "25px 0",
+            padding: "15px 0",
             width: "20%",
           }}
         >
@@ -1260,6 +1307,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       </div>
     )
   }
+
   // Replace the existing betting section with the new design while keeping the betting functionality
   const renderDonationSection = () => {
     // This function was not provided in the previous context, adding a placeholder
@@ -1298,12 +1346,14 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       </div>
     )
   }
+
   const renderBettingSection = () => {
     return (
       <div
         style={{
-          backgroundColor: "rgba(15, 23, 42, 0.95)",
-          padding: "15px",
+          background: "linear-gradient(180deg, #022A57 0%, #08192C 100%)", // Solid dark background from screenshot
+          color: "white",
+          padding: "15px", // Adjusted padding to match screenshot
           borderRadius: "16px 16px 0 0",
           position: "fixed",
           bottom: "60px",
@@ -1313,289 +1363,375 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           boxShadow: "0px -4px 20px rgba(0, 0, 0, 0.5)",
           maxHeight: "60vh",
           overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-          <span style={{ color: "#06b6d4", fontWeight: "bold", fontSize: "16px" }}>Place a Bet</span>
-          <button
+        {/* Back Arrow and Question */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+            marginBottom: "15px",
+            justifyContent: "flex-start", // Align to start for back arrow
+          }}
+        >
+          <ArrowLeft
+            size={24}
+            style={{ color: "white", cursor: "pointer", marginRight: "10px" }}
             onClick={() => setActiveMobileSection(null)}
+          />
+          <div style={{ flex: 1, textAlign: "center", fontSize: "20px", fontWeight: "bold", color: "#0ea5e9" }}>
+            {currentQuestion?.question || "No active question"}
+          </div>
+          <div style={{ width: "24px", marginLeft: "10px" }}></div> {/* Spacer for alignment */}
+        </div>
+
+        {/* Bets closing in timer */}
+        <div style={{ color: "#9ca3af", fontSize: "14px", marginBottom: "25px", textAlign: "center" }}>
+          Bets closing in <span style={{ color: "#ef4444", fontWeight: "bold" }}>{formatCountdown(countdown)}</span>
+        </div>
+
+        {/* Current Cash Amount Input */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            backgroundColor: "#0e1a2b",
+            border: "1px solid #1a2b3c", // Added border
+            borderRadius: "6px",
+            position: "relative",
+            height: "45px",
+            width: "100%",
+            marginBottom: "15px",
+          }}
+        >
+          <span style={{ color: "#06b6d4", marginLeft: "15px", marginRight: "10px" }}>
+            <img src="/assets/img/paymenticon/ruppe.png" width="16" height="16" alt="currency icon" />
+          </span>
+          <input
+            type="text"
+            placeholder="Enter Bet Amount"
+            value={betAmount}
+            onChange={(e) => setBetAmount(e.target.value)}
             style={{
-              background: "none",
+              flex: 1,
+              backgroundColor: "transparent",
               border: "none",
               color: "white",
-              fontSize: "20px",
+              fontSize: "14px",
+              outline: "none",
+              paddingRight: "5px", // Add padding to prevent text overlapping CLEAR
+            }}
+          />
+          <span
+            style={{
+              marginRight: "12px",
+              color: "#9ca3af",
+              fontSize: "12px",
               cursor: "pointer",
             }}
+            onClick={() => setBetAmount("")}
           >
-            ×
+            CLEAR
+          </span>
+        </div>
+
+        {/* Quick Bet Buttons */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "nowrap", // Ensure no wrapping
+            gap: "6px", // Adjusted gap
+            width: "100%",
+            marginBottom: "20px",
+            // Removed overflowX: "auto" and paddingBottom as buttons should now fit
+          }}
+        >
+          <button
+            style={{
+              flex: "0 0 calc((100% - 36px) / 7)", // Distribute space evenly for 7 buttons with 6px gaps
+              backgroundColor: "#0e1a2b",
+              border: "1px solid #1a2b3c",
+              borderRadius: "6px",
+              color: "#06b6d4",
+              padding: "8px 0", // Consistent vertical padding, no horizontal padding
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              whiteSpace: "nowrap", // Prevent text wrapping inside button
+            }}
+            onClick={() => setBetAmount((prev) => (Number.parseFloat(prev) || 0) + 0.1 + "")}
+          >
+            +0.1
+          </button>
+          <button
+            style={{
+              flex: "0 0 calc((100% - 36px) / 7)",
+              backgroundColor: "#0e1a2b",
+              border: "1px solid #1a2b3c",
+              borderRadius: "6px",
+              color: "#06b6d4",
+              padding: "8px 0",
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+            onClick={() => setBetAmount((prev) => (Number.parseFloat(prev) || 0) + 1 + "")}
+          >
+            +1
+          </button>
+          <button
+            style={{
+              flex: "0 0 calc((100% - 36px) / 7)",
+              backgroundColor: "#0e1a2b",
+              border: "1px solid #1a2b3c",
+              borderRadius: "6px",
+              color: "#06b6d4",
+              padding: "8px 0",
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+            onClick={() => setBetAmount((prev) => (Number.parseFloat(prev) || 0) + 10 + "")}
+          >
+            +10
+          </button>
+          <button
+            style={{
+              flex: "0 0 calc((100% - 36px) / 7)",
+              backgroundColor: "#0e1a2b",
+              border: "1px solid #1a2b3c",
+              borderRadius: "6px",
+              color: "#06b6d4",
+              padding: "8px 0",
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+            onClick={() => setBetAmount((prev) => (Number.parseFloat(prev) || 0) + 100 + "")}
+          >
+            +100
+          </button>
+          <button
+            style={{
+              flex: "0 0 calc((100% - 36px) / 7)",
+              backgroundColor: "#0e1a2b",
+              border: "1px solid #1a2b3c",
+              borderRadius: "6px",
+              color: "#06b6d4",
+              padding: "8px 0",
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+            onClick={() => setBetAmount((prev) => (Number.parseFloat(prev) / 2).toFixed(2))}
+          >
+            1/2
+          </button>
+          <button
+            style={{
+              flex: "0 0 calc((100% - 36px) / 7)",
+              backgroundColor: "#0e1a2b",
+              border: "1px solid #1a2b3c",
+              borderRadius: "6px",
+              color: "#06b6d4",
+              padding: "8px 0",
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+            onClick={() => setBetAmount((prev) => (Number.parseFloat(prev) * 2).toFixed(2))}
+          >
+            X2
+          </button>
+          <button
+            style={{
+              flex: "0 0 calc((100% - 36px) / 7)", // Now part of the same flex row
+              backgroundColor: "#0ea5e9", // Blue color from screenshot
+              border: "none",
+              borderRadius: "6px",
+              color: "white",
+              padding: "8px 0", // Consistent padding
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+            onClick={() => setBetAmount(walletBalance.toFixed(2))}
+          >
+            MAX
           </button>
         </div>
-        <>
-          {!cameraHolder || !cameraHolder.CameraHolderName || cameraHolder.CameraHolderName === "None" ? (
-            <div style={{ color: "#ef4444", fontSize: "14px", marginBottom: "15px", textAlign: "center" }}>
-              {/* Removed error message as requested */}
-            </div>
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "15px",
-                position: "relative",
-              }}
-            >
-              <div>
-                {/* Use the full question text from the server instead of constructing it */}
-                <span style={{ fontSize: "16px", color: "white" }}>{currentQuestion?.question || ""}</span>
-              </div>
-              {/* Always show timer when question is available */}
-              <div
-                style={{
-                  position: "absolute",
-                  right: "0",
-                  top: "0",
-                  bottom: "0",
-                  backgroundColor: "#7f1d1d",
-                  border: "1px solid #b91c1c",
-                  borderRadius: "4px",
-                  color: "white",
-                  padding: "2px 8px",
-                  fontSize: "14px",
-                  fontWeight: "bold",
-                }}
-              >
-                {formatCountdown(countdown)}
-              </div>
-            </div>
-          )}
-          {/* Yes/No buttons with percentages */}
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}>
-            {/* YES button with centered percentage */}
-            <div style={{ position: "relative", width: "48%", height: "40px" }}>
-              <button
-                onClick={() => setSelectedChoice("Yes")}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  backgroundColor: selectedChoice === "Yes" ? "#15803d" : "#0e4429",
-                  border: "1px solid #15803d",
-                  borderRadius: "4px",
-                  color: "#22c55e",
-                  padding: "8px 15px",
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                  textAlign: "left",
-                  cursor: countdown > 0 ? "pointer" : "not-allowed",
-                  opacity: countdown > 0 ? 1 : 0.7,
-                }}
-                disabled={countdown <= 0}
-              >
-                YES
-              </button>
-              <div
-                style={{
-                  position: "absolute",
-                  right: "0",
-                  top: "0",
-                  bottom: "0",
-                  backgroundColor: "#166534",
-                  borderTopRightRadius: "4px",
-                  borderBottomRightRadius: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "40px",
-                  color: "white",
-                  fontSize: "14px",
-                  fontWeight: "bold",
-                }}
-              >
-                {yesPercentage}%
-              </div>
-            </div>
-            {/* NO button with centered percentage */}
-            <div style={{ position: "relative", width: "48%", height: "40px" }}>
-              <button
-                onClick={() => setSelectedChoice("No")}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  backgroundColor: selectedChoice === "No" ? "#b91c1c" : "#7f1d1d",
-                  border: "1px solid #b91c1c",
-                  borderRadius: "4px",
-                  color: "#ef4444",
-                  padding: "8px 15px",
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                  textAlign: "left",
-                  cursor: countdown > 0 ? "pointer" : "not-allowed",
-                  opacity: countdown > 0 ? 1 : 0.7,
-                }}
-                disabled={countdown <= 0}
-              >
-                NO
-              </button>
-              <div
-                style={{
-                  position: "absolute",
-                  right: "0",
-                  top: "0",
-                  bottom: "0",
-                  backgroundColor: "#b91c1c",
-                  borderTopRightRadius: "4px",
-                  borderBottomRightRadius: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "40px",
-                  color: "white",
-                  fontSize: "14px",
-                  fontWeight: "bold",
-                }}
-              >
-                {noPercentage}%
-              </div>
-            </div>
+
+        {/* Error and success messages */}
+        {betError && (
+          <div style={{ color: "#ef4444", fontSize: "14px", marginBottom: "10px", textAlign: "center" }}>
+            {betError}
           </div>
-          <div style={{ marginBottom: "15px" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                backgroundColor: "#1e293b",
-                borderRadius: "8px",
-                position: "relative",
-                height: "50px",
-                width: "100%",
-                marginBottom: "10px",
-              }}
-            >
-              <span style={{ color: "#06b6d4", marginLeft: "15px", marginRight: "10px" }}>
-                <img src="/assets/img/paymenticon/ruppe.png" width="16" height="16" alt="help icon" />
-              </span>
-              <span style={{ color: "#06b6d4", fontSize: "18px", fontWeight: "bold" }}>{betAmount}</span>
-              <span
-                style={{
-                  position: "absolute",
-                  right: "15px",
-                  color: "#9ca3af",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                }}
-                onClick={() => setBetAmount("")}
-              >
-                CLEAR
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
-              <button
-                style={{
-                  backgroundColor: "#1e293b",
-                  border: "none",
-                  borderRadius: "8px",
-                  color: "#06b6d4",
-                  padding: "10px",
-                  fontSize: "14px",
-                  flex: 1,
-                }}
-                onClick={() => setBetAmount((prev) => (Number.parseFloat(prev) || 0) + 1 + "")}
-              >
-                +1.00
-              </button>
-              <button
-                style={{
-                  backgroundColor: "#1e293b",
-                  border: "none",
-                  borderRadius: "8px",
-                  color: "#06b6d4",
-                  padding: "10px",
-                  fontSize: "14px",
-                  flex: 1,
-                }}
-                onClick={() => setBetAmount((prev) => (Number.parseFloat(prev) || 0) + 5 + "")}
-              >
-                +5.00
-              </button>
-              <button
-                style={{
-                  backgroundColor: "#1e293b",
-                  border: "none",
-                  borderRadius: "8px",
-                  color: "#06b6d4",
-                  padding: "10px",
-                  fontSize: "14px",
-                  flex: 1,
-                }}
-                onClick={() => setBetAmount((prev) => (Number.parseFloat(prev) || 0) + 10 + "")}
-              >
-                +10.00
-              </button>
-            </div>
+        )}
+        {betSuccess && (
+          <div style={{ color: "#22c55e", fontSize: "14px", marginBottom: "10px", textAlign: "center" }}>
+            Bet placed successfully!
           </div>
-          {/* Error and success messages */}
-          {betError && (
-            <div style={{ color: "#ef4444", fontSize: "14px", marginBottom: "10px", textAlign: "center" }}>
-              {betError}
-            </div>
-          )}
-          {betSuccess && (
-            <div style={{ color: "#22c55e", fontSize: "14px", marginBottom: "10px", textAlign: "center" }}>
-              Bet placed successfully!
-            </div>
-          )}
+        )}
+
+        {/* YES/NO Buttons */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row", // Changed to row for side-by-side
+            gap: "15px",
+            width: "100%",
+            marginBottom: "20px",
+          }}
+        >
           <button
-            onClick={() => handlePlaceBet(selectedChoice)}
-            disabled={!selectedChoice || isProcessing || countdown <= 0}
+            onClick={() => handlePlaceBet("Yes")} // Call handlePlaceBet directly
+            disabled={isProcessing || countdown <= 0} // Disable if not 'Yes' or processing/timer up
             style={{
-              backgroundColor: "#06b6d4",
-              border: "none",
-              borderRadius: "8px",
+              backgroundColor: "#22c55e", // Green color from screenshot
+              border: "none", // No border
+              borderRadius: "6px",
               color: "white",
               padding: "12px",
-              fontSize: "16px",
+              fontSize: "18px",
               fontWeight: "bold",
-              width: "100%",
-              marginBottom: "10px",
-              opacity: !selectedChoice || isProcessing || countdown <= 0 ? 0.7 : 1,
-            }}
-          >
-            {isProcessing ? "PROCESSING..." : "PLACE BET"}
-          </button>
-          {/* Stats row with dynamic values */}
-          <div
-            style={{
+              flex: 1, // Take equal width
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              fontSize: "12px",
-              color: "#9ca3af",
-              marginTop: "10px",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: !isProcessing && countdown > 0 ? "pointer" : "not-allowed",
+              opacity: !isProcessing && countdown > 0 ? 1 : 0.7,
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div>
-                <span>Total Bets:</span>
-                <span style={{ color: "#06b6d4" }}> {currentQuestionTotalBets}</span>
-              </div>
-              <div>
-                <span>Biggest Win:</span>
-                <span style={{ color: "#06b6d4" }}> {biggestWin}</span>
-              </div>
+            YES
+            <span style={{ fontSize: "10px", fontWeight: "normal", marginTop: "2px" }}>PLACE BET WIN 2X</span>
+          </button>
+          <button
+            onClick={() => handlePlaceBet("No")} // Call handlePlaceBet directly
+            disabled={isProcessing || countdown <= 0} // Disable if not 'No' or processing/timer up
+            style={{
+              backgroundColor: "#ef4444", // Red color from screenshot
+              border: "none", // No border
+              borderRadius: "6px",
+              color: "white",
+              padding: "12px",
+              fontSize: "18px",
+              fontWeight: "bold",
+              flex: 1, // Take equal width
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: !isProcessing && countdown > 0 ? "pointer" : "not-allowed",
+              opacity: !isProcessing && countdown > 0 ? 1 : 0.7,
+            }}
+          >
+            NO
+            <span style={{ fontSize: "10px", fontWeight: "normal", marginTop: "2px" }}>PLACE BET WIN 2X</span>
+          </button>
+        </div>
+
+        {/* Current Bet Status */}
+        <div
+          style={{
+            width: "100%",
+            marginBottom: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", color: "white", fontSize: "14px" }}>
+              <Check size={16} style={{ color: "#22c55e", marginRight: "5px" }} /> Yes
             </div>
-            <div style={{ textAlign: "center" }}>
-              <span style={{ color: "white", fontWeight: "bold" }}>{currentQuestionPlayers} Players</span> Have Already
-              Bet
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <span>Potential Payout:</span>
-              <span style={{ color: "#06b6d4" }}> {potentialPayout}</span>
+            <div style={{ color: "white", fontSize: "14px" }}>
+              {formatCurrency(currentQuestion?.yesTotalBetAmount || 0)}
+              <ChevronDown size={16} style={{ marginLeft: "5px" }} />
             </div>
           </div>
-        </>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", color: "white", fontSize: "14px" }}>
+              <X size={16} style={{ color: "#ef4444", marginRight: "5px" }} /> No
+            </div>
+            <div style={{ color: "white", fontSize: "14px" }}>
+              {formatCurrency(currentQuestion?.noTotalBetAmount || 0)}
+              <ChevronDown size={16} style={{ marginLeft: "5px" }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Your Balance and Add Balance Button */}
+        <div
+          style={{
+            width: "100%",
+            marginTop: "auto", // Push to bottom
+            paddingTop: "15px", // Corrected padding
+            borderTop: "1px solid #1e293b",
+            display: "flex",
+            flexDirection: "row", // Changed to row
+            justifyContent: "space-between", // Added for spacing
+          }}
+        >
+          <div style={{ fontSize: "14px", color: "white" }}>
+            Your Balance: <span style={{ color: "#06b6d4", fontWeight: "bold" }}>{formatCurrency(walletBalance)}</span>
+          </div>
+          <button
+            onClick={() => handleAddFundsClick(10)} // Default to $10 or adjust as needed
+            style={{
+              backgroundColor: "#0ea5e9", // Blue color from screenshot
+              border: "none",
+              borderRadius: "6px",
+              color: "white",
+              padding: "4px", // Corrected padding
+              fontSize: "14px", // Corrected font size
+              fontWeight: "bold",
+              width: "120px", // Set fixed width
+              cursor: "pointer",
+              height: "45px", // Corrected height
+            }}
+          >
+            ADD BALANCE
+          </button>
+        </div>
+
+        {/* Socket Connection Indicator (kept for debugging/info) */}
+        <div
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            fontSize: "12px",
+            color: socketConnected ? "#22c55e" : "#ef4444",
+          }}
+        >
+          <div
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              backgroundColor: socketConnected ? "#22c55e" : "#ef4444",
+            }}
+          ></div>
+          {socketConnected ? "Connected" : "Disconnected"}
+        </div>
       </div>
     )
   }
+
   // In the useEffect hook that checks for insufficient funds:
   useEffect(() => {
     // Get the current wallet balance
@@ -1623,14 +1759,14 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       setAmountNeeded(0)
     }
   }, [betAmount, walletBalance])
+
   return (
     <>
       {/* Desktop version */}
       {!isMobile && (
         <div
           style={{
-            background: "linear-gradient(180deg, #022A57 0%, #08192C 100%)",
- // Solid dark background from screenshot
+            background: "linear-gradient(180deg, #022A57 0%, #08192C 100%)", // Solid dark background from screenshot
             color: "white",
             padding: "15px", // Adjusted padding to match screenshot
             display: "flex",
@@ -2025,6 +2161,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           )}
         </div>
       )}
+
       {/* Mobile version */}
       {isMobile && (
         <>
@@ -2033,6 +2170,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           {activeMobileSection === "bet" && renderBettingSection()}
         </>
       )}
+
       {/* Payment Modal */}
       {showPaymentModal && (
         <PaymentModal
