@@ -8,6 +8,7 @@ import { useSocket } from "../../components/contexts/SocketContext"
 import { useMediaQuery } from "../../components/chat/use-mobile"
 import StreamBottomBar from "@/components/stream-bottom-bar"
 import { MessageCircle, Gem, Send } from "lucide-react" // Import Lucide icons
+import { usePathname } from "next/navigation" // Import usePathname
 
 const getValidImageUrl = (url) => {
   if (!url || typeof url !== "string") {
@@ -83,6 +84,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
   const [isRateLimited, setIsRateLimited] = useState(false)
   const [rateLimitMessage, setRateLimitMessage] = useState("")
   const rateLimitTimerRef = useRef(null)
+  const pathname = usePathname() // Get the current pathname
 
   useEffect(() => {
     const { isLoggedIn } = getAuthDetails()
@@ -134,7 +136,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
     e.preventDefault()
     if (isReadOnly) return
     if (!message.trim() || !socket || !isConnected) return
-
     const { isLoggedIn, anonymousId, customUsername } = getAuthDetails()
     if (!isLoggedIn) {
       setPendingMessage(message)
@@ -142,21 +143,17 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
       setShowAuthModal(true)
       return
     }
-
     if (isRateLimited) {
       setRateLimitMessage("Please wait before sending more messages")
       return
     }
-
     const messageContent = message.trim()
-
     const senderDetails = {
       id: isLoggedIn ? currentUserData?.id : anonymousId,
       username: isLoggedIn ? currentUserData?.username : customUsername,
       profilePicture: isLoggedIn ? getValidImageUrl(currentUserData?.avatar) : "/placeholder.svg?height=40&width=40",
       isAnonymous: !isLoggedIn,
     }
-
     const tempMessage = {
       id: `temp-${Date.now()}`,
       content: messageContent,
@@ -166,23 +163,19 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
       replyTo: null,
       isPending: true,
     }
-
     setMessages((prev) => [...prev, tempMessage])
-
     console.log("Sending message via socket:", {
       content: messageContent,
       streamId,
       replyTo: null,
       sender: senderDetails,
     })
-
     socket.emit("send_message", {
       content: messageContent,
       streamId,
       replyTo: null,
       sender: senderDetails,
     })
-
     setMessage("")
   }
 
@@ -397,7 +390,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
                 height: "45px",
                 marginRight: "8px",
                 overflow: "hidden",
-                marginBottom:"25px"
+                marginBottom: "25px",
               }}
             >
               <input
@@ -520,62 +513,63 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
       }}
     >
       {/* Toggle Buttons */}
-      <div
-        className={styles.topTabs}
-        style={{
-          display: "flex",
-          width: "100%",
-          borderBottom: "1px solid #1e293b",
-        }}
-      >
-        <button
-          className={`${styles.tabButton} ${activeTab === "chat" ? styles.active : ""}`}
-          onClick={() => setActiveTab("chat")}
+      {pathname !== "/chat" && ( // Conditionally render based on pathname
+        <div
+          className={styles.topTabs}
           style={{
-            flex: 1,
-            padding: "15px 0",
-            backgroundColor: activeTab === "chat" ? "#0ea5e9" : "transparent",
-            border: "none",
-            color: "white",
-            fontSize: "16px",
-            fontWeight: "bold",
-            cursor: "pointer",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-            transition: "background-color 0.3s ease",
-            borderRadius: "9px",
+            width: "100%",
+            borderBottom: "1px solid #1e293b",
           }}
         >
-          <MessageCircle size={20} />
-          CHAT
-        </button>
-        <button
-          className={`${styles.tabButton} ${activeTab === "bet" ? styles.active : ""}`}
-          onClick={() => setActiveTab("bet")}
-          style={{
-            flex: 1,
-            padding: "15px 0",
-            backgroundColor: activeTab === "bet" ? "#0ea5e9" : "transparent",
-            border: "none",
-            color: "white",
-            fontSize: "16px",
-            fontWeight: "bold",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-            transition: "background-color 0.3s ease",
-            borderRadius: "9px",
-          }}
-        >
-          <Gem size={20} />
-          BET
-        </button>
-      </div>
-
+          <button
+            className={`${styles.tabButton} ${activeTab === "chat" ? styles.active : ""}`}
+            onClick={() => setActiveTab("chat")}
+            style={{
+              flex: 1,
+              padding: "15px 0",
+              backgroundColor: activeTab === "chat" ? "#0ea5e9" : "transparent",
+              border: "none",
+              color: "white",
+              fontSize: "16px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              transition: "background-color 0.3s ease",
+              borderRadius: "9px",
+            }}
+          >
+            <MessageCircle size={20} />
+            CHAT
+          </button>
+          <button
+            className={`${styles.tabButton} ${activeTab === "bet" ? styles.active : ""}`}
+            onClick={() => setActiveTab("bet")}
+            style={{
+              flex: 1,
+              padding: "15px 0",
+              backgroundColor: activeTab === "bet" ? "#0ea5e9" : "transparent",
+              border: "none",
+              color: "white",
+              fontSize: "16px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              transition: "background-color 0.3s ease",
+              borderRadius: "9px",
+            }}
+          >
+            <Gem size={20} />
+            BET
+          </button>
+        </div>
+      )}
       {/* Chat Section */}
       {activeTab === "chat" ? (
         <>
@@ -672,7 +666,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
             )}
             <div ref={messagesEndRef} />
           </div>
-
           {showReplyUI && replyTo && !isReadOnly && (
             <ReplyMessage
               username={replyTo.sender.username}
@@ -684,7 +677,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
               replyTo={replyTo}
             />
           )}
-
           {!showReplyUI && !isReadOnly && (
             <form
               onSubmit={handleSendMessage}
@@ -740,7 +732,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
       ) : (
         <StreamBottomBar />
       )}
-
       {isRateLimited && rateLimitMessage && (
         <div
           style={{
@@ -758,7 +749,6 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
           {rateLimitMessage}
         </div>
       )}
-
       {showAuthModal && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
