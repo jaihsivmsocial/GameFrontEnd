@@ -1,23 +1,20 @@
 "use client"
-import MobileModel from "@/components/mobilebutton/mobileModel"
-import { useState, useEffect, useCallback, useRef } from "react"
-import { Check, X, ChevronDown, ArrowLeft } from "lucide-react" // Import necessary Lucide icons
+import { useState, useEffect, useRef } from "react"
+import { ArrowLeft, Check, X, ChevronDown } from "lucide-react"
 import "bootstrap/dist/css/bootstrap.min.css"
 import AuthHeaderButtons from "../components/register/SignupLogin"
 import PaymentModal from "../components/subscribes/PaymentModal"
-import { bettingAPI, getCameraHolder } from "../components/wallet-service/api"
+import { bettingAPI, walletAPI } from "../components/wallet-service/api"
 import {
   socketEvents,
   initializeSocket,
-  getSocket,
   getCurrentCameraHolder,
   getStreamId,
 } from "../components/wallet-service/socketService"
-import { walletAPI } from "../components/wallet-service/api"
+import { useSocket } from "../components/contexts/SocketContext" // Import useSocket hook
 
-export default function StreamBottomBar({ onQuestionUpdate }) {
-  const [donationAmount, setDonationAmount] = useState("")
-  const [betAmount, setBetAmount] = useState("")
+export default function StreamBottomBar() {
+  const [betAmount, setBetAmount] = useState("") // Changed default to empty string
   const [giftToPlayer, setGiftToPlayer] = useState(false)
   const [addToPrizepool, setAddToPrizepool] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -41,7 +38,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
   const [totalPlayers, setTotalPlayers] = useState(0)
   const [selectedChoice, setSelectedChoice] = useState(null)
   const [potentialPayout, setPotentialPayout] = useState("$0")
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false) // This state will now be set later
   const [betSuccess, setBetSuccess] = useState(false)
   const [betError, setBetError] = useState(null)
   // Add a new state variable for tracking players for the current question
@@ -50,8 +47,8 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
   const [autoPlaceBetAfterPayment, setAutoPlaceBetAfterPayment] = useState(false) // New state to track if bet should be auto-placed
   // Add state for camera holder
   const [cameraHolder, setCameraHolder] = useState(null)
-  // Add state for socket connection status
-  const [socketConnected, setSocketConnected] = useState(false)
+  // Use isConnected from SocketContext
+  const { socket, isConnected } = useSocket() // Use isConnected from context
   // Add this state to track the last update time
   const [lastCameraHolderUpdate, setLastCameraHolderUpdate] = useState(0)
   // Add state to track if timer is visible - always true now
@@ -63,8 +60,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
   const cameraHolderCheckRef = useRef(null)
   // Create a lastCameraHolderCheck ref to track when we last checked
   const lastCameraHolderCheckRef = useRef(Date.now())
-  // Create a socket ref to track the socket
-  const socketRef = useRef(null)
   // Create a ref to track the last camera holder name
   const lastCameraHolderNameRef = useRef(null)
   // Get wallet balance from context
@@ -202,112 +197,109 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
   }
 
   // Calculate potential payout based on current odds with 5% platform fee
-  const calculatePotentialPayout = useCallback(
-    (amount, choice) => {
-      if (!amount || !choice || !currentQuestion) return 0
-      // Convert amount to number if it's a string
-      const betAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
-      if (isNaN(betAmount) || betAmount <= 0) return 0
-      // Get the current odds based on yes/no percentages
-      const yesPercentage = currentQuestion.yesPercentage || 50
-      const noPercentage = currentQuestion.noPercentage || 50
-      // Calculate odds based on the choice
-      const odds = choice === "Yes" ? noPercentage / yesPercentage : yesPercentage / noPercentage
-      // Apply platform fee (5%)
-      const platformFee = 0.05
-      // Calculate potential payout using the formula: bet * 2 * 0.95
-      // This doubles the bet amount and then applies a 5% platform fee
-      const potentialPayout = betAmount * 2 * (1 - platformFee)
-      return potentialPayout
-    },
-    [currentQuestion],
-  )
+  const calculatePotentialPayout = (amount, choice) => {
+    if (!amount || !choice || !currentQuestion) return 0
+    // Convert amount to number if it's a string
+    const betAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
+    if (isNaN(betAmount) || betAmount <= 0) return 0
+    // Get the current odds based on yes/no percentages
+    const yesPercentage = currentQuestion.yesPercentage || 50
+    const noPercentage = currentQuestion.noPercentage || 50
+    // Calculate odds based on the choice
+    const odds = choice === "Yes" ? noPercentage / yesPercentage : yesPercentage / noPercentage
+    // Apply platform fee (5%)
+    const platformFee = 0.05
+    // Calculate potential payout using the formula: bet * 2 * (1 - platformFee)
+    // This doubles the bet amount and then applies a 5% platform fee
+    const potentialPayout = betAmount * 2 * (1 - platformFee)
+    return potentialPayout
+  }
 
   // Modify the handleNewQuestion function to ensure timer appears immediately
-  const handleNewQuestion = useCallback(
-    (data) => {
-      // Skip if data is empty
-      if (!data) {
-        return
-      }
-      console.log("Processing new question:", data)
-      // Add debug logging to track the exact question text from backend
-      console.log("EXACT BACKEND QUESTION TEXT:", data.question)
-      // Mark this question as processed
-      if (data.id) {
-        questionProcessedRef.current[data.id] = true
-      }
-      // Use the question data directly from the backend without any modification
-      const normalizedQuestion = {
-        id: data.id || data._id,
-        question: data.question, // Use the exact question text from backend
-        subject: data.subject,
-        condition: data.condition,
-        endTime: new Date(data.endTime || Date.now() + 36000),
-        yesPercentage: data.yesPercentage || 50,
-        noPercentage: data.noPercentage || 50,
-        totalBetAmount: data.totalBetAmount || 0,
-        totalPlayers: data.totalPlayers || 0,
-        resolved: false,
-        outcome: null,
-        yesTotalBetAmount: data.yesTotalBetAmount || 0, // Ensure these are carried over
-        noTotalBetAmount: data.noTotalBetAmount || 0, // Ensure these are carried over
-      }
-      // Update the current question immediately
-      setCurrentQuestion(normalizedQuestion)
-      // Use the countdown value from the server if available, otherwise calculate it
-      let timeLeft
-      if (data.countdown !== undefined) {
-        // Use the countdown value provided by the server
-        timeLeft = data.countdown
-      } else {
-        // Calculate the countdown from endTime
-        const now = new Date()
-        const endTime = new Date(normalizedQuestion.endTime)
-        timeLeft = Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000))
-      }
-      // Always ensure we have at least 36 seconds for betting if the timer is less than 5 seconds
-      if (timeLeft < 5) {
-        timeLeft = 36
-      }
-      // Set the countdown immediately
-      setCountdown(timeLeft)
-      // Always ensure timer is visible
-      setTimerVisible(true)
-      // Clear any existing timer
+  const handleNewQuestion = (data) => {
+    // Skip if data is empty or if camera holder is None (to prevent stale questions from appearing)
+    if (!data || !cameraHolder || cameraHolder.CameraHolderName === "None") {
+      console.log("Skipping new question processing: data empty or no camera holder.", data, cameraHolder)
+      // Ensure question is cleared if it somehow got set
+      setCurrentQuestion(null)
+      setCountdown(0)
       if (timerRef.current) {
         clearInterval(timerRef.current)
+        timerRef.current = null
       }
-      // Start the timer immediately
-      timerRef.current = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current)
-            // Don't clear the question when the timer ends
-            // Just return 0 to show the timer is done
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-      // Reset betting state
-      setSelectedChoice(null)
-      // REMOVED: setBetAmount("100"); // This line was causing the bet amount to reset
-      setBetError(null)
-      setBetSuccess(false)
-      // Update percentages
-      setYesPercentage(normalizedQuestion.yesPercentage)
-      setNoPercentage(normalizedQuestion.noPercentage)
-      // Update total bets for this question
-      setCurrentQuestionTotalBets(formatCurrency(normalizedQuestion.totalBetAmount))
-      setCurrentQuestionPlayers(normalizedQuestion.totalPlayers)
-      // Notify parent component of question update
-      if (onQuestionUpdate) {
-        onQuestionUpdate(normalizedQuestion, timeLeft)
-      }
-    },
-    [onQuestionUpdate],
-  )
+      return
+    }
+    console.log("Processing new question:", data)
+    // Add debug logging to track the exact question text from backend
+    console.log("EXACT BACKEND QUESTION TEXT:", data.question)
+    // Mark this question as processed
+    if (data.id) {
+      questionProcessedRef.current[data.id] = true
+    }
+    // Use the question data directly from the backend without any modification
+    const normalizedQuestion = {
+      id: data.id || data._id,
+      question: data.question, // Use the exact question text from backend
+      subject: data.subject,
+      condition: data.condition,
+      endTime: new Date(data.endTime || Date.now() + 36000),
+      yesPercentage: data.yesPercentage || 50,
+      noPercentage: data.noPercentage || 50,
+      totalBetAmount: data.totalBetAmount || 0,
+      totalPlayers: data.totalPlayers || 0,
+      yesTotalBetAmount: data.yesTotalBetAmount || 0, // Added for new design
+      noTotalBetAmount: data.noTotalBetAmount || 0, // Added for new design
+      resolved: false,
+      outcome: null,
+    }
+    // Update the current question immediately
+    setCurrentQuestion(normalizedQuestion)
+    // Use the countdown value from the server if available, otherwise calculate it
+    let timeLeft
+    if (data.countdown !== undefined) {
+      // Use the countdown value provided by the server
+      timeLeft = data.countdown
+    } else {
+      // Calculate the countdown from endTime
+      const now = new Date()
+      const endTime = new Date(normalizedQuestion.endTime)
+      timeLeft = Math.max(0, Math.floor((endTime - now) / 1000))
+    }
+    // Always ensure we have at least 36 seconds for betting if the timer is less than 5 seconds
+    if (timeLeft < 5) {
+      timeLeft = 36
+    }
+    // Set the countdown immediately
+    setCountdown(timeLeft)
+    // Always ensure timer is visible
+    setTimerVisible(true)
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+    }
+    // Start the timer immediately
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current)
+          // Don't clear the question when the timer ends
+          // Just return 0 to show the timer is done
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    // Reset betting state
+    setSelectedChoice(null)
+    setBetError(null)
+    setBetSuccess(false)
+    // Update percentages
+    setYesPercentage(normalizedQuestion.yesPercentage)
+    setNoPercentage(normalizedQuestion.noPercentage)
+    // Update total bets for this question
+    setCurrentQuestionTotalBets(formatCurrency(normalizedQuestion.totalBetAmount))
+    setCurrentQuestionPlayers(normalizedQuestion.totalPlayers)
+  }
 
   // New handler functions for question events
   const handleNewQuestionReceived = (event) => {
@@ -325,168 +317,68 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
   }
 
   // Watch for camera holder changes to reset timer and fetch new question
-  const fetchActiveQuestion = useCallback(
-    async (retryCount = 0, forceRefresh = false) => {
-      try {
-        // Check if there's a valid camera holder before fetching a question
-        if (!cameraHolder || !cameraHolder.CameraHolderName || cameraHolder.CameraHolderName === "None") {
-          // Don't clear the current question immediately
-          // Only set to null if we're sure there's no camera holder after multiple retries
-          if (retryCount > 5) {
-            // Increase from 3 to 5 for more stability
-            setCurrentQuestion(null)
-            setCountdown(0)
-            if (onQuestionUpdate) {
-              onQuestionUpdate(null, 0)
-            }
-          }
-          return
-        }
-        console.log("Fetching active question, retry:", retryCount, "force:", forceRefresh)
-        const response = await bettingAPI.getActiveQuestion()
-        if (response.success && response.question) {
-          console.log("Got active question from API:", response.question)
-          // Add debug logging to track the exact question text from API
-          console.log("EXACT API QUESTION TEXT:", response.question.question)
-          // Process the question data with the countdown value from the server
-          handleNewQuestion(response.question)
-          // Reset any error state
-          setBetError(null)
-        } else {
-          console.log("No active question found or error:", response)
-          // If no active question is found, request one from the socket server
-          const socket = getSocket()
-          if (socket && socket.connected) {
-            console.log("Requesting question from socket")
-            socket.emit("get_active_question")
-            // Also request to create a new question if we have a valid camera holder
-            if (cameraHolder && cameraHolder.CameraHolderName && cameraHolder.CameraHolderName !== "None") {
-              console.log("Requesting to create a new question")
-              socket.emit("create_bet_question", { streamId: getStreamId() })
-            }
-          }
-          // If this is not the last retry attempt, retry after a short delay
-          if (retryCount < 5) {
-            setTimeout(
-              () => {
-                fetchActiveQuestion(retryCount + 1, forceRefresh)
-              },
-              100, // Even shorter delay between retries - 100ms
-            )
-          } else if (forceRefresh) {
-            // If we're forcing a refresh and still don't have a question, try to create one
-            try {
-              console.log("Forcing question refresh")
-              const refreshResponse = await bettingAPI.forceRefreshQuestion()
-              if (refreshResponse.success && refreshResponse.question) {
-                console.log("Got question from force refresh:", refreshResponse.question)
-                // Add debug logging to track the exact question text from force refresh
-                console.log("EXACT FORCE REFRESH QUESTION TEXT:", refreshResponse.question.question)
-                handleNewQuestion(refreshResponse.question)
-              }
-            } catch (refreshError) {
-              console.error("Error forcing question refresh:", refreshError)
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching active question:", error)
-        // Try to get a question via socket as a fallback
-        const socket = getSocket()
-        if (socket && socket.connected) {
-          socket.emit("get_active_question")
-          // Also request to create a new question if we have a valid camera holder
-          if (cameraHolder && cameraHolder.CameraHolderName && cameraHolder.CameraHolderName !== "None") {
-            socket.emit("create_bet_question", { streamId: getStreamId() })
-          }
-        }
-        // If this is not the last retry attempt, retry after a short delay
-        if (retryCount < 5) {
-          setTimeout(
-            () => {
-              fetchActiveQuestion(retryCount + 1, forceRefresh)
-            },
-            100, // Even shorter delay between retries - 100ms
-          )
-        }
-      }
-    },
-    [cameraHolder, handleNewQuestion, onQuestionUpdate],
-  )
-
   useEffect(() => {
-    if (cameraHolder && cameraHolder.CameraHolderName) {
-      // Check if camera holder name has changed
-      if (lastCameraHolderNameRef.current !== cameraHolder.CameraHolderName) {
-        console.log("Camera holder changed from", lastCameraHolderNameRef.current, "to", cameraHolder.CameraHolderName)
-        // Update the last camera holder name
-        lastCameraHolderNameRef.current = cameraHolder.CameraHolderName
-        // If this is a valid camera holder (not "None"), fetch a new question with a fresh timer
-        if (cameraHolder.CameraHolderName !== "None") {
+    if (cameraHolder) {
+      if (cameraHolder.CameraHolderName && cameraHolder.CameraHolderName !== "None") {
+        // Existing logic for when cameraHolderName changes and is NOT None
+        if (lastCameraHolderNameRef.current !== cameraHolder.CameraHolderName) {
+          console.log(
+            "Camera holder changed from",
+            lastCameraHolderNameRef.current,
+            "to",
+            cameraHolder.CameraHolderName,
+          )
+          lastCameraHolderNameRef.current = cameraHolder.CameraHolderName
           console.log("New camera holder detected, fetching fresh question with new timer")
-          // Force create a new question for this camera holder
-          const socket = getSocket()
-          if (socket && socket.connected) {
+          // Use the socket from context
+          if (socket && isConnected) {
             socket.emit("create_bet_question", { streamId: getStreamId() })
           }
-          // Fetch the active question with a fresh timer
           fetchActiveQuestion(0, true)
         }
+      } else if (cameraHolder.CameraHolderName === "None") {
+        // NEW LOGIC: Camera holder is None, clear the question immediately
+        console.log("Camera holder is None, clearing current question.")
+        setCurrentQuestion(null)
+        setCountdown(0)
+        // Also clear the timer interval if it's running
+        if (timerRef.current) {
+          clearInterval(timerRef.current)
+          timerRef.current = null
+        }
+        // Reset lastCameraHolderNameRef to ensure a new question is fetched if a camera holder reappears
+        lastCameraHolderNameRef.current = null
       }
     }
-  }, [cameraHolder, fetchActiveQuestion])
+  }, [cameraHolder, socket, isConnected]) // Dependency array includes cameraHolder, socket, isConnected
 
   // Initialize socket connection and fetch active question
   useEffect(() => {
-    // Initialize socket (assuming this is a singleton and only connects if not already connected)
-    const socket = initializeSocket()
-    socketRef.current = socket
-    // Set initial connection status immediately
-    setSocketConnected(socket.connected)
+    // Initialize socket (ensures singleton is active)
+    initializeSocket()
 
-    // Track socket connection status
-    socket.on("connect", () => {
-      setSocketConnected(true)
-      // Request active question immediately on connect
-      socket.emit("get_active_question")
-      // Request the current camera holder from the server
-      socket.emit("get_camera_holder")
-      // Force create a question if we have a camera holder - do this immediately
-      const currentCameraHolder = getCurrentCameraHolder()
-      if (
-        currentCameraHolder &&
-        currentCameraHolder.CameraHolderName &&
-        currentCameraHolder.CameraHolderName !== "None"
-      ) {
-        console.log("Forcing question creation on socket connect")
-        socket.emit("create_bet_question", { streamId: getStreamId() })
-        // Also fetch the active question immediately
-        fetchActiveQuestion(0, true)
-      }
-    })
-    socket.on("disconnect", () => {
-      setSocketConnected(false)
-    })
-
-    // Initialize with any existing camera holder
+    // Initial fetch of camera holder status
     const initialCameraHolder = getCurrentCameraHolder()
     if (initialCameraHolder) {
       setCameraHolder(initialCameraHolder)
-      // Store the initial camera holder name
       lastCameraHolderNameRef.current = initialCameraHolder.CameraHolderName
-      // Immediately fetch a question when we have a camera holder
-      fetchActiveQuestion(0, true)
-    } else {
-      // Fetch camera holder data
-      getCameraHolder().then(({ success, cameraHolder }) => {
-        if (success && cameraHolder) {
-          setCameraHolder(cameraHolder)
-          // Store the initial camera holder name
-          lastCameraHolderNameRef.current = cameraHolder.CameraHolderName
-          // Immediately fetch a question when we have a camera holder
-          fetchActiveQuestion(0, true)
+      // If there's an initial camera holder, try to fetch question
+      if (initialCameraHolder.CameraHolderName && initialCameraHolder.CameraHolderName !== "None") {
+        fetchActiveQuestion(0, true)
+      } else {
+        // If initial camera holder is None, ensure question is cleared
+        setCurrentQuestion(null)
+        setCountdown(0)
+        if (timerRef.current) {
+          clearInterval(timerRef.current)
+          timerRef.current = null
         }
-      })
+      }
+    } else {
+      // If no initial camera holder, request it from the server
+      if (socket && isConnected) {
+        socket.emit("get_camera_holder")
+      }
     }
 
     // Listen for camera holder updates
@@ -517,28 +409,50 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       }
     }
 
-    // Add listener for socket connection events
-    const handleSocketConnected = () => {
-      setSocketConnected(true)
+    // Add listener for wallet balance updates (dispatched by socketService)
+    const handleWalletBalanceUpdated = (event) => {
+      if (event.detail && event.detail.newBalance !== undefined) {
+        updateWalletBalanceUI(event.detail.newBalance)
+      }
     }
-    const handleSocketDisconnected = () => {
-      setSocketConnected(false)
+
+    // Add listener for biggest win updates (dispatched by socketService)
+    const handleBiggestWinUpdated = (event) => {
+      if (event.detail && event.detail.biggestWinThisWeek !== undefined) {
+        const rawValue =
+          typeof event.detail.biggestWinThisWeek === "string"
+            ? Number.parseFloat(event.detail.biggestWinThisWeek.replace(/[$,]/g, ""))
+            : event.detail.biggestWinThisWeek
+        setBiggestWin(formatCurrency(rawValue))
+      }
+    }
+
+    // NEW: Listener for explicit clear question event
+    const handleClearQuestionRequested = (event) => {
+      console.log("Clear question requested:", event.detail.reason)
+      setCurrentQuestion(null)
+      setCountdown(0)
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
     }
 
     window.addEventListener("camera_holder_updated", handleCameraHolderUpdate)
     window.addEventListener("new_question_received", handleNewQuestionReceived)
     window.addEventListener("current_question_received", handleCurrentQuestionReceived)
+    window.addEventListener("question_updated", handleNewQuestionReceived) // Use same handler for updates
+    window.addEventListener("question_created", handleNewQuestionReceived) // Use same handler for created
     window.addEventListener("active_question_loaded", handleActiveQuestionLoaded)
     window.addEventListener("question_refreshed", handleQuestionRefreshed)
-    window.addEventListener("socket_connected", handleSocketConnected)
-    window.addEventListener("socket_disconnected", handleSocketDisconnected)
+    window.addEventListener("wallet_balance_updated", handleWalletBalanceUpdated)
+    window.addEventListener("biggest_win_updated", handleBiggestWinUpdated)
+    window.addEventListener("clear_question_requested", handleClearQuestionRequested) // Add new listener
 
-    // Fetch active question immediately
-    fetchActiveQuestion(0, true)
-    // Fetch betting stats
+    // Fetch betting stats (always fetch regardless of camera holder)
     fetchBettingStats()
 
-    // Listen for socket events with updated event names
+    // Listen for socket events with updated event names (these are still specific to betting logic)
     socketEvents.onNewQuestion((data) => {
       console.log("New question from socket:", data)
       handleNewQuestion(data)
@@ -557,17 +471,17 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           // If the backend indicates this is a new player, increment the count
           setCurrentQuestionPlayers((prevCount) => prevCount + 1)
         }
+        // Add updates for yesTotalBetAmount and noTotalBetAmount
+        setCurrentQuestion((prev) => ({
+          ...prev,
+          yesTotalBetAmount: data.yesTotalBetAmount !== undefined ? data.yesTotalBetAmount : prev?.yesTotalBetAmount,
+          noTotalBetAmount: data.noTotalBetAmount !== undefined ? data.noTotalBetAmount : prev?.noTotalBetAmount,
+        }))
         // Recalculate potential payout if user has selected a choice
         if (selectedChoice && betAmount) {
           const newPayout = calculatePotentialPayout(betAmount, selectedChoice)
           setPotentialPayout(formatCurrency(newPayout))
         }
-        // Update individual choice bet amounts
-        setCurrentQuestion((prev) => ({
-          ...prev,
-          yesTotalBetAmount: data.yesTotalBetAmount,
-          noTotalBetAmount: data.noTotalBetAmount,
-        }))
       }
     })
     socketEvents.onQuestionResolved((data) => {
@@ -593,14 +507,13 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         setTotalBets(formatCurrency(data.totalBetsAmount))
       }
       if (data.biggestWinThisWeek !== undefined) {
-        // Ensure we're formatting a number, not a string that already has formatting
         const rawValue =
           typeof data.biggestWinThisWeek === "string"
             ? Number.parseFloat(data.biggestWinThisWeek.replace(/[$,]/g, ""))
             : data.biggestWinThisWeek
         setBiggestWin(formatCurrency(rawValue))
       } else {
-        // If biggestWinThisWeek is not provided, set to "$0"
+        // If biggestWinThisWeek is not provided, set to $0
         setBiggestWin("$0")
       }
       if (data.activePlayers !== undefined) {
@@ -620,69 +533,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       }
     })
 
-    // Listen for wallet updates
-    socket.on("wallet_update", (data) => {
-      if (data.newBalance !== undefined) {
-        updateWalletBalanceUI(data.newBalance)
-        // Update localStorage
-        const userData = JSON.parse(localStorage.getItem("userData") || "{}")
-        userData.walletBalance = data.newBalance
-        localStorage.setItem("userData", JSON.stringify(userData))
-        // Emit a custom event for other components
-        if (typeof window !== "undefined") {
-          const event = new CustomEvent("wallet_balance_updated", {
-            detail: { newBalance: data.newBalance },
-          })
-          window.dispatchEvent(event)
-        }
-      }
-    })
-
-    // Listen for bet results
-    socket.on("bet_result", (data) => {
-      if (data.success && data.newBalance !== undefined) {
-        updateWalletBalanceUI(data.newBalance)
-        // Update localStorage
-        const userData = JSON.parse(localStorage.getItem("userData") || "{}")
-        userData.walletBalance = data.newBalance
-        localStorage.setItem("userData", JSON.stringify(userData))
-        // Emit a custom event for other components
-        if (typeof window !== "undefined") {
-          const event = new CustomEvent("wallet_balance_updated", {
-            detail: { newBalance: data.newBalance },
-          })
-          window.dispatchEvent(event)
-        }
-        // If this bet created a new biggest win, update the UI
-        if (data.biggestWin !== undefined) {
-          setBiggestWin(formatCurrency(data.biggestWin))
-        }
-      }
-    })
-
-    // Add a socket event listener for biggest win updates
-    socket.on("biggest_win_update", (data) => {
-      if (data.biggestWinThisWeek !== undefined) {
-        // Ensure we're formatting a number, not a string that already has formatting
-        const rawValue =
-          typeof data.biggestWinThisWeek === "string"
-            ? Number.parseFloat(data.biggestWinThisWeek.replace(/[$,]/g, ""))
-            : data.biggestWinThisWeek
-        setBiggestWin(formatCurrency(rawValue))
-      }
-    })
-
-    socket.on("camera_holder_update", (data) => {
-      if (data && data.cameraHolder) {
-        setCameraHolder(data.cameraHolder)
-        // Also dispatch a custom event for other components
-        const event = new CustomEvent("camera_holder_updated", {
-          detail: { cameraHolder: data.cameraHolder },
-        })
-        window.dispatchEvent(event)
-      }
-    })
-
     // Set up more frequent camera holder checks to ensure we always have a question
     cameraHolderCheckRef.current = setInterval(() => {
       const now = Date.now()
@@ -695,22 +545,22 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             console.log("No question with camera holder, fetching one")
             fetchActiveQuestion(0, true)
             // Also force create a new question, but only if we don't have one
-            const socket = getSocket()
-            if (socket && socket.connected) {
+            // Use the socket from context
+            if (socket && isConnected) {
               socket.emit("create_bet_question", { streamId: getStreamId() })
             }
           }
         } else {
           // Try to get the camera holder, but less frequently
-          const socket = getSocket()
-          if (socket && socket.connected) {
+          // Use the socket from context
+          if (socket && isConnected) {
             socket.emit("get_camera_holder")
           }
         }
       }
     }, 1000) // Check every second instead of 500ms
 
-    // Set up automatic question refresh every 15 seconds instead of 30
+    // Set up automatic question refresh every 30 seconds
     questionRefreshTimerRef.current = setInterval(() => {
       if (cameraHolder && cameraHolder.CameraHolderName && cameraHolder.CameraHolderName !== "None") {
         // Only refresh if we don't already have a question
@@ -719,7 +569,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           fetchActiveQuestion(0, true)
         }
       }
-    }, 30000) // Increase to 30 seconds instead of 15
+    }, 30000)
 
     // Remove any debug buttons that might have been added
     if (typeof document !== "undefined") {
@@ -729,42 +579,27 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       }
     }
 
-    // Add this after the other socket event listeners
-    socket.on("question_update", (data) => {
-      console.log("Question update received:", data)
-      if (data && data.question) {
-        handleNewQuestion(data.question)
-        // Dispatch a custom event for other components
-        window.dispatchEvent(
-          new CustomEvent("question_updated", {
-            detail: { question: data.question },
-          }),
-        )
-      }
-    })
-
-    // Also listen for question_created events
-    socket.on("question_created", (data) => {
-      console.log("Question created received:", data)
-      if (data) {
-        handleNewQuestion(data)
-        // Dispatch a custom event for other components
-        window.dispatchEvent(
-          new CustomEvent("question_created", {
-            detail: { question: data },
-          }),
-        )
-      }
-    })
-
     return () => {
-      // Clean up socketEvents listeners
+      // Clean up window event listeners
+      window.removeEventListener("camera_holder_updated", handleCameraHolderUpdate)
+      window.removeEventListener("new_question_received", handleNewQuestionReceived)
+      window.removeEventListener("current_question_received", handleCurrentQuestionReceived)
+      window.removeEventListener("question_updated", handleNewQuestionReceived)
+      window.removeEventListener("question_created", handleNewQuestionReceived)
+      window.removeEventListener("active_question_loaded", handleActiveQuestionLoaded)
+      window.removeEventListener("question_refreshed", handleQuestionRefreshed)
+      window.removeEventListener("wallet_balance_updated", handleWalletBalanceUpdated)
+      window.removeEventListener("biggest_win_updated", handleBiggestWinUpdated)
+      window.removeEventListener("clear_question_requested", handleClearQuestionRequested) // Remove new listener
+
+      // Clean up socketEvents listeners (these use getSocket().off internally)
       socketEvents.removeListener("new_question")
       socketEvents.removeListener("bet_placed")
       socketEvents.removeListener("question_resolved")
       socketEvents.removeListener("betting_stats")
       socketEvents.removeListener("total_bets_update")
       socketEvents.removeListener("player_count_update")
+
       // Clear any active timer
       if (timerRef.current) {
         clearInterval(timerRef.current)
@@ -778,7 +613,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         clearInterval(cameraHolderCheckRef.current)
       }
     }
-  }, [cameraHolder, currentQuestion, fetchActiveQuestion, handleNewQuestion, lastCameraHolderUpdate, onQuestionUpdate])
+  }, [cameraHolder, currentQuestion, isConnected, socket]) // Added isConnected and socket to dependencies
 
   // Update potential payout when bet amount or choice changes
   useEffect(() => {
@@ -788,7 +623,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     } else {
       setPotentialPayout("$0")
     }
-  }, [selectedChoice, betAmount, currentQuestion, calculatePotentialPayout])
+  }, [selectedChoice, betAmount, currentQuestion])
 
   // Add a global API response interceptor to check for token expiration
   useEffect(() => {
@@ -815,7 +650,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
 
   // Listen for payment success events
   useEffect(() => {
-    const handlePaymentSuccess = (event) => {
+    const handlePaymentSuccessEvent = (event) => {
       // If payment was for a bet and we have pending bet data, place the bet automatically
       if (event.detail && event.detail.forBet && pendingBetData) {
         // Check if we should auto-place the bet
@@ -829,9 +664,9 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       // Refresh wallet balance
       fetchWalletBalance()
     }
-    window.addEventListener("payment_success", handlePaymentSuccess)
+    window.addEventListener("payment_success", handlePaymentSuccessEvent)
     return () => {
-      window.removeEventListener("payment_success", handlePaymentSuccess)
+      window.removeEventListener("payment_success", handlePaymentSuccessEvent)
     }
   }, [pendingBetData, autoPlaceBetAfterPayment])
 
@@ -846,7 +681,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     const numAmount = typeof amount === "string" ? Number.parseFloat(amount.replace(/[^0-9.-]+/g, "")) : Number(amount)
     if (isNaN(numAmount)) return "$0"
     // Format the number with $ sign and commas
-    return `$${numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    return `$${numAmount.toLocaleString()}`
   }
 
   // Format countdown time
@@ -857,6 +692,92 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
   }
 
   // Now modify the fetchActiveQuestion function to remove the fallback question creation
+  const fetchActiveQuestion = async (retryCount = 0, forceRefresh = false) => {
+    try {
+      // Check if there's a valid camera holder before fetching a question
+      if (!cameraHolder || !cameraHolder.CameraHolderName || cameraHolder.CameraHolderName === "None") {
+        // Immediately clear the question and countdown if no valid camera holder
+        if (currentQuestion !== null || countdown !== 0) {
+          console.log("No active camera holder, clearing current question and countdown.")
+          setCurrentQuestion(null)
+          setCountdown(0)
+          if (timerRef.current) {
+            clearInterval(timerRef.current)
+            timerRef.current = null
+          }
+        }
+        return // Stop further execution of this function
+      }
+      console.log("Fetching active question, retry:", retryCount, "force:", forceRefresh)
+      const response = await bettingAPI.getActiveQuestion()
+      if (response.success && response.question) {
+        console.log("Got active question from API:", response.question)
+        // Add debug logging to track the exact question text from API
+        console.log("EXACT API QUESTION TEXT:", response.question.question)
+        // Process the question data with the countdown value from the server
+        handleNewQuestion(response.question)
+        // Reset any error state
+        setBetError(null)
+      } else {
+        console.log("No active question found or error:", response)
+        // If no active question is found, request one from the socket server
+        // Use the socket from context
+        if (socket && isConnected) {
+          console.log("Requesting question from socket")
+          socket.emit("get_active_question")
+          // Also request to create a new question if we have a valid camera holder
+          if (cameraHolder && cameraHolder.CameraHolderName && cameraHolder.CameraHolderName !== "None") {
+            console.log("Requesting to create a new question")
+            socket.emit("create_bet_question", { streamId: getStreamId() })
+          }
+        }
+        // If this is not the last retry attempt, retry after a short delay
+        if (retryCount < 5) {
+          setTimeout(
+            () => {
+              fetchActiveQuestion(retryCount + 1, forceRefresh)
+            },
+            100, // Even shorter delay between retries - 100ms
+          )
+        } else if (forceRefresh) {
+          // If we're forcing a refresh and still don't have a question, try to create one
+          try {
+            console.log("Forcing question refresh")
+            const refreshResponse = await bettingAPI.forceRefreshQuestion()
+            if (refreshResponse.success && refreshResponse.question) {
+              console.log("Got question from force refresh:", refreshResponse.question)
+              // Add debug logging to track the exact question text from force refresh
+              console.log("EXACT FORCE REFRESH QUESTION TEXT:", refreshResponse.question.question)
+              handleNewQuestion(refreshResponse.question)
+            }
+          } catch (refreshError) {
+            console.error("Error forcing question refresh:", refreshError)
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching active question:", error)
+      // Try to get a question via socket as a fallback
+      // Use the socket from context
+      if (socket && isConnected) {
+        socket.emit("get_active_question")
+        // Also request to create a new question if we have a valid camera holder
+        if (cameraHolder && cameraHolder.CameraHolderName && cameraHolder.CameraHolderName !== "None") {
+          socket.emit("create_bet_question", { streamId: getStreamId() })
+        }
+      }
+      // If this is not the last retry attempt, retry after a short delay
+      if (retryCount < 5) {
+        setTimeout(
+          () => {
+            fetchActiveQuestion(retryCount + 1, forceRefresh)
+          },
+          100, // Even shorter delay between retries - 100ms
+        )
+      }
+    }
+  }
+
   // Fetch betting stats - enhanced to get real data
   const fetchBettingStats = async () => {
     try {
@@ -908,7 +829,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
   // Function to place a bet after successful payment
   const placeBetAfterPayment = async (betData) => {
     try {
-      setIsProcessing(true)
+      setIsProcessing(true) // Set processing state when placing bet after payment
       const response = await bettingAPI.placeBet(betData)
       if (response.success) {
         // Update wallet balance with the actual value from the server
@@ -921,6 +842,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         // Update stats
         updateStatsAfterBet(betData.amount)
         // Reset selected choice
+        setSelectedChoice(null)
         // Clear pending bet data
         setPendingBetData(null)
       } else if (
@@ -945,12 +867,13 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           error.message.includes("invalid token") ||
           error.message.includes("unauthorized"))
       ) {
+        // Handle authentication errors with automatic logout
         handleTokenExpiration()
       } else {
         setBetError(error.message || "Failed to place bet")
       }
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false) // Reset processing state
     }
   }
 
@@ -1000,7 +923,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     setShowPaymentModal(false)
   }
 
-  // Modify handlePlaceBet to check for token expiration
+  // Modified handlePlaceBet to accept choice as an argument
   const handlePlaceBet = async (choice, fundsAlreadyAdded = false) => {
     // Reset status
     setBetSuccess(false)
@@ -1020,19 +943,23 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
       return
     }
 
-    if (!betAmount || countdown <= 0) {
-      setBetError("Please enter a bet amount")
+    // Use the passed 'choice' argument for validation
+    if (!choice || !betAmount || countdown <= 0) {
+      setBetError("Please select Yes or No and enter a bet amount")
       return
     }
 
+    const betAmountNumber = Number.parseFloat(betAmount)
+    if (isNaN(betAmountNumber) || betAmountNumber <= 0) {
+      setBetError("Please enter a valid bet amount.")
+      return
+    }
+
+    // Set processing state *after* initial synchronous checks
+    setIsProcessing(true)
+
     try {
-      setIsProcessing(true)
-      const betAmountNumber = Number.parseFloat(betAmount)
-
-      // Get the latest wallet balance
-      await fetchWalletBalance()
-
-      // Check if user has enough balance
+      // Use the current walletBalance state for the check, avoid fetching here
       if (betAmountNumber > walletBalance && !fundsAlreadyAdded) {
         // Calculate how much more is needed
         const additionalFundsNeeded = betAmountNumber - walletBalance
@@ -1043,7 +970,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         // Prepare bet data for after payment
         const betData = {
           questionId: currentQuestion.id,
-          choice: choice,
+          choice: choice, // Use the passed 'choice'
           amount: betAmountNumber,
           streamId: getStreamId(),
         }
@@ -1070,59 +997,27 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             }),
           )
         }, 0)
-        setIsProcessing(false)
-        return
+        return // Exit after showing payment modal, finally block will reset isProcessing
       }
 
       // Get current stream ID from URL or use a default
       const streamId = getStreamId()
-
       // Make sure we have a valid question ID
       if (!currentQuestion || !currentQuestion.id) {
         setBetError("No active betting question available")
-        setIsProcessing(false)
-        return
+        return // Exit, finally block will reset isProcessing
       }
 
       // Prepare the bet data
       const betData = {
         questionId: currentQuestion.id,
-        choice: choice,
+        choice: choice, // Use the passed 'choice'
         amount: betAmountNumber,
         streamId: streamId,
       }
 
-      // Optimistically update the UI to show the bet amount deducted
-      const newBalance = walletBalance - betAmountNumber
-      updateWalletBalanceUI(newBalance)
-      // Update localStorage for persistence
-      const userData = JSON.parse(localStorage.getItem("userData") || "{}")
-      userData.walletBalance = newBalance
-      localStorage.setItem("userData", JSON.stringify(userData))
-      // Emit a custom event for other components
-      if (typeof window !== "undefined") {
-        const event = new CustomEvent("wallet_balance_updated", {
-          detail: { newBalance: newBalance },
-        })
-        window.dispatchEvent(event)
-      }
-
-      // Only update stats and show success if we have sufficient funds
-      if (betAmountNumber <= walletBalance) {
-        // IMPORTANT: Update stats immediately for better UX
-        updateStatsAfterBet(betAmountNumber)
-        // Show success message immediately
-        setBetSuccess(true)
-        setBetError(null)
-        // Indicate that we're waiting for a new question
-        setCurrentQuestion((prev) => ({
-          ...prev,
-          resolved: true,
-          outcome: choice, // Optimistically show the user's choice as the outcome
-        }))
-      }
-
       const response = await bettingAPI.placeBet(betData)
+
       if (response.success) {
         // Update wallet balance with the actual value from the server
         if (response.newBalance !== undefined) {
@@ -1157,6 +1052,9 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         }
         // Refresh betting stats to get updated values
         fetchBettingStats()
+        // Show success message
+        setBetSuccess(true)
+        setBetError(null)
       } else if (
         response.error &&
         (response.error.includes("token expired") ||
@@ -1171,14 +1069,15 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         setBetError(`Insufficient balance. You need $${response.amountNeeded.toFixed(2)} more to place this bet.`)
         setBetSuccess(false)
         // Prepare bet data for after payment
-        const betData = {
+        const betDataForPayment = {
+          // Re-create betData for payment flow
           questionId: currentQuestion.id,
-          choice: choice,
+          choice: choice, // Use the passed 'choice'
           amount: betAmountNumber,
           streamId: getStreamId(),
         }
         // Store the pending bet data
-        setPendingBetData(betData)
+        setPendingBetData(betDataForPayment)
         // Set flag to auto-place bet after payment
         setAutoPlaceBetAfterPayment(true)
         // Show payment modal with the exact amount needed and pass current balance
@@ -1186,11 +1085,14 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         setPaymentForBet(true)
         setInsufficientFunds(true)
         setAmountNeeded(response.amountNeeded)
+        // Force the payment modal to open
         setShowPaymentModal(true)
+        // Revert the optimistic update (or just refresh to be safe)
+        fetchWalletBalance()
+      } else {
+        setBetError(response.message || "Failed to place bet")
       }
     } catch (error) {
-      // Revert the optimistic update if there was an error
-      fetchWalletBalance()
       // Check if it's an authentication error
       if (
         error.message &&
@@ -1208,14 +1110,15 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           `Insufficient balance. You need $${error.response.data.amountNeeded.toFixed(2)} more to place this bet.`,
         )
         // Prepare bet data for after payment
-        const betData = {
+        const betDataForPayment = {
+          // Re-create betData for payment flow
           questionId: currentQuestion.id,
-          choice: choice,
+          choice: choice, // Use the passed 'choice'
           amount: betAmountNumber,
           streamId: getStreamId(),
         }
         // Store the pending bet data
-        setPendingBetData(betData)
+        setPendingBetData(betDataForPayment)
         // Set flag to auto-place bet after payment
         setAutoPlaceBetAfterPayment(true)
         // Show payment modal with the exact amount needed and pass current balance
@@ -1228,7 +1131,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
         setBetError(error.message || "Failed to place bet")
       }
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false) // Always reset processing state
     }
   }
 
@@ -1281,12 +1184,28 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           left: 0,
           right: 0,
           background: "#071323",
-          padding: "-3px", // Corrected padding
+          padding: "10px",
           display: "flex",
           justifyContent: "space-around",
           zIndex: 1000,
         }}
       >
+        <button
+          onClick={() => setActiveMobileSection("donate")}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            background: "none",
+            border: "none",
+            color: "white",
+            padding: "5px 0",
+            width: "20%",
+          }}
+        >
+          <img src="/assets/img/mobile/donate.png" alt="donate" width={24} height={24} />
+          <span style={{ fontSize: "12px", marginTop: "2px" }}>Donate</span>
+        </button>
         <button
           onClick={() => setActiveMobileSection("bet")}
           style={{
@@ -1296,21 +1215,68 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             background: "none",
             border: "none",
             color: "white",
-            padding: "15px 0",
+            padding: "5px 0",
             width: "20%",
           }}
         >
           <img src="/assets/img/mobile/bet.png" alt="Bet" width={24} height={24} />
           <span style={{ fontSize: "12px", marginTop: "2px" }}>Bet</span>
         </button>
-        <MobileModel />
+        <button
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            background: "none",
+            border: "none",
+            color: "white",
+            padding: "5px 0",
+            width: "20%",
+          }}
+        >
+          <img src="/assets/img/mobile/shop.png" alt="Shop" width={24} height={24} />
+          <span style={{ fontSize: "12px", marginTop: "2px" }}>Shop</span>
+        </button>
+        <button
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            background: "none",
+            border: "none",
+            color: "white",
+            padding: "5px 0",
+            width: "20%",
+          }}
+        >
+          <img src="/assets/img/mobile/video-play.png" alt="Clips" width={24} height={24} />
+          <span style={{ fontSize: "12px", marginTop: "2px" }}>Clips</span>
+        </button>
+        <button
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            background: "none",
+            border: "none",
+            color: "white",
+            padding: "5px 0",
+            width: "20%",
+          }}
+        >
+          <img
+            src="/assets/img/mobile/iconImage/settings 1.png"
+            alt="Settings"
+            style={{ width: "24px", height: "24px" }}
+          />
+          <span style={{ fontSize: "12px", marginTop: "2px" }}>Settings</span>
+        </button>
       </div>
     )
   }
 
-  // Replace the existing betting section with the new design while keeping the betting functionality
+  // Mobile Donation Section
   const renderDonationSection = () => {
-    // This function was not provided in the previous context, adding a placeholder
     return (
       <div
         style={{
@@ -1347,6 +1313,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
     )
   }
 
+  // Replace the existing betting section with the new design while keeping the betting functionality
   const renderBettingSection = () => {
     return (
       <div
@@ -1354,46 +1321,48 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           background: "linear-gradient(180deg, #022A57 0%, #08192C 100%)", // Solid dark background from screenshot
           color: "white",
           padding: "15px", // Adjusted padding to match screenshot
-          borderRadius: "16px 16px 0 0",
-          position: "fixed",
-          bottom: "60px",
-          left: 0,
-          right: 0,
-          zIndex: 50,
-          boxShadow: "0px -4px 20px rgba(0, 0, 0, 0.5)",
-          maxHeight: "60vh",
+          borderRadius: isMobile ? "16px 16px 0 0" : "16px", // Rounded top corners for mobile, all corners for desktop
+          position: isMobile ? "fixed" : "relative", // Use relative for desktop, fixed for mobile
+          bottom: isMobile ? "60px" : "auto", // Only apply bottom for mobile
+          left: isMobile ? 0 : "auto",
+          right: isMobile ? 0 : "auto",
+          zIndex: isMobile ? 50 : "auto",
+          boxShadow: isMobile ? "0px -4px 20px rgba(0, 0, 0, 0.5)" : "none",
+          maxHeight: isMobile ? "60vh" : "100%", // Max height for mobile, full height for desktop
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          width: "100%", // Ensure it takes full width of its parent container
+          height: "100%", // Ensure it takes full height of its parent container
         }}
       >
-        {/* Back Arrow and Question */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            width: "100%",
-            marginBottom: "15px",
-            justifyContent: "flex-start", // Align to start for back arrow
-          }}
-        >
-          <ArrowLeft
-            size={24}
-            style={{ color: "white", cursor: "pointer", marginRight: "10px" }}
-            onClick={() => setActiveMobileSection(null)}
-          />
-          <div style={{ flex: 1, textAlign: "center", fontSize: "20px", fontWeight: "bold", color: "#0ea5e9" }}>
-            {currentQuestion?.question || "No active question"}
+        {/* Back Arrow and Question (only for mobile) */}
+        {isMobile && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              marginBottom: "15px",
+              justifyContent: "flex-start", // Align to start for back arrow
+            }}
+          >
+            <ArrowLeft
+              size={24}
+              style={{ color: "white", cursor: "pointer", marginRight: "10px" }}
+              onClick={() => setActiveMobileSection(null)}
+            />
+            <div style={{ flex: 1, textAlign: "center", fontSize: "20px", fontWeight: "bold", color: "#0ea5e9" }}>
+              {currentQuestion?.question || "No active question"}
+            </div>
+            <div style={{ width: "24px", marginLeft: "10px" }}></div> {/* Spacer for alignment */}
           </div>
-          <div style={{ width: "24px", marginLeft: "10px" }}></div> {/* Spacer for alignment */}
-        </div>
-
+        )}
         {/* Bets closing in timer */}
         <div style={{ color: "#9ca3af", fontSize: "14px", marginBottom: "25px", textAlign: "center" }}>
           Bets closing in <span style={{ color: "#ef4444", fontWeight: "bold" }}>{formatCountdown(countdown)}</span>
         </div>
-
         {/* Current Cash Amount Input */}
         <div
           style={{
@@ -1438,7 +1407,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             CLEAR
           </span>
         </div>
-
         {/* Quick Bet Buttons */}
         <div
           style={{
@@ -1520,7 +1488,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           </button>
           <button
             style={{
-              flex: "0 0 calc((100% - 36px) / 7)",
+              flex: "0 0 calc((100% - 36px) / 7)", // Now part of the same flex row
               backgroundColor: "#0e1a2b",
               border: "1px solid #1a2b3c",
               borderRadius: "6px",
@@ -1537,7 +1505,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           </button>
           <button
             style={{
-              flex: "0 0 calc((100% - 36px) / 7)",
+              flex: "0 0 calc((100% - 36px) / 7)", // Now part of the same flex row
               backgroundColor: "#0e1a2b",
               border: "1px solid #1a2b3c",
               borderRadius: "6px",
@@ -1570,7 +1538,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             MAX
           </button>
         </div>
-
         {/* Error and success messages */}
         {betError && (
           <div style={{ color: "#ef4444", fontSize: "14px", marginBottom: "10px", textAlign: "center" }}>
@@ -1582,7 +1549,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             Bet placed successfully!
           </div>
         )}
-
         {/* YES/NO Buttons */}
         <div
           style={{
@@ -1594,8 +1560,11 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           }}
         >
           <button
-            onClick={() => handlePlaceBet("Yes")} // Call handlePlaceBet directly
-            disabled={isProcessing || countdown <= 0} // Disable if not 'Yes' or processing/timer up
+            onClick={() => {
+              setSelectedChoice("Yes") // Keep for UI/potential payout calculation
+              handlePlaceBet("Yes") // Pass choice directly to handlePlaceBet
+            }}
+            disabled={isProcessing || countdown <= 0} // Disable if processing or timer up
             style={{
               backgroundColor: "#22c55e", // Green color from screenshot
               border: "none", // No border
@@ -1617,8 +1586,11 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             <span style={{ fontSize: "10px", fontWeight: "normal", marginTop: "2px" }}>PLACE BET WIN 2X</span>
           </button>
           <button
-            onClick={() => handlePlaceBet("No")} // Call handlePlaceBet directly
-            disabled={isProcessing || countdown <= 0} // Disable if not 'No' or processing/timer up
+            onClick={() => {
+              setSelectedChoice("No") // Keep for UI/potential payout calculation
+              handlePlaceBet("No") // Pass choice directly to handlePlaceBet
+            }}
+            disabled={isProcessing || countdown <= 0} // Disable if processing or timer up
             style={{
               backgroundColor: "#ef4444", // Red color from screenshot
               border: "none", // No border
@@ -1640,7 +1612,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             <span style={{ fontSize: "10px", fontWeight: "normal", marginTop: "2px" }}>PLACE BET WIN 2X</span>
           </button>
         </div>
-
         {/* Current Bet Status */}
         <div
           style={{
@@ -1670,20 +1641,19 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             </div>
           </div>
         </div>
-
         {/* Your Balance and Add Balance Button */}
         <div
           style={{
             width: "100%",
             marginTop: "auto", // Push to bottom
-            paddingTop: "15px", // Corrected padding
+            paddingTop: "15px",
             borderTop: "1px solid #1e293b",
             display: "flex",
-            flexDirection: "row", // Changed to row
-            justifyContent: "space-between", // Added for spacing
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
-          <div style={{ fontSize: "14px", color: "white" }}>
+          <div style={{ fontSize: "14px", color: "white", marginBottom: "10px" }}>
             Your Balance: <span style={{ color: "#06b6d4", fontWeight: "bold" }}>{formatCurrency(walletBalance)}</span>
           </div>
           <button
@@ -1693,18 +1663,16 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
               border: "none",
               borderRadius: "6px",
               color: "white",
-              padding: "4px", // Corrected padding
-              fontSize: "14px", // Corrected font size
+              padding: "10px",
+              fontSize: "14px",
               fontWeight: "bold",
-              width: "120px", // Set fixed width
+              width: "100%",
               cursor: "pointer",
-              height: "45px", // Corrected height
             }}
           >
             ADD BALANCE
           </button>
         </div>
-
         {/* Socket Connection Indicator (kept for debugging/info) */}
         <div
           style={{
@@ -1715,7 +1683,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             alignItems: "center",
             gap: "5px",
             fontSize: "12px",
-            color: socketConnected ? "#22c55e" : "#ef4444",
+            color: isConnected ? "#22c55e" : "#ef4444",
           }}
         >
           <div
@@ -1723,42 +1691,14 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
               width: "8px",
               height: "8px",
               borderRadius: "50%",
-              backgroundColor: socketConnected ? "#22c55e" : "#ef4444",
+              backgroundColor: isConnected ? "#22c55e" : "#ef4444",
             }}
           ></div>
-          {socketConnected ? "Connected" : "Disconnected"}
+          {isConnected ? "Connected" : "Disconnected"}
         </div>
       </div>
     )
   }
-
-  // In the useEffect hook that checks for insufficient funds:
-  useEffect(() => {
-    // Get the current wallet balance
-    const fetchWalletBalance = async () => {
-      try {
-        const response = await walletAPI.getBalance()
-        if (response.success && response.balance !== undefined) {
-          setWalletBalance(response.balance || 0)
-        } else {
-          // If response is not successful, set balance to 0
-          setWalletBalance(0)
-        }
-      } catch (error) {
-        // On error, set balance to 0
-        setWalletBalance(0)
-      }
-    }
-    fetchWalletBalance()
-    // Check if the bet amount is greater than the wallet balance
-    if (Number.parseFloat(betAmount) > walletBalance) {
-      setInsufficientFunds(true)
-      setAmountNeeded(Number.parseFloat(betAmount) - walletBalance)
-    } else {
-      setInsufficientFunds(false)
-      setAmountNeeded(0)
-    }
-  }, [betAmount, walletBalance])
 
   return (
     <>
@@ -1791,16 +1731,14 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           >
             <ArrowLeft size={24} style={{ color: "white", cursor: "pointer", marginRight: "10px" }} />
             <div style={{ flex: 1, textAlign: "center", fontSize: "20px", fontWeight: "bold", color: "#0ea5e9" }}>
-              {currentQuestion?.question}
+              {currentQuestion?.question || "No active question"}
             </div>
             <div style={{ width: "24px", marginLeft: "10px" }}></div> {/* Spacer for alignment */}
           </div>
-
           {/* Bets closing in timer */}
           <div style={{ color: "#9ca3af", fontSize: "14px", marginBottom: "25px", textAlign: "center" }}>
             Bets closing in <span style={{ color: "#ef4444", fontWeight: "bold" }}>{formatCountdown(countdown)}</span>
           </div>
-
           {/* Current Cash Amount Input */}
           <div
             style={{
@@ -1845,7 +1783,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
               CLEAR
             </span>
           </div>
-
           {/* Quick Bet Buttons */}
           <div
             style={{
@@ -1952,7 +1889,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
               X2
             </button>
           </div>
-
           {/* MAX Button */}
           <button
             style={{
@@ -1971,7 +1907,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           >
             MAX
           </button>
-
           {/* Error and success messages */}
           {betError && (
             <div style={{ color: "#ef4444", fontSize: "14px", marginBottom: "10px", textAlign: "center" }}>
@@ -1983,7 +1918,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
               Bet placed successfully!
             </div>
           )}
-
           {/* YES/NO Buttons */}
           <div
             style={{
@@ -1995,8 +1929,11 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
             }}
           >
             <button
-              onClick={() => handlePlaceBet("Yes")} // Call handlePlaceBet directly
-              disabled={isProcessing || countdown <= 0} // Disable if not 'Yes' or processing/timer up
+              onClick={() => {
+                setSelectedChoice("Yes") // Keep for UI/potential payout calculation
+                handlePlaceBet("Yes") // Pass choice directly to handlePlaceBet
+              }}
+              disabled={isProcessing || countdown <= 0} // Disable if processing or timer up
               style={{
                 backgroundColor: "#22c55e", // Green color from screenshot
                 border: "none", // No border
@@ -2018,8 +1955,11 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
               <span style={{ fontSize: "10px", fontWeight: "normal", marginTop: "2px" }}>PLACE BET WIN 2X</span>
             </button>
             <button
-              onClick={() => handlePlaceBet("No")} // Call handlePlaceBet directly
-              disabled={isProcessing || countdown <= 0} // Disable if not 'No' or processing/timer up
+              onClick={() => {
+                setSelectedChoice("No") // Keep for UI/potential payout calculation
+                handlePlaceBet("No") // Pass choice directly to handlePlaceBet
+              }}
+              disabled={isProcessing || countdown <= 0} // Disable if processing or timer up
               style={{
                 backgroundColor: "#ef4444", // Red color from screenshot
                 border: "none", // No border
@@ -2041,7 +1981,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
               <span style={{ fontSize: "10px", fontWeight: "normal", marginTop: "2px" }}>PLACE BET WIN 2X</span>
             </button>
           </div>
-
           {/* Current Bet Status */}
           <div
             style={{
@@ -2071,7 +2010,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
               </div>
             </div>
           </div>
-
           {/* Your Balance and Add Balance Button */}
           <div
             style={{
@@ -2105,7 +2043,6 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
               ADD BALANCE
             </button>
           </div>
-
           {/* Socket Connection Indicator (kept for debugging/info) */}
           <div
             style={{
@@ -2116,7 +2053,7 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
               alignItems: "center",
               gap: "5px",
               fontSize: "12px",
-              color: socketConnected ? "#22c55e" : "#ef4444",
+              color: isConnected ? "#22c55e" : "#ef4444",
             }}
           >
             <div
@@ -2124,44 +2061,13 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
                 width: "8px",
                 height: "8px",
                 borderRadius: "50%",
-                backgroundColor: socketConnected ? "#22c55e" : "#ef4444",
+                backgroundColor: isConnected ? "#22c55e" : "#ef4444",
               }}
             ></div>
-            {socketConnected ? "Connected" : "Disconnected"}
+            {isConnected ? "Connected" : "Disconnected"}
           </div>
-
-          {/* Auth Modal */}
-          {showAuthModal && (
-            <div
-              className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
-              style={{
-                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                backdropFilter: "blur(2px)",
-                zIndex: 1050,
-              }}
-            >
-              <AuthHeaderButtons
-                initialView={initialAuthView}
-                onAuthStateChange={(loggedIn, userData) => {
-                  // Only close the modal if login was successful
-                  if (loggedIn) {
-                    setIsLoggedIn(loggedIn)
-                    if (userData) {
-                      updateWalletBalanceUI(userData.walletBalance)
-                      // Store user data in localStorage for persistence
-                      localStorage.setItem("userData", JSON.stringify(userData))
-                    }
-                    setShowAuthModal(false)
-                  }
-                }}
-                isModal={true}
-                onClose={() => setShowAuthModal(false)}
-              />
-            </div>
-          )}
         </div>
       )}
-
       {/* Mobile version */}
       {isMobile && (
         <>
@@ -2170,8 +2076,36 @@ export default function StreamBottomBar({ onQuestionUpdate }) {
           {activeMobileSection === "bet" && renderBettingSection()}
         </>
       )}
-
-      {/* Payment Modal */}
+      {/* Auth Modal (rendered at the top level for overlay) */}
+      {showAuthModal && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            backdropFilter: "blur(2px)",
+            zIndex: 1050,
+          }}
+        >
+          <AuthHeaderButtons
+            initialView={initialAuthView}
+            onAuthStateChange={(loggedIn, userData) => {
+              // Only close the modal if login was successful
+              if (loggedIn) {
+                setIsLoggedIn(loggedIn)
+                if (userData) {
+                  updateWalletBalanceUI(userData.walletBalance)
+                  // Store user data in localStorage for persistence
+                  localStorage.setItem("userData", JSON.stringify(userData))
+                }
+                setShowAuthModal(false)
+              }
+            }}
+            isModal={true}
+            onClose={() => setShowAuthModal(false)}
+          />
+        </div>
+      )}
+      {/* Payment Modal (rendered at the top level for overlay) */}
       {showPaymentModal && (
         <PaymentModal
           show={showPaymentModal}
