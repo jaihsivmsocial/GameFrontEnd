@@ -4,7 +4,7 @@ import styles from "../../custonCss/home.module.css"
 import Image from "next/image"
 import AuthHeaderButtons from "../../components/register/SignupLogin"
 import ReplyMessage from "../../components/chat/reply-message"
-import { useSocket } from "../../components/contexts/SocketContext"
+import { useSocket } from "../../components/contexts/SocketContext" // Use the new SocketContext
 import { useMediaQuery } from "../../components/chat/use-mobile"
 import StreamBottomBar from "@/components/stream-bottom-bar"
 import { MessageCircle, Gem, Send } from "lucide-react" // Import Lucide icons
@@ -101,7 +101,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
 
   const handleAuthStateChange = (loggedIn, user) => {
     console.log("Auth state changed:", loggedIn, user)
-    updateSocketAuth()
+    updateSocketAuth() // Trigger re-authentication in SocketContext
     if (loggedIn) {
       setShowAuthModal(false)
     }
@@ -136,17 +136,21 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
     e.preventDefault()
     if (isReadOnly) return
     if (!message.trim() || !socket || !isConnected) return
+
     const { isLoggedIn, anonymousId, customUsername } = getAuthDetails()
+
     if (!isLoggedIn) {
       setPendingMessage(message)
       setWaitingForAuth(true)
       setShowAuthModal(true)
       return
     }
+
     if (isRateLimited) {
       setRateLimitMessage("Please wait before sending more messages")
       return
     }
+
     const messageContent = message.trim()
     const senderDetails = {
       id: isLoggedIn ? currentUserData?.id : anonymousId,
@@ -154,29 +158,35 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
       profilePicture: isLoggedIn ? getValidImageUrl(currentUserData?.avatar) : "/placeholder.svg?height=40&width=40",
       isAnonymous: !isLoggedIn,
     }
+
     const tempMessage = {
       id: `temp-${Date.now()}`,
       content: messageContent,
       streamId,
       timestamp: Date.now(),
       sender: senderDetails,
-      replyTo: null,
+      replyTo: replyTo ? { id: replyTo.id, username: replyTo.sender.username, content: replyTo.content } : null,
       isPending: true,
     }
+
     setMessages((prev) => [...prev, tempMessage])
+
     console.log("Sending message via socket:", {
       content: messageContent,
       streamId,
-      replyTo: null,
+      replyTo: replyTo ? { messageId: replyTo.id, username: replyTo.sender.username, content: replyTo.content } : null,
       sender: senderDetails,
     })
+
     socket.emit("send_message", {
       content: messageContent,
       streamId,
-      replyTo: null,
+      replyTo: replyTo ? { messageId: replyTo.id, username: replyTo.sender.username, content: replyTo.content } : null,
       sender: senderDetails,
     })
+
     setMessage("")
+    handleAfterReplySent() // Clear reply UI after sending
   }
 
   useEffect(() => {
@@ -200,6 +210,7 @@ const RealTimeChatComp = ({ streamId = "default-stream", isReadOnly = false }) =
       }
     }
 
+    // Listen for general socket errors
     socket.on("error", handleError)
 
     return () => {
