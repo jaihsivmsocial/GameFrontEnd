@@ -265,10 +265,9 @@ export default function StreamBottomBar() {
       const endTime = new Date(normalizedQuestion.endTime)
       timeLeft = Math.max(0, Math.floor((endTime - now) / 1000))
     }
-    // Always ensure we have at least 36 seconds for betting if the timer is less than 5 seconds
-    if (timeLeft < 5) {
-      timeLeft = 36
-    }
+    // Removed the problematic line: if (timeLeft < 5) { timeLeft = 36 }
+    // This ensures the timer counts down to 0 naturally.
+
     // Set the countdown immediately
     setCountdown(timeLeft)
     // Always ensure timer is visible
@@ -956,7 +955,7 @@ export default function StreamBottomBar() {
     }
 
     // Set processing state *after* initial synchronous checks
-    setIsProcessing(true)
+    setIsProcessing(true) // This is the key for instant feedback
 
     try {
       // Use the current walletBalance state for the check, avoid fetching here
