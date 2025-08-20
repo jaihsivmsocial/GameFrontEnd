@@ -1,9 +1,9 @@
-
 "use client"
 import { useState, useEffect, useRef } from "react"
 import { BASEURL } from "@/utils/apiservice"
 import ForgotPasswordModal from "../../components/register/forgetpassword"
 import VerifyCodeModal from "./verify-code"
+import SignupVerifyCodeModal from "./verify-code" // New component for signup OTP
 import GameHeader from "../game-header"
 import UnderstandingModal from "../../components/model/understanding-modal"
 import ExplanationModal from "../../components/model/explanation-modal"
@@ -90,10 +90,12 @@ export default function AuthHeaderButtons({
   const [showSignupModal, setShowSignupModal] = useState(initialView === "signup" || (!initialView && isModal))
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [showVerifyCode, setShowVerifyCode] = useState(false)
+  const [showSignupVerifyCode, setShowSignupVerifyCode] = useState(false) // New state for signup OTP
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userData, setUserData] = useState(null)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState("")
+  const [signupVerificationEmail, setSignupVerificationEmail] = useState("") // New state for signup email
   const [isMobileView, setIsMobileView] = useState(false)
   const [mobileSize, setMobileSize] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
@@ -310,33 +312,72 @@ export default function AuthHeaderButtons({
     setLoading(true)
     setError("")
     try {
-      const response = await fetch(`${BASEURL}/api/register`, {
+      // First send OTP to email for signup verification
+      const otpResponse = await fetch(`${BASEURL}/api/send-signup-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(signupFormData),
+        body: JSON.stringify({ email: signupFormData.email }),
       })
-      const responseText = await response.text()
-      let data
-      try {
-        data = JSON.parse(responseText)
-      } catch (e) {
-        setError("Received invalid response from server")
-        return
+      
+      const otpData = await otpResponse.json()
+      
+      if (otpResponse.ok) {
+        // OTP sent successfully, now show OTP verification modal
+        setSignupVerificationEmail(signupFormData.email)
+        setShowSignupModal(false)
+        setShowSignupVerifyCode(true)
+        
+        // Show success message if test OTP is provided (for development)
+        if (otpData.testOtp) {
+          console.log("Test Signup OTP:", otpData.testOtp)
+          alert(`OTP sent to your email! (Test OTP: ${otpData.testOtp})`)
+        } else {
+          alert("OTP sent to your email! Please check your inbox.")
+        }
+      } else {
+        throw new Error(otpData.message || "Failed to send OTP")
       }
+    } catch (error) {
+      setError(error.message || "An error occurred during signup")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // New function to handle signup OTP verification
+  const handleSignupOtpVerify = async (code) => {
+    setLoading(true)
+    try {
+      const response = await fetch(`${BASEURL}/api/verify-signup-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: signupVerificationEmail,
+          otp: code,
+          userData: signupFormData // Send the signup form data
+        }),
+      })
+      
+      const data = await response.json()
+      
       if (response.ok) {
+        // OTP verified and user registered successfully
         localStorage.setItem("registrationComplete", "true")
         sessionStorage.setItem("registrationComplete", "true")
         alert("Registration successful! Please login with your credentials.")
-        setShowSignupModal(false)
+        setShowSignupVerifyCode(false)
         setShowLoginModal(true)
         setLoginFormData({ ...loginFormData, username: signupFormData.username })
         setSignupFormData({ username: "", email: "", password: "" })
+        setSignupVerificationEmail("")
+        return true
       } else {
-        setError(data.message || data.error || "Registration failed")
+        alert(data.message || "Failed to verify OTP")
+        return false
       }
     } catch (error) {
-      setError("An error occurred during registration")
+      alert("An error occurred while verifying OTP")
+      return false
     } finally {
       setLoading(false)
     }
@@ -400,6 +441,7 @@ export default function AuthHeaderButtons({
     setShowSignupModal(false)
     setShowForgotPassword(false)
     setShowVerifyCode(false)
+    setShowSignupVerifyCode(false) // Close signup OTP modal
     setGameModalStep(0)
     if (isModal) onClose()
   }
@@ -695,9 +737,10 @@ export default function AuthHeaderButtons({
                 <button
                   type="submit"
                   className="btn w-100 mb-2"
+                  disabled={loading}
                   style={{ backgroundColor: "#0dcaf0", color: "#fff", fontWeight: "bold", borderRadius: "5px" }}
                 >
-                  Sign Up
+                  {loading ? "Sending OTP..." : "Sign Up"}
                 </button>
               </form>{" "}
               <button
@@ -743,6 +786,15 @@ export default function AuthHeaderButtons({
               handleClose={closeAllModals}
               email={verificationEmail}
               onVerify={handleVerifyOtp}
+              loading={loading}
+            />
+          )}
+          {showSignupVerifyCode && (
+            <SignupVerifyCodeModal
+              show={showSignupVerifyCode}
+              handleClose={closeAllModals}
+              email={signupVerificationEmail}
+              onVerify={handleSignupOtpVerify}
               loading={loading}
             />
           )}
@@ -955,9 +1007,10 @@ export default function AuthHeaderButtons({
                   <button
                     type="submit"
                     className="btn w-100 mb-2"
+                    disabled={loading}
                     style={{ backgroundColor: "#0dcaf0", color: "#fff", fontWeight: "bold", borderRadius: "5px" }}
                   >
-                    Sign Up
+                    {loading ? "Sending OTP..." : "Sign Up"}
                   </button>
                 </form>{" "}
                 <button
@@ -1004,6 +1057,15 @@ export default function AuthHeaderButtons({
               handleClose={closeAllModals}
               email={verificationEmail}
               onVerify={handleVerifyOtp}
+              loading={loading}
+            />
+          )}
+          {showSignupVerifyCode && (
+            <SignupVerifyCodeModal
+              show={showSignupVerifyCode}
+              handleClose={closeAllModals}
+              email={signupVerificationEmail}
+              onVerify={handleSignupOtpVerify}
               loading={loading}
             />
           )}
