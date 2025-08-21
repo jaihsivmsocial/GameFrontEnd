@@ -3,8 +3,11 @@
 import { useState, useRef, useEffect } from "react"
 import { BASEURL } from "@/utils/apiservice"
 
-const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: externalLoading }) => {
+const VerifyCodeModal = ({ show, handleClose, email, onVerify, loading: externalLoading }) => {
   const [code, setCode] = useState(["", "", "", "", "", ""])
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [passwordError, setPasswordError] = useState("")
   const [verificationLoading, setVerificationLoading] = useState(false)
   const [timeLeft, setTimeLeft] = useState(300) // 5 minutes in seconds
   const [message, setMessage] = useState("")
@@ -12,14 +15,11 @@ const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: ex
 
   const inputRefs = useRef([])
 
-
-
   useEffect(() => {
     if (show) {
       // Focus the first input when modal opens
       if (inputRefs.current[0]) {
         inputRefs.current[0].focus()
-
       }
 
       // Start the countdown timer
@@ -82,9 +82,23 @@ const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: ex
       }
     }
   }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords don't match")
+      return
+    }
+
+    // Validate password length
+    if (newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters")
+      return
+    }
+
+    setPasswordError("")
     setVerificationLoading(true)
     setMessage("")
 
@@ -92,30 +106,60 @@ const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: ex
       // Get the full OTP code
       const otp = code.join("")
 
-      console.log("Submitting signup verification with:", {
+      console.log("Submitting verification with:", {
         email,
         otp,
+        newPassword: newPassword.length, // Don't log actual password
       })
 
-      // Call the parent's onVerify function
-      const success = await onVerify(otp)
+      // Make API call to verify OTP and reset password
+      const response = await fetch(`${BASEURL}/api/verify-otp-reset`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          otp,
+          newPassword,
+        }),
+      })
 
-      if (success) {
-        // Success message will be handled by parent component
-        setMessageType("success")
-        setMessage("Email verified successfully!")
-        
-        // Reset form
-        setCode(["", "", "", "", "", ""])
-        
-        return true
-      } else {
-        setMessageType("error")
-        setMessage("Invalid verification code. Please try again.")
-        return false
+      // Log the raw response for debugging
+      const responseText = await response.text()
+      console.log("Verification response:", responseText)
+
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (e) {
+        console.error("Error parsing response:", e)
+        throw new Error("Invalid response from server")
       }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to verify code")
+      }
+
+      // Success
+      setMessageType("success")
+      setMessage("Password reset successful!")
+
+      // Reset form
+      setCode(["", "", "", "", "", ""])
+      setNewPassword("")
+      setConfirmPassword("")
+
+      // Close modal after delay
+      setTimeout(() => {
+        handleClose()
+        // Call onVerify callback if provided
+        if (onVerify) onVerify(true)
+      }, 2000)
+
+      return true
     } catch (err) {
-      console.error("Signup verification error:", err)
+      console.error("Verification error:", err)
       setMessageType("error")
       setMessage(err.message || "Verification failed")
       return false
@@ -129,13 +173,14 @@ const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: ex
       // Reset the timer
       setTimeLeft(300)
 
-      // Resend signup OTP
-      const response = await fetch(`${BASEURL}/api/send-signup-otp`, {
+      // Use the forgot-password endpoint for resending OTP
+      const response = await fetch(`${BASEURL}/api/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
+        credentials: "include",
       })
 
       const data = await response.json()
@@ -146,14 +191,14 @@ const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: ex
 
       // If we have a test OTP in the response (for development), show it
       if (data.testOtp) {
-        console.log("Test Signup OTP:", data.testOtp)
+        console.log("Test OTP:", data.testOtp)
         setMessage(`New verification code sent! (Test OTP: ${data.testOtp})`)
       } else {
         setMessage("New verification code sent!")
       }
       setMessageType("success")
     } catch (err) {
-      console.error("Resend signup code error:", err)
+      console.error("Resend code error:", err)
       setMessage(err.message || "Failed to resend code")
       setMessageType("error")
     }
@@ -199,15 +244,10 @@ const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: ex
         ></button>
 
         <div className="text-center mt-4">
-          <div className="mb-3">
-            <span role="img" aria-label="email emoji" style={{ fontSize: "2rem" }}>
-              📧
-            </span>
-          </div>
-          <h5>Verify Your Email</h5>
-          <p className="text-muted small mb-4">Complete your registration</p>
+          <h5>Verify Email Address</h5>
+          <p className="text-muted small mb-4">Enter your verification code</p>
           <p className="mb-3 small">
-            We have sent a verification code to <span className="text-info">{email}</span>
+            We have sent a code to <span className="text-info">{email}</span>
           </p>
 
           {message && <p className={`text-${messageType === "success" ? "success" : "danger"} mb-3`}>{message}</p>}
@@ -242,19 +282,45 @@ const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: ex
 
             <p className="text-muted small mb-3">This code will expire in {formatTime(timeLeft)}.</p>
 
+            {/* New password fields */}
+            <div className="mb-3">
+              <label className="form-label small">New Password</label>
+              <input
+                type="password"
+                className="form-control"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                style={{ backgroundColor: "#1a1a1a", borderColor: "#333", color: "#fff" }}
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label small">Confirm Password</label>
+              <input
+                type="password"
+                className="form-control"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                style={{ backgroundColor: "#1a1a1a", borderColor: "#333", color: "#fff" }}
+                required
+              />
+              {passwordError && <div className="text-danger mt-1 small">{passwordError}</div>}
+            </div>
+
             {/* Submit button */}
             <button
               type="submit"
               className="btn w-100 mb-3"
-              disabled={verificationLoading || externalLoading || code.some((digit) => !digit)}
+              disabled={verificationLoading || externalLoading || code.some((digit) => !digit) || !newPassword}
               style={{
-                backgroundColor: "#0dcaf0",
+                backgroundColor: "#07a1fe",
                 color: "#fff",
                 fontWeight: "bold",
                 borderRadius: "5px",
               }}
             >
-              {verificationLoading || externalLoading ? "Verifying..." : "Verify & Complete Registration"}
+              {verificationLoading || externalLoading ? "Verifying..." : "Reset Password"}
             </button>
           </form>
 
@@ -268,16 +334,11 @@ const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: ex
           >
             Resend code
           </button>
-          
-          <div className="text-center mt-3">
-            <small className="text-muted">
-              After verification, you'll be able to login with your credentials.
-            </small>
-          </div>
         </div>
       </div>
     </div>
   )
 }
 
-export default SignupVerifyCodeModal
+export default VerifyCodeModal
+
