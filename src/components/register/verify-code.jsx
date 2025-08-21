@@ -12,12 +12,14 @@ const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: ex
 
   const inputRefs = useRef([])
 
+
+
   useEffect(() => {
     if (show) {
       // Focus the first input when modal opens
       if (inputRefs.current[0]) {
         inputRefs.current[0].focus()
-        
+
       }
 
       // Start the countdown timer
@@ -80,7 +82,6 @@ const SignupVerifyCodeModal = ({ show, handleClose, email, onVerify, loading: ex
       }
     }
   }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
 

@@ -1071,7 +1071,6 @@ export default function AuthHeaderButtons({
           )}
         </>
       )}
-
       <UnderstandingModal
         show={gameModalStep === 1}
         onClose={handleCloseGameModal}
