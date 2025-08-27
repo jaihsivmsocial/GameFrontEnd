@@ -2119,8 +2119,4 @@ export default function StreamBottomBar() {
       )}
     </>
   )
-
 }
-
-
-
