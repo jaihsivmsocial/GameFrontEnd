@@ -1,4 +1,3 @@
-
 "use client"
 import { useState, useEffect, useRef } from "react"
 import { BASEURL } from "@/utils/apiservice"
@@ -90,10 +89,12 @@ export default function AuthHeaderButtons({
   const [showSignupModal, setShowSignupModal] = useState(initialView === "signup" || (!initialView && isModal))
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [showVerifyCode, setShowVerifyCode] = useState(false)
+  const [showSignupVerify, setShowSignupVerify] = useState(false) // NEW: For signup verification
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userData, setUserData] = useState(null)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState("")
+  const [signupVerificationData, setSignupVerificationData] = useState(null) // NEW: Store signup data
   const [isMobileView, setIsMobileView] = useState(false)
   const [mobileSize, setMobileSize] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
@@ -290,10 +291,9 @@ export default function AuthHeaderButtons({
 
       if (postLoginTimerRef.current) clearTimeout(postLoginTimerRef.current)
       postLoginTimerRef.current = setTimeout(() => {
-        console.log("Timer fired! Attempting to start game flow.") // For debugging
-        // The timer firing implies login was successful and user hasn't logged out.
+        console.log("Timer fired! Attempting to start game flow.")
         handleStartGameFlow()
-      }, 60000) // 1 minute
+      }, 60000)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -301,6 +301,7 @@ export default function AuthHeaderButtons({
     }
   }
 
+  // UPDATED: Handle signup submission to initiate verification process
   const handleSignupSubmit = async (e) => {
     e.preventDefault()
     if (usernameTaken) {
@@ -309,6 +310,7 @@ export default function AuthHeaderButtons({
     }
     setLoading(true)
     setError("")
+    
     try {
       const response = await fetch(`${BASEURL}/api/register`, {
         method: "POST",
@@ -316,6 +318,7 @@ export default function AuthHeaderButtons({
         credentials: "include",
         body: JSON.stringify(signupFormData),
       })
+      
       const responseText = await response.text()
       let data
       try {
@@ -324,21 +327,160 @@ export default function AuthHeaderButtons({
         setError("Received invalid response from server")
         return
       }
+      
       if (response.ok) {
-        localStorage.setItem("registrationComplete", "true")
-        sessionStorage.setItem("registrationComplete", "true")
-        alert("Registration successful! Please login with your credentials.")
-        setShowSignupModal(false)
-        setShowLoginModal(true)
-        setLoginFormData({ ...loginFormData, username: signupFormData.username })
-        setSignupFormData({ username: "", email: "", password: "" })
+        // Registration initiated successfully, now show verification modal
+        if (data.requiresVerification) {
+          console.log("Registration requires verification, showing verify modal")
+          setSignupVerificationData({
+            email: data.email,
+            username: data.username,
+            userData: signupFormData // Store the original form data
+          })
+          setVerificationEmail(data.email)
+          setShowSignupModal(false)
+          setShowSignupVerify(true) // Show signup verification modal
+          
+          // Clear form data
+          setSignupFormData({ username: "", email: "", password: "" })
+        } else {
+          // Direct registration success (shouldn't happen with new backend)
+          alert("Registration successful! Please login with your credentials.")
+          setShowSignupModal(false)
+          setShowLoginModal(true)
+          setLoginFormData({ ...loginFormData, username: signupFormData.username })
+          setSignupFormData({ username: "", email: "", password: "" })
+        }
       } else {
         setError(data.message || data.error || "Registration failed")
       }
     } catch (error) {
+      console.error("Signup error:", error)
       setError("An error occurred during registration")
     } finally {
       setLoading(false)
+    }
+  }
+
+  // NEW: Handle signup OTP verification
+  const handleSignupVerifyOtp = async (code) => {
+    if (!signupVerificationData) {
+      console.error("No signup verification data available")
+      return false
+    }
+
+    setLoading(true)
+    try {
+      console.log("Sending verification request:", {
+        email: signupVerificationData.email,
+        otp: code,
+        // Don't log userData for security, just indicate it exists
+        hasUserData: !!signupVerificationData.userData
+      })
+
+      const response = await fetch(`${BASEURL}/api/verify-signup-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: signupVerificationData.email,
+          otp: code,
+          // The backend expects userData but actually uses the temp user's stored data
+          userData: signupVerificationData.userData
+        }),
+      })
+
+      const responseText = await response.text()
+      console.log("Raw response:", responseText)
+      
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error("Failed to parse response:", parseError)
+        alert("Received invalid response from server")
+        return false
+      }
+
+      if (response.ok) {
+        console.log("Signup verification successful:", data)
+        
+        // Store auth data if token is provided
+        if (data.token) {
+          localStorage.setItem("authToken", data.token)
+          sessionStorage.setItem("authToken", data.token)
+          document.cookie = `authToken=${data.token}; path=/; max-age=2592000; SameSite=Lax`
+          
+          if (data.user) {
+            const userDataToStore = {
+              username: data.user.username,
+              email: data.user.email,
+              walletBalance: data.user.walletBalance || 0,
+              avatar: data.user.profilePicture || "/placeholder.svg?height=40&width=40",
+            }
+            localStorage.setItem("userData", JSON.stringify(userDataToStore))
+            sessionStorage.setItem("userData", JSON.stringify(userDataToStore))
+            localStorage.setItem("username", data.user.username)
+          }
+        }
+
+        alert(data.message || "Registration completed successfully!")
+        setShowSignupVerify(false)
+        setSignupVerificationData(null)
+        
+        // If token provided, log in immediately, otherwise show login
+        if (data.token && data.user) {
+          setIsLoggedIn(true)
+          setUserData({
+            username: data.user.username,
+            avatar: data.user.profilePicture || "/placeholder.svg?height=40&width=40",
+          })
+          onAuthStateChange(true, data.user)
+          if (isModal) onClose()
+        } else {
+          setShowLoginModal(true)
+          setLoginFormData({ ...loginFormData, username: data.finalUsername || data.user?.username || "" })
+        }
+        
+        return true
+      } else {
+        console.error("Verification failed:", data)
+        alert(data.message || "Failed to verify OTP")
+        return false
+      }
+    } catch (error) {
+      console.error("Signup verification error:", error)
+      alert("An error occurred while verifying your registration")
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // NEW: Handle resending signup verification OTP
+  const handleResendSignupOtp = async () => {
+    if (!signupVerificationData) {
+      console.error("No signup verification data available")
+      return
+    }
+
+    try {
+      const response = await fetch(`${BASEURL}/api/send-signup-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: signupVerificationData.email
+        }),
+      })
+
+      const data = await response.json()
+      if (response.ok) {
+        console.log("Signup OTP resent successfully")
+        // The verification modal will show the success message
+      } else {
+        console.error("Failed to resend signup OTP:", data.message)
+      }
+    } catch (error) {
+      console.error("Error resending signup OTP:", error)
     }
   }
 
@@ -373,11 +515,6 @@ export default function AuthHeaderButtons({
       clearTimeout(postLoginTimerRef.current)
       postLoginTimerRef.current = null
     }
-    // try {
-    //   await fetch(`${BASEURL}/api/logout`, { method: "POST", credentials: "include" })
-    // } catch (error) {
-    //   console.error("Logout API error:", error)
-    // }
     localStorage.removeItem("authToken")
     localStorage.removeItem("username")
     localStorage.removeItem("avatar")
@@ -400,6 +537,8 @@ export default function AuthHeaderButtons({
     setShowSignupModal(false)
     setShowForgotPassword(false)
     setShowVerifyCode(false)
+    setShowSignupVerify(false) // NEW: Close signup verification modal
+    setSignupVerificationData(null) // NEW: Clear signup data
     setGameModalStep(0)
     if (isModal) onClose()
   }
@@ -421,106 +560,106 @@ export default function AuthHeaderButtons({
       <style jsx global>
         {mobileStyles}
       </style>
-  {!isModal && !isLoggedIn && !isMobile ? (
-  <div className="d-flex gap-2 auth-buttons-container">
-    {/* LOGIN Button */}
-    <button
-      type="button"
-      className="btn btn-dark border border-info  auth-button-mobile"
-      style={{
-        backgroundColor: isSpecificMobileSize ? "#081e2e" : "#050505",
-        background: isSpecificMobileSize ? "linear-gradient(to right, #090e12, #070a0f)" : "#050505",
-          border: "2px solid$ #0046c0",
-        width: isSpecificMobileSize ? "75px" : "141px",
-        height: isSpecificMobileSize ? "26px" : "37px",
-        fontWeight: "bold",
-        font: "Poppins",
-        letterSpacing: "1px",
-        boxShadow: "0 0 1px rgba(13, 202, 240, 0.5)",
-        transition: "box-shadow 0.3s ease",
-        padding: "0",
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: "16px",
-        borderRadius: "4px",
-        fontSize: isSpecificMobileSize ? "12px" : "inherit",
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 10px rgba(13, 202, 240, 0.8)")}
-      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 0 5px rgba(13, 202, 240, 0.5)")}
-      onClick={() => setShowLoginModal(true)}
-    >
-      LOGIN
-    </button>
+      {!isModal && !isLoggedIn && !isMobile ? (
+        <div className="d-flex gap-2 auth-buttons-container">
+          {/* LOGIN Button */}
+          <button
+            type="button"
+            className="btn btn-dark border border-info  auth-button-mobile"
+            style={{
+              backgroundColor: isSpecificMobileSize ? "#081e2e" : "#050505",
+              background: isSpecificMobileSize ? "linear-gradient(to right, #090e12, #070a0f)" : "#050505",
+              border: "2px solid$ #0046c0",
+              width: isSpecificMobileSize ? "75px" : "141px",
+              height: isSpecificMobileSize ? "26px" : "37px",
+              fontWeight: "bold",
+              font: "Poppins",
+              letterSpacing: "1px",
+              boxShadow: "0 0 1px rgba(13, 202, 240, 0.5)",
+              transition: "box-shadow 0.3s ease",
+              padding: "0",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: "16px",
+              borderRadius: "4px",
+              fontSize: isSpecificMobileSize ? "12px" : "inherit",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 10px rgba(13, 202, 240, 0.8)")}
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 0 5px rgba(13, 202, 240, 0.5)")}
+            onClick={() => setShowLoginModal(true)}
+          >
+            LOGIN
+          </button>
 
-    {/* SIGNUP Button */}
-    <button
-      type="button"
-      className="btn btn-dark border border-info text-white auth-button-mobile"
-      style={{
-        backgroundColor: isSpecificMobileSize ? "#081e2e" : "#050505",
-        background: isSpecificMobileSize ? "linear-gradient(to right, #070a0f, #070a0f)" : "#050505",
-        border: "2px solid #0046c0",
-        width: isSpecificMobileSize ? "75px" : "141px",
-        height: isSpecificMobileSize ? "26px" : "37px",
-        fontWeight: "bold",
-        font: "Poppins",
-        letterSpacing: "1px",
-        boxShadow: "0 0 1px rgba(13, 202, 240, 0.5)",
-        transition: "box-shadow 0.3s ease",
-        padding: "0",
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: isSpecificMobileSize ? "0" : "61px",
-        borderRadius: "4px",
-        fontSize: isSpecificMobileSize ? "12px" : "inherit",
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 10px rgba(13, 202, 240, 0.8)")}
-      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 0 5px rgba(13, 202, 240, 0.5)")}
-      onClick={() => setShowSignupModal(true)}
-    >
-      {isSpecificMobileSize ? "SIGN UP" : "SIGNUP"}
-    </button>
-  </div>
-) : !isModal && isLoggedIn && !isMobile ? (
-  <div className="position-relative d-flex align-items-center">
-    <div className="d-flex align-items-center gap-5" style={{ minWidth: "250px", marginRight: "-190px" }}>
-      <GameHeader />
-    </div>
-    {isProfileMenuOpen && (
-      <div
-        className="position-absolute end-0 mt-2 border rounded shadow-lg py-1"
-        style={{ width: "250px", zIndex: 1000, backgroundColor: "#121212", borderColor: "#333" }}
-      ></div>
-    )}
-  </div>
-) : null}
+          {/* SIGNUP Button */}
+          <button
+            type="button"
+            className="btn btn-dark border border-info text-white auth-button-mobile"
+            style={{
+              backgroundColor: isSpecificMobileSize ? "#081e2e" : "#050505",
+              background: isSpecificMobileSize ? "linear-gradient(to right, #070a0f, #070a0f)" : "#050505",
+              border: "2px solid #0046c0",
+              width: isSpecificMobileSize ? "75px" : "141px",
+              height: isSpecificMobileSize ? "26px" : "37px",
+              fontWeight: "bold",
+              font: "Poppins",
+              letterSpacing: "1px",
+              boxShadow: "0 0 1px rgba(13, 202, 240, 0.5)",
+              transition: "box-shadow 0.3s ease",
+              padding: "0",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: isSpecificMobileSize ? "0" : "61px",
+              borderRadius: "4px",
+              fontSize: isSpecificMobileSize ? "12px" : "inherit",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 10px rgba(13, 202, 240, 0.8)")}
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 0 5px rgba(13, 202, 240, 0.5)")}
+            onClick={() => setShowSignupModal(true)}
+          >
+            {isSpecificMobileSize ? "SIGN UP" : "SIGNUP"}
+          </button>
+        </div>
+      ) : !isModal && isLoggedIn && !isMobile ? (
+        <div className="position-relative d-flex align-items-center">
+          <div className="d-flex align-items-center gap-5" style={{ minWidth: "250px", marginRight: "-190px" }}>
+            <GameHeader />
+          </div>
+          {isProfileMenuOpen && (
+            <div
+              className="position-absolute end-0 mt-2 border rounded shadow-lg py-1"
+              style={{ width: "250px", zIndex: 1000, backgroundColor: "#121212", borderColor: "#333" }}
+            ></div>
+          )}
+        </div>
+      ) : null}
 
-
+      {/* All modals remain the same structure, just adding the new signup verification modal */}
       {isModal && (
         <>
+          {/* Login Modal */}
           {showLoginModal && (
             <div
               className="card p-4 text-white position-relative"
               style={{ background: "#050505", borderRadius: "10px", width: "400px", border: "2px solid #0dcaf0" }}
             >
-              {" "}
               <button
                 className="btn-close position-absolute top-0 end-0 m-2"
                 style={{ backgroundColor: "#fff", opacity: "1" }}
                 onClick={closeAllModals}
-              ></button>{" "}
+              ></button>
               <div className="text-center mb-3">
                 <img
                   src="/assets/img/logo/5 Minutes Of Fame (2).png"
                   alt="M's TRIBE Logo"
                   style={{ maxWidth: "150px", height: "auto" }}
                 />
-              </div>{" "}
-              {error && <p className="text-danger text-center">{error}</p>}{" "}
+              </div>
+              {error && <p className="text-danger text-center">{error}</p>}
               <form onSubmit={handleLoginSubmit}>
                 <div className="mb-3">
                   <label className="form-label">Username</label>
@@ -556,7 +695,7 @@ export default function AuthHeaderButtons({
                 >
                   {loading ? "Signing In..." : "Sign In"}
                 </button>
-              </form>{" "}
+              </form>
               <button
                 className="btn btn-light w-100 d-flex align-items-center justify-content-center mb-2"
                 style={{ borderRadius: "5px" }}
@@ -572,7 +711,7 @@ export default function AuthHeaderButtons({
                   }}
                 />
                 Sign in with Google
-              </button>{" "}
+              </button>
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <div className="form-check">
                   <input
@@ -597,7 +736,7 @@ export default function AuthHeaderButtons({
                     Forgot password?
                   </a>
                 </div>
-              </div>{" "}
+              </div>
               <div className="text-center">
                 <small>
                   Don't have an account?{" "}
@@ -612,28 +751,29 @@ export default function AuthHeaderButtons({
                     Sign up
                   </a>
                 </small>
-              </div>{" "}
+              </div>
             </div>
           )}
+
+          {/* Signup Modal */}
           {showSignupModal && (
             <div
               className="card p-4 text-white position-relative"
               style={{ background: "#050505", borderRadius: "10px", width: "400px", border: "2px solid #0dcaf0" }}
             >
-              {" "}
               <button
                 className="btn-close position-absolute top-0 end-0 m-2"
                 style={{ backgroundColor: "#fff", opacity: "1" }}
                 onClick={closeAllModals}
-              ></button>{" "}
+              ></button>
               <div className="text-center mb-3">
                 <img
                   src="/assets/img/logo/5 Minutes Of Fame (2).png"
                   alt="M's TRIBE Logo"
                   style={{ maxWidth: "150px", height: "auto" }}
                 />
-              </div>{" "}
-              {error && <p className="text-danger text-center">{error}</p>}{" "}
+              </div>
+              {error && <p className="text-danger text-center">{error}</p>}
               <form onSubmit={handleSignupSubmit}>
                 <div className="mb-3">
                   <label className="form-label">Username</label>
@@ -695,18 +835,19 @@ export default function AuthHeaderButtons({
                 <button
                   type="submit"
                   className="btn w-100 mb-2"
+                  disabled={loading}
                   style={{ backgroundColor: "#0dcaf0", color: "#fff", fontWeight: "bold", borderRadius: "5px" }}
                 >
-                  Sign Up
+                  {loading ? "Creating Account..." : "Sign Up"}
                 </button>
-              </form>{" "}
+              </form>
               <button
                 className="btn btn-light w-100 d-flex align-items-center justify-content-center"
                 style={{ borderRadius: "5px" }}
               >
                 <img src="/assets/img/iconImage/g.webp" alt="Google" width="20" height="20" className="me-2" />
                 Sign up with Google
-              </button>{" "}
+              </button>
               <div className="text-center mt-3">
                 <small>
                   Already have an account?{" "}
@@ -721,9 +862,26 @@ export default function AuthHeaderButtons({
                     Login?
                   </a>
                 </small>
-              </div>{" "}
+              </div>
             </div>
           )}
+
+          {/* NEW: Signup Verification Modal */}
+          {showSignupVerify && (
+            <VerifyCodeModal
+              show={showSignupVerify}
+              handleClose={closeAllModals}
+              email={verificationEmail}
+              onVerify={handleSignupVerifyOtp}
+              onResendCode={handleResendSignupOtp}
+              loading={loading}
+              isSignupVerification={true}
+              title="Verify Your Email"
+              subtitle="Complete your registration"
+            />
+          )}
+
+          {/* Forgot Password Modal */}
           {showForgotPassword && (
             <ForgotPasswordModal
               show={showForgotPassword}
@@ -737,6 +895,8 @@ export default function AuthHeaderButtons({
               setEmail={setForgotPasswordEmail}
             />
           )}
+
+          {/* Password Reset Verification Modal */}
           {showVerifyCode && (
             <VerifyCodeModal
               show={showVerifyCode}
@@ -744,6 +904,7 @@ export default function AuthHeaderButtons({
               email={verificationEmail}
               onVerify={handleVerifyOtp}
               loading={loading}
+              isSignupVerification={false}
             />
           )}
         </>
@@ -756,25 +917,23 @@ export default function AuthHeaderButtons({
               className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
               style={{ backgroundColor: "rgba(0, 0, 0, 0.7)", backdropFilter: "blur(2px)", zIndex: 1050 }}
             >
-              {" "}
               <div
                 className="card p-4 text-white position-relative"
                 style={{ background: "#050505", borderRadius: "10px", width: "400px", border: "2px solid #0dcaf0" }}
               >
-                {" "}
                 <button
                   className="btn-close position-absolute top-0 end-0 m-2"
                   style={{ backgroundColor: "#fff", opacity: "1" }}
                   onClick={closeAllModals}
-                ></button>{" "}
+                ></button>
                 <div className="text-center mb-3">
                   <img
                     src="/assets/img/logo/5 Minutes Of Fame (2).png"
                     alt="M's TRIBE Logo"
                     style={{ maxWidth: "150px", height: "auto" }}
                   />
-                </div>{" "}
-                {error && <p className="text-danger text-center">{error}</p>}{" "}
+                </div>
+                {error && <p className="text-danger text-center">{error}</p>}
                 <form onSubmit={handleLoginSubmit}>
                   <div className="mb-3">
                     <label className="form-label">Username</label>
@@ -810,7 +969,7 @@ export default function AuthHeaderButtons({
                   >
                     {loading ? "Signing In..." : "Sign In"}
                   </button>
-                </form>{" "}
+                </form>
                 <button
                   className="btn btn-light w-100 d-flex align-items-center justify-content-center mb-2"
                   style={{ borderRadius: "5px" }}
@@ -826,7 +985,7 @@ export default function AuthHeaderButtons({
                     }}
                   />
                   Sign in with Google
-                </button>{" "}
+                </button>
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <div className="form-check">
                     <input
@@ -851,7 +1010,7 @@ export default function AuthHeaderButtons({
                       Forgot password?
                     </a>
                   </div>
-                </div>{" "}
+                </div>
                 <div className="text-center">
                   <small>
                     Don't have an account?{" "}
@@ -866,34 +1025,33 @@ export default function AuthHeaderButtons({
                       Sign up
                     </a>
                   </small>
-                </div>{" "}
-              </div>{" "}
+                </div>
+              </div>
             </div>
           )}
+          
           {showSignupModal && (
             <div
               className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
               style={{ backgroundColor: "rgba(0, 0, 0, 0.7)", backdropFilter: "blur(2px)", zIndex: 1050 }}
             >
-              {" "}
               <div
                 className="card p-4 text-white position-relative"
                 style={{ background: "#050505", borderRadius: "10px", width: "400px", border: "2px solid #0dcaf0" }}
               >
-                {" "}
                 <button
                   className="btn-close position-absolute top-0 end-0 m-2"
                   style={{ backgroundColor: "#fff", opacity: "1" }}
                   onClick={closeAllModals}
-                ></button>{" "}
+                ></button>
                 <div className="text-center mb-3">
                   <img
                     src="/assets/img/logo/5 Minutes Of Fame (2).png"
                     alt="M's TRIBE Logo"
                     style={{ maxWidth: "150px", height: "auto" }}
                   />
-                </div>{" "}
-                {error && <p className="text-danger text-center">{error}</p>}{" "}
+                </div>
+                {error && <p className="text-danger text-center">{error}</p>}
                 <form onSubmit={handleSignupSubmit}>
                   <div className="mb-3">
                     <label className="form-label">Username</label>
@@ -955,18 +1113,19 @@ export default function AuthHeaderButtons({
                   <button
                     type="submit"
                     className="btn w-100 mb-2"
+                    disabled={loading}
                     style={{ backgroundColor: "#0dcaf0", color: "#fff", fontWeight: "bold", borderRadius: "5px" }}
                   >
-                    Sign Up
+                    {loading ? "Creating Account..." : "Sign Up"}
                   </button>
-                </form>{" "}
+                </form>
                 <button
                   className="btn btn-light w-100 d-flex align-items-center justify-content-center"
                   style={{ borderRadius: "5px" }}
                 >
                   <img src="/assets/img/iconImage/g.webp" alt="Google" width="20" height="20" className="me-2" />
                   Sign up with Google
-                </button>{" "}
+                </button>
                 <div className="text-center mt-3">
                   <small>
                     Already have an account?{" "}
@@ -981,10 +1140,26 @@ export default function AuthHeaderButtons({
                       Login?
                     </a>
                   </small>
-                </div>{" "}
-              </div>{" "}
+                </div>
+              </div>
             </div>
           )}
+          
+          {/* NEW: Signup Verification Modal for non-modal view */}
+          {showSignupVerify && (
+            <VerifyCodeModal
+              show={showSignupVerify}
+              handleClose={closeAllModals}
+              email={verificationEmail}
+              onVerify={handleSignupVerifyOtp}
+              onResendCode={handleResendSignupOtp}
+              loading={loading}
+              isSignupVerification={true}
+              title="Verify Your Email"
+              subtitle="Complete your registration"
+            />
+          )}
+          
           {showForgotPassword && (
             <ForgotPasswordModal
               show={showForgotPassword}
@@ -998,6 +1173,7 @@ export default function AuthHeaderButtons({
               setEmail={setForgotPasswordEmail}
             />
           )}
+          
           {showVerifyCode && (
             <VerifyCodeModal
               show={showVerifyCode}
@@ -1005,6 +1181,7 @@ export default function AuthHeaderButtons({
               email={verificationEmail}
               onVerify={handleVerifyOtp}
               loading={loading}
+              isSignupVerification={false}
             />
           )}
         </>
